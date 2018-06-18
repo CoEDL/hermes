@@ -1,0 +1,5 @@
+pympi-ling
+requests
+numpy
+PyQt5
+moviepy
