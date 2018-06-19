@@ -1,16 +1,18 @@
+import os
+import sys
+import pympi
+import tempfile
+import shutil
+from pygame import mixer
+from functools import partial
 from PyQt5.QtWidgets import QApplication, QFileDialog, QWidget, QLabel, QPushButton, \
      QGridLayout, QHBoxLayout, QLineEdit, QComboBox, QTableWidget, QHeaderView, \
      QTableWidgetItem, QCheckBox, QMainWindow
 from PyQt5.QtGui import QIcon
-from PyQt5.QtCore import Qt, QSize, pyqtSlot
+from PyQt5.QtCore import Qt, QSize
 from moviepy.editor import AudioFileClip
 from os.path import expanduser
-import os
-import sys
-import pympi
-from pygame import mixer
-from functools import partial
-import tempfile
+
 
 TABLE_COLUMNS = {
     'Transcription': 0,
@@ -190,8 +192,15 @@ class Converter(QWidget):
             if self.trans_table.cellWidget(row, TABLE_COLUMNS['Include']).selector.isChecked():
                 sound_file = audio_file.subclip(t_start=self.transcription_data[row][0] / 1000,
                                                 t_end=self.transcription_data[row][1] / 1000)
-                sound_file.write_audiofile(f'{sound_file_path}/{str(row)}.wav')
-
+                sound_file.write_audiofile(f'{sound_file_path}/word{str(row)}.wav')
+                image_path = self.image_data[row]
+                if image_path:
+                    image_name, image_extension = os.path.splitext(image_path)
+                    shutil.copy(self.image_data[row], f'{image_file_path}/word{row}.{image_extension}')
+                with open(f'{transcription_path}/word{row}.txt', 'w') as file:
+                    file.write(f'{self.transcription_data[row]}')
+                with open(f'{translation_path}/word{row}.txt', 'w') as file:
+                    file.write(f'{self.translation_data[row]}')
 
     def get_audio_file(self):
         linked_files = self.eaf_object.get_linked_files()
