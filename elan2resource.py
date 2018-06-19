@@ -7,7 +7,7 @@ from pygame import mixer
 from functools import partial
 from PyQt5.QtWidgets import QApplication, QFileDialog, QWidget, QLabel, QPushButton, \
      QGridLayout, QHBoxLayout, QLineEdit, QComboBox, QTableWidget, QHeaderView, \
-     QTableWidgetItem, QCheckBox, QMainWindow
+     QTableWidgetItem, QCheckBox, QMainWindow, QMessageBox
 from PyQt5.QtGui import QIcon
 from PyQt5.QtCore import Qt, QSize
 from moviepy.editor import AudioFileClip
@@ -115,11 +115,9 @@ class Converter(QWidget):
             self.trans_table.setItem(row, 1, QTableWidgetItem(self.translation_data[row][2]))
             # Add Preview Button
             preview_button = PreviewButton(row)
-            preview_button.clicked.connect(partial(self.sample_sound, row))
             self.trans_table.setCellWidget(row, 2, preview_button)
             # Add Image Button
-            image_button = ImageButton()
-            image_button.clicked.connect(partial(self.on_click_image, row))
+            image_button = ImageButton(row)
             self.trans_table.setCellWidget(row, 3, image_button)
             # Add Inclusion Selector
             include_widget = SelectorWidget()
@@ -135,7 +133,16 @@ class Converter(QWidget):
             self.translation_menu.setEnabled(True)
 
     def on_click_import(self):
-        self.load_third_stage_widgets()
+        if not self.image_data:
+            self.load_third_stage_widgets()
+        else:
+            warning_message = QMessageBox()
+            choice = warning_message.question(warning_message, 'Warning',
+                                 'Warning: Any unsaved work will be overwritten. Proceed?',
+                                 QMessageBox.Yes | QMessageBox.No | QMessageBox.Warning)
+            if choice == QMessageBox.Yes:
+                self.load_third_stage_widgets()
+
 
     def on_click_image(self, row):
         image_path = self.open_image_dialogue()
@@ -248,14 +255,19 @@ class PreviewButton(QPushButton):
         self.row = row
         image_icon = QIcon('img/play.png')
         self.setIcon(image_icon)
+        self.clicked.connect(partial(self.sample_sound, row))
+        self.setToolTip('Press to hear a preview of the audio clip')
 
 
 class ImageButton(QPushButton):
-    def __init__(self):
+    def __init__(self, row):
         super().__init__()
         self.image_icon_no = QIcon('img/image-no.png')
         self.image_icon_yes = QIcon('img/image-yes.png')
         self.setIcon(self.image_icon_no)
+        self.clicked.connect(partial(self.on_click_image, row))
+        self.setToolTip('Left click to choose an image for this word\n'
+                        'Right click to delete the existing image')
 
     def swap_icon(self):
         self.setIcon(self.image_icon_yes)
@@ -270,10 +282,20 @@ class ApplicationIcon(QIcon):
         self.addFile('img/language-256.png', QSize(256, 256))
 
 
+class LockedLineEdit(QLineEdit):
+    def __init__(self, string):
+        super().__init__(string)
+        self.setReadOnly()
+
+    def mousePressEvent(self, QMouseEvent):
+        pass
+
+
 def make_file_if_not_exists(path):
     if not os.path.exists(path):
         os.makedirs(path)
     return path
+
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
