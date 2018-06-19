@@ -114,10 +114,10 @@ class Converter(QWidget):
             self.trans_table.setItem(row, 0, QTableWidgetItem(self.transcription_data[row][2]))
             self.trans_table.setItem(row, 1, QTableWidgetItem(self.translation_data[row][2]))
             # Add Preview Button
-            preview_button = PreviewButton(row)
+            preview_button = PreviewButton(self, row)
             self.trans_table.setCellWidget(row, 2, preview_button)
             # Add Image Button
-            image_button = ImageButton(row)
+            image_button = ImageButton(self, row)
             self.trans_table.setCellWidget(row, 3, image_button)
             # Add Inclusion Selector
             include_widget = SelectorWidget()
@@ -250,22 +250,24 @@ class SelectorWidget(QWidget):
 
 
 class PreviewButton(QPushButton):
-    def __init__(self, row):
+    def __init__(self, parent, row):
         super().__init__()
+        self.parent = parent
         self.row = row
         image_icon = QIcon('img/play.png')
         self.setIcon(image_icon)
-        self.clicked.connect(partial(self.sample_sound, row))
+        self.clicked.connect(partial(self.parent.sample_sound, row))
         self.setToolTip('Press to hear a preview of the audio clip')
 
 
 class ImageButton(QPushButton):
-    def __init__(self, row):
+    def __init__(self, parent, row):
         super().__init__()
+        self.parent = parent
         self.image_icon_no = QIcon('img/image-no.png')
         self.image_icon_yes = QIcon('img/image-yes.png')
         self.setIcon(self.image_icon_no)
-        self.clicked.connect(partial(self.on_click_image, row))
+        self.clicked.connect(partial(self.parent.on_click_image, row))
         self.setToolTip('Left click to choose an image for this word\n'
                         'Right click to delete the existing image')
 
