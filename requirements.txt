@@ -3,3 +3,4 @@ requests
 numpy
 PyQt5
 moviepy
+pygame
