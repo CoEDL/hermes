@@ -8,8 +8,8 @@ from functools import partial
 from PyQt5.QtWidgets import QApplication, QFileDialog, QWidget, QLabel, QPushButton, \
      QGridLayout, QHBoxLayout, QLineEdit, QComboBox, QTableWidget, QHeaderView, \
      QTableWidgetItem, QCheckBox, QMainWindow, QMessageBox
-from PyQt5.QtGui import QIcon
-from PyQt5.QtCore import Qt, QSize
+from PyQt5.QtGui import QIcon, QDesktopServices
+from PyQt5.QtCore import Qt, QSize, QUrl
 from moviepy.editor import AudioFileClip
 from os.path import expanduser
 
@@ -208,6 +208,8 @@ class Converter(QWidget):
                     file.write(f'{self.transcription_data[row]}')
                 with open(f'{translation_path}/word{row}.txt', 'w') as file:
                     file.write(f'{self.translation_data[row]}')
+        export_url = QUrl.fromLocalFile(self.export_location)
+        QDesktopServices().openUrl(export_url)
 
     def get_audio_file(self):
         linked_files = self.eaf_object.get_linked_files()
