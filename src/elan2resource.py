@@ -13,6 +13,7 @@ from PyQt5.QtGui import QIcon, QDesktopServices
 from PyQt5.QtCore import Qt, QSize, QUrl, pyqtSignal
 from moviepy.editor import AudioFileClip
 from os.path import expanduser
+from pathlib import Path
 
 TABLE_COLUMNS = {
     'Index': 0,
@@ -260,11 +261,10 @@ class ConverterWidget(QWidget):
         export_url = QUrl.fromLocalFile(self.export_location)
         QDesktopServices().openUrl(export_url)
 
-
     def get_audio_file(self):
         linked_files = self.eaf_object.get_linked_files()
-        relative_file_path = '/'.join(self.elan_file.split('/')[:-1])
-        media_file = os.path.join(relative_file_path, linked_files[0]['RELATIVE_MEDIA_URL'][2:])
+        print(str(Path.home()))
+        media_file = os.path.join(str(Path.home()), linked_files[0]['RELATIVE_MEDIA_URL'][3:])
         audio_data = AudioFileClip(media_file)
         return audio_data
 
