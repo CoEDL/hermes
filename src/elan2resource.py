@@ -39,7 +39,7 @@ class MainWindow(QMainWindow):
         self.setCentralWidget(self.converter)
         self.statusBar().showMessage('Ready!')
         self.statusBar().addPermanentWidget(self.progress_bar)
-        self.progress_bar.show()
+        self.progress_bar.hide()
 
     def update_progress_bar(self, value):
         self.progress_bar.update_progress(value)
