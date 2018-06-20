@@ -32,12 +32,12 @@ class MainWindow(QMainWindow):
 
     def init_ui(self):
         self.setWindowTitle(self.title)
-        self.converter = Converter(parent=self)
+        self.converter = ConverterWidget(parent=self)
         self.setCentralWidget(self.converter)
         self.statusBar().showMessage('Ready!')
 
 
-class Converter(QWidget):
+class ConverterWidget(QWidget):
     def __init__(self, parent):
         super().__init__()
         self.parent = parent
@@ -97,15 +97,15 @@ class Converter(QWidget):
         # Fifth Row (Filter & Selector)
         filter_label = QLabel('Filter Results:')
         self.layout.addWidget(filter_label, 4, 0, 1, 1)
-        self.filter_field = QLineEdit('')
+        self.filter_field = FilterFieldWidget('', self)
         self.layout.addWidget(self.filter_field, 4, 1, 1, 2)
-        filter_clear_button = QPushButton('Clear')
+        filter_clear_button = FilterClearButtonWidget('Clear', self.filter_field)
         self.layout.addWidget(filter_clear_button, 4, 3, 1, 1)
         select_all_button = QPushButton('Select All')
         select_all_button.clicked.connect(self.on_click_select_all)
         self.layout.addWidget(select_all_button, 4, 7, 1, 1)
         # Sixth Row (Table)
-        self.trans_table = TranslationTable(len(self.eaf_object.get_annotation_data_for_tier(transcription_tier)))
+        self.trans_table = TranslationTableWidget(len(self.eaf_object.get_annotation_data_for_tier(transcription_tier)))
         self.populate_table(transcription_tier, translation_tier)
         self.layout.addWidget(self.trans_table, 5, 0, 1, 8)
         # Seventh Row (Export Location)
@@ -127,18 +127,18 @@ class Converter(QWidget):
         self.translation_data = self.eaf_object.get_annotation_data_for_tier(translation_tier)
         self.image_data = [None for _ in self.translation_data]
         for row in range(len(self.transcription_data)):
-            self.trans_table.setItem(row, TABLE_COLUMNS['Index'], TableIndex(row))
+            self.trans_table.setItem(row, TABLE_COLUMNS['Index'], TableIndexCell(row))
             self.trans_table.setItem(row, TABLE_COLUMNS['Transcription'],
                                      QTableWidgetItem(self.transcription_data[row][2]))
             self.trans_table.setItem(row, TABLE_COLUMNS['Translation'], QTableWidgetItem(self.translation_data[row][2]))
             # Add Preview Button
-            preview_button = PreviewButton(self, row)
+            preview_button = PreviewButtonWidget(self, row)
             self.trans_table.setCellWidget(row, TABLE_COLUMNS['Preview'], preview_button)
             # Add Image Button
-            image_button = ImageButton(self, row)
+            image_button = ImageButtonWidget(self, row)
             self.trans_table.setCellWidget(row, TABLE_COLUMNS['Image'], image_button)
             # Add Inclusion Selector
-            include_widget = SelectorWidget()
+            include_widget = SelectorCellWidget()
             self.trans_table.setCellWidget(row, TABLE_COLUMNS['Include'], include_widget)
 
     def on_click_load(self):
@@ -261,7 +261,7 @@ class Converter(QWidget):
         sound.play()
 
 
-class TranslationTable(QTableWidget):
+class TranslationTableWidget(QTableWidget):
     def __init__(self, num_rows):
         super().__init__(num_rows, 6)
         self.setMinimumHeight(200)
@@ -279,8 +279,22 @@ class TranslationTable(QTableWidget):
         self.setSortingEnabled(True)
         self.sortByColumn(TABLE_COLUMNS['Index'], Qt.AscendingOrder)
 
+    def show_all_rows(self):
+        for row in range(self.rowCount()):
+            self.showRow(row)
 
-class SelectorWidget(QWidget):
+    def filter_rows(self, string):
+        self.show_all_rows()
+        for row in range(self.rowCount()):
+            if string not in self.get_cell_value(row, TABLE_COLUMNS['Transcription']) and \
+                    string not in self.get_cell_value(row, TABLE_COLUMNS['Translation']):
+                self.hideRow(row)
+
+    def get_cell_value(self, row, column):
+        return self.item(row, column).text()
+
+
+class SelectorCellWidget(QWidget):
     def __init__(self):
         super().__init__()
         self.layout = QHBoxLayout()
@@ -291,7 +305,7 @@ class SelectorWidget(QWidget):
         self.setLayout(self.layout)
 
 
-class PreviewButton(QPushButton):
+class PreviewButtonWidget(QPushButton):
     def __init__(self, parent, row):
         super().__init__()
         self.parent = parent
@@ -302,7 +316,7 @@ class PreviewButton(QPushButton):
         self.setToolTip('Left click to hear a preview of the audio for this word')
 
 
-class ImageButton(QPushButton):
+class ImageButtonWidget(QPushButton):
     rightClick = pyqtSignal()
 
     def __init__(self, parent, row):
@@ -352,7 +366,30 @@ class LockedLineEdit(QLineEdit):
         pass
 
 
-class TableIndex(QTableWidgetItem):
+class FilterFieldWidget(QLineEdit):
+    def __init__(self, string, parent):
+        super().__init__(string)
+        self.parent = parent
+        self.textChanged.connect(self.update_table)
+
+    def update_table(self, p_str):
+        if p_str == '':
+            self.parent.trans_table.show_all_rows()
+        else:
+            self.parent.trans_table.filter_rows(p_str)
+
+
+class FilterClearButtonWidget(QPushButton):
+    def __init__(self, name, field):
+        super().__init__(name)
+        self.field = field
+        self.clicked.connect(self.clear_filter)
+
+    def clear_filter(self):
+        self.field.setText('')
+
+
+class TableIndexCell(QTableWidgetItem):
     def __init__(self, value):
         super().__init__()
         self.setTextAlignment(Qt.AlignCenter)
