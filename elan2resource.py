@@ -6,20 +6,20 @@ import shutil
 from pygame import mixer
 from functools import partial
 from PyQt5.QtWidgets import QApplication, QFileDialog, QWidget, QLabel, QPushButton, \
-     QGridLayout, QHBoxLayout, QLineEdit, QComboBox, QTableWidget, QHeaderView, \
-     QTableWidgetItem, QCheckBox, QMainWindow, QMessageBox
+    QGridLayout, QHBoxLayout, QLineEdit, QComboBox, QTableWidget, QHeaderView, \
+    QTableWidgetItem, QCheckBox, QMainWindow, QMessageBox
 from PyQt5.QtGui import QIcon, QDesktopServices
-from PyQt5.QtCore import Qt, QSize, QUrl
+from PyQt5.QtCore import Qt, QSize, QUrl, pyqtSignal
 from moviepy.editor import AudioFileClip
 from os.path import expanduser
 
-
 TABLE_COLUMNS = {
-    'Transcription': 0,
-    'Translation': 1,
-    'Preview': 2,
-    'Image': 3,
-    'Include': 4
+    'Index': 0,
+    'Transcription': 1,
+    'Translation': 2,
+    'Preview': 3,
+    'Image': 4,
+    'Include': 5,
 }
 
 
@@ -50,6 +50,7 @@ class Converter(QWidget):
         self.translation_menu = None
         self.transcription_data = None
         self.translation_data = None
+        self.filter_field = None
         self.image_data = None
         self.eaf_object = None
         self.trans_table = None
@@ -62,6 +63,7 @@ class Converter(QWidget):
         self.show()
 
     def load_inital_widgets(self):
+        # First Row (ELAN File Field)
         self.elan_file_field = QLineEdit('Load an ELAN (*.eaf) file.')
         self.elan_file_field.setReadOnly(True)
         self.layout.addWidget(self.elan_file_field, 0, 0, 1, 7)
@@ -71,6 +73,7 @@ class Converter(QWidget):
 
     def load_second_stage_widgets(self):
         self.eaf_object = pympi.Elan.Eaf(self.elan_file)
+        # Second Row (Tier Selection)
         transcription_label = QLabel('Transcription Tier:')
         self.layout.addWidget(transcription_label, 2, 0, 1, 2)
         self.transcription_menu = QComboBox()
@@ -81,6 +84,7 @@ class Converter(QWidget):
         self.translation_menu = QComboBox()
         self.translation_menu.addItems(self.eaf_object.get_tier_names())
         self.layout.addWidget(self.translation_menu, 2, 6, 1, 2)
+        # Third Row (Import Button)
         import_button = QPushButton('Import')
         import_button.clicked.connect(self.on_click_import)
         self.layout.addWidget(import_button, 3, 0, 1, 8)
@@ -90,38 +94,52 @@ class Converter(QWidget):
         translation_tier = self.translation_menu.currentText()
         self.transcription_menu.setDisabled(True)
         self.translation_menu.setDisabled(True)
+        # Fifth Row (Filter & Selector)
+        filter_label = QLabel('Filter Results:')
+        self.layout.addWidget(filter_label, 4, 0, 1, 1)
+        self.filter_field = QLineEdit('')
+        self.layout.addWidget(self.filter_field, 4, 1, 1, 2)
+        filter_clear_button = QPushButton('Clear')
+        self.layout.addWidget(filter_clear_button, 4, 3, 1, 1)
+        select_all_button = QPushButton('Select All')
+        select_all_button.clicked.connect(self.on_click_select_all)
+        self.layout.addWidget(select_all_button, 4, 7, 1, 1)
+        # Sixth Row (Table)
         self.trans_table = TranslationTable(len(self.eaf_object.get_annotation_data_for_tier(transcription_tier)))
         self.populate_table(transcription_tier, translation_tier)
-        self.trans_table.setMinimumHeight(200)
-        self.layout.addWidget(self.trans_table, 4, 0, 1, 8)
+        self.layout.addWidget(self.trans_table, 5, 0, 1, 8)
+        # Seventh Row (Export Location)
         self.export_location_field = QLineEdit('Choose an export location')
         self.export_location_field.setReadOnly(True)
-        self.layout.addWidget(self.export_location_field, 5, 0, 1, 7)
+        self.layout.addWidget(self.export_location_field, 6, 0, 1, 7)
         choose_export_button = QPushButton('Choose')
         choose_export_button.clicked.connect(self.on_click_choose_export)
-        self.layout.addWidget(choose_export_button, 5, 7, 1, 1)
+        self.layout.addWidget(choose_export_button, 6, 7, 1, 1)
 
     def load_fourth_stage_widgets(self):
+        # Eighth Row (Export Button)
         export_button = QPushButton('Export')
         export_button.clicked.connect(self.export_resources)
-        self.layout.addWidget(export_button, 6, 0, 1, 8)
+        self.layout.addWidget(export_button, 7, 0, 1, 8)
 
     def populate_table(self, transcription_tier, translation_tier):
         self.transcription_data = self.eaf_object.get_annotation_data_for_tier(transcription_tier)
         self.translation_data = self.eaf_object.get_annotation_data_for_tier(translation_tier)
         self.image_data = [None for _ in self.translation_data]
         for row in range(len(self.transcription_data)):
-            self.trans_table.setItem(row, 0, QTableWidgetItem(self.transcription_data[row][2]))
-            self.trans_table.setItem(row, 1, QTableWidgetItem(self.translation_data[row][2]))
+            self.trans_table.setItem(row, TABLE_COLUMNS['Index'], TableIndex(row))
+            self.trans_table.setItem(row, TABLE_COLUMNS['Transcription'],
+                                     QTableWidgetItem(self.transcription_data[row][2]))
+            self.trans_table.setItem(row, TABLE_COLUMNS['Translation'], QTableWidgetItem(self.translation_data[row][2]))
             # Add Preview Button
             preview_button = PreviewButton(self, row)
-            self.trans_table.setCellWidget(row, 2, preview_button)
+            self.trans_table.setCellWidget(row, TABLE_COLUMNS['Preview'], preview_button)
             # Add Image Button
             image_button = ImageButton(self, row)
-            self.trans_table.setCellWidget(row, 3, image_button)
+            self.trans_table.setCellWidget(row, TABLE_COLUMNS['Image'], image_button)
             # Add Inclusion Selector
             include_widget = SelectorWidget()
-            self.trans_table.setCellWidget(row, 4, include_widget)
+            self.trans_table.setCellWidget(row, TABLE_COLUMNS['Include'], include_widget)
 
     def on_click_load(self):
         file_name = self.open_file_dialogue()
@@ -138,23 +156,36 @@ class Converter(QWidget):
         else:
             warning_message = QMessageBox()
             choice = warning_message.question(warning_message, 'Warning',
-                                 'Warning: Any unsaved work will be overwritten. Proceed?',
-                                 QMessageBox.Yes | QMessageBox.No | QMessageBox.Warning)
+                                              'Warning: Any unsaved work will be overwritten. Proceed?',
+                                              QMessageBox.Yes | QMessageBox.No | QMessageBox.Warning)
             if choice == QMessageBox.Yes:
                 self.load_third_stage_widgets()
-
 
     def on_click_image(self, row):
         image_path = self.open_image_dialogue()
         if image_path:
             self.image_data[row] = image_path
-            self.trans_table.cellWidget(row, TABLE_COLUMNS['Image']).swap_icon()
+            self.trans_table.cellWidget(row, TABLE_COLUMNS['Image']).swap_icon_yes()
 
     def on_click_choose_export(self):
         self.export_location = self.open_folder_dialogue()
         self.export_location_field.setText(self.export_location)
         if self.export_location:
             self.load_fourth_stage_widgets()
+
+    def on_click_select_all(self):
+        if self.all_selected():
+            for row in range(self.trans_table.rowCount()):
+                self.trans_table.cellWidget(row, TABLE_COLUMNS['Include']).selector.setChecked(False)
+        else:
+            for row in range(self.trans_table.rowCount()):
+                self.trans_table.cellWidget(row, TABLE_COLUMNS['Include']).selector.setChecked(True)
+
+    def all_selected(self):
+        for row in range(self.trans_table.rowCount()):
+            if not self.trans_table.cellWidget(row, TABLE_COLUMNS['Include']).selector.isChecked():
+                return False
+        return True
 
     @staticmethod
     def open_folder_dialogue():
@@ -229,15 +260,24 @@ class Converter(QWidget):
         sound = mixer.Sound(sound_file_path)
         sound.play()
 
+
 class TranslationTable(QTableWidget):
     def __init__(self, num_rows):
-        super().__init__(num_rows, 5)
-        self.setHorizontalHeaderLabels([column_name for column_name in TABLE_COLUMNS])
-        self.horizontalHeader().setSectionResizeMode(0, QHeaderView.Stretch)
-        self.horizontalHeader().setSectionResizeMode(1, QHeaderView.Stretch)
-        self.setColumnWidth(2, 50)
-        self.setColumnWidth(3, 50)
-        self.setColumnWidth(4, 50)
+        super().__init__(num_rows, 6)
+        self.setMinimumHeight(200)
+        self.setHorizontalHeaderLabels([''] + [column_name for column_name in list(TABLE_COLUMNS.keys())[1:]])
+        self.horizontalHeader().setSectionResizeMode(TABLE_COLUMNS['Transcription'], QHeaderView.Stretch)
+        self.horizontalHeader().setSectionResizeMode(TABLE_COLUMNS['Translation'], QHeaderView.Stretch)
+        self.setColumnWidth(TABLE_COLUMNS['Index'], 30)
+        self.setColumnWidth(TABLE_COLUMNS['Preview'], 50)
+        self.setColumnWidth(TABLE_COLUMNS['Image'], 50)
+        self.setColumnWidth(TABLE_COLUMNS['Include'], 50)
+        self.verticalHeader().hide()
+        self.setSortingEnabled(False)
+
+    def sort_by_index(self):
+        self.setSortingEnabled(True)
+        self.sortByColumn(TABLE_COLUMNS['Index'], Qt.AscendingOrder)
 
 
 class SelectorWidget(QWidget):
@@ -259,22 +299,39 @@ class PreviewButton(QPushButton):
         image_icon = QIcon('img/play.png')
         self.setIcon(image_icon)
         self.clicked.connect(partial(self.parent.sample_sound, row))
-        self.setToolTip('Press to hear a preview of the audio clip')
+        self.setToolTip('Left click to hear a preview of the audio for this word')
 
 
 class ImageButton(QPushButton):
+    rightClick = pyqtSignal()
+
     def __init__(self, parent, row):
         super().__init__()
         self.parent = parent
+        self.row = row
         self.image_icon_no = QIcon('img/image-no.png')
         self.image_icon_yes = QIcon('img/image-yes.png')
         self.setIcon(self.image_icon_no)
         self.clicked.connect(partial(self.parent.on_click_image, row))
         self.setToolTip('Left click to choose an image for this word\n'
                         'Right click to delete the existing image')
+        self.rightClick.connect(self.remove_image)
 
-    def swap_icon(self):
+    def swap_icon_yes(self):
         self.setIcon(self.image_icon_yes)
+
+    def swap_icon_no(self):
+        self.setIcon(self.image_icon_no)
+
+    def mousePressEvent(self, event):
+        QPushButton.mousePressEvent(self, event)
+
+        if event.button() == Qt.RightButton:
+            self.rightClick.emit()
+
+    def remove_image(self):
+        self.parent.image_data[self.row] = None
+        self.swap_icon_no()
 
 
 class ApplicationIcon(QIcon):
@@ -293,6 +350,13 @@ class LockedLineEdit(QLineEdit):
 
     def mousePressEvent(self, QMouseEvent):
         pass
+
+
+class TableIndex(QTableWidgetItem):
+    def __init__(self, value):
+        super().__init__()
+        self.setTextAlignment(Qt.AlignCenter)
+        self.setData(Qt.EditRole, value + 1)
 
 
 def make_file_if_not_exists(path):
