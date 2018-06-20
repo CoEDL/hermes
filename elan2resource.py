@@ -3,11 +3,12 @@ import sys
 import pympi
 import tempfile
 import shutil
+import math
 from pygame import mixer
 from functools import partial
 from PyQt5.QtWidgets import QApplication, QFileDialog, QWidget, QLabel, QPushButton, \
     QGridLayout, QHBoxLayout, QLineEdit, QComboBox, QTableWidget, QHeaderView, \
-    QTableWidgetItem, QCheckBox, QMainWindow, QMessageBox
+    QTableWidgetItem, QCheckBox, QMainWindow, QMessageBox, QProgressBar
 from PyQt5.QtGui import QIcon, QDesktopServices
 from PyQt5.QtCore import Qt, QSize, QUrl, pyqtSignal
 from moviepy.editor import AudioFileClip
@@ -24,10 +25,12 @@ TABLE_COLUMNS = {
 
 
 class MainWindow(QMainWindow):
-    def __init__(self):
+    def __init__(self, app):
         super().__init__()
+        self.app = app
         self.title = 'Language Resource Creator'
         self.converter = None
+        self.progress_bar = ExportProgressBarWidget()
         self.init_ui()
 
     def init_ui(self):
@@ -35,6 +38,12 @@ class MainWindow(QMainWindow):
         self.converter = ConverterWidget(parent=self)
         self.setCentralWidget(self.converter)
         self.statusBar().showMessage('Ready!')
+        self.statusBar().addPermanentWidget(self.progress_bar)
+        self.progress_bar.show()
+
+    def update_progress_bar(self, value):
+        self.progress_bar.update_progress(value)
+        self.app.processEvents()
 
 
 class ConverterWidget(QWidget):
@@ -92,8 +101,6 @@ class ConverterWidget(QWidget):
     def load_third_stage_widgets(self):
         transcription_tier = self.transcription_menu.currentText()
         translation_tier = self.translation_menu.currentText()
-        self.transcription_menu.setDisabled(True)
-        self.translation_menu.setDisabled(True)
         # Fifth Row (Filter & Selector)
         filter_label = QLabel('Filter Results:')
         self.layout.addWidget(filter_label, 4, 0, 1, 1)
@@ -176,14 +183,17 @@ class ConverterWidget(QWidget):
     def on_click_select_all(self):
         if self.all_selected():
             for row in range(self.trans_table.rowCount()):
-                self.trans_table.cellWidget(row, TABLE_COLUMNS['Include']).selector.setChecked(False)
+                if not self.trans_table.isRowHidden(row):
+                    self.trans_table.cellWidget(row, TABLE_COLUMNS['Include']).selector.setChecked(False)
         else:
             for row in range(self.trans_table.rowCount()):
-                self.trans_table.cellWidget(row, TABLE_COLUMNS['Include']).selector.setChecked(True)
+                if not self.trans_table.isRowHidden(row):
+                    self.trans_table.cellWidget(row, TABLE_COLUMNS['Include']).selector.setChecked(True)
 
     def all_selected(self):
         for row in range(self.trans_table.rowCount()):
-            if not self.trans_table.cellWidget(row, TABLE_COLUMNS['Include']).selector.isChecked():
+            if not self.trans_table.cellWidget(row, TABLE_COLUMNS['Include']).selector.isChecked() \
+                    and not self.trans_table.isRowHidden(row):
                 return False
         return True
 
@@ -220,14 +230,18 @@ class ConverterWidget(QWidget):
         return file_name
 
     def export_resources(self):
-        self.parent.statusBar().showMessage('Exporting')
+        self.parent.statusBar().clearMessage()
+        self.parent.progress_bar.show()
         transcription_path = make_file_if_not_exists(os.path.join(self.export_location, 'words'))
         translation_path = make_file_if_not_exists(os.path.join(self.export_location, 'translations'))
         sound_file_path = make_file_if_not_exists(os.path.join(self.export_location, 'sounds'))
         image_file_path = make_file_if_not_exists(os.path.join(self.export_location, 'images'))
         audio_file = self.get_audio_file()
+        export_count = self.trans_table.get_selected_count()
+        completed_count = 0
         for row in range(self.trans_table.rowCount()):
             if self.trans_table.cellWidget(row, TABLE_COLUMNS['Include']).selector.isChecked():
+                self.parent.statusBar().showMessage(f'Exporting file {completed_count + 1} of {export_count}')
                 sound_file = audio_file.subclip(t_start=self.transcription_data[row][0] / 1000,
                                                 t_end=self.transcription_data[row][1] / 1000)
                 sound_file.write_audiofile(f'{sound_file_path}/word{str(row)}.wav')
@@ -239,8 +253,13 @@ class ConverterWidget(QWidget):
                     file.write(f'{self.transcription_data[row]}')
                 with open(f'{translation_path}/word{row}.txt', 'w') as file:
                     file.write(f'{self.translation_data[row]}')
+                completed_count += 1
+                self.parent.update_progress_bar(completed_count/export_count)
+        self.parent.progress_bar.hide()
+        self.parent.statusBar().showMessage(f'Exported {str(export_count)} words to {self.export_location}')
         export_url = QUrl.fromLocalFile(self.export_location)
         QDesktopServices().openUrl(export_url)
+
 
     def get_audio_file(self):
         linked_files = self.eaf_object.get_linked_files()
@@ -292,6 +311,12 @@ class TranslationTableWidget(QTableWidget):
 
     def get_cell_value(self, row, column):
         return self.item(row, column).text()
+
+    def get_selected_count(self):
+        count = 0
+        for row in range(self.rowCount()):
+            count += 1 if self.cellWidget(row, TABLE_COLUMNS['Include']).selector.isChecked() else 0
+        return count
 
 
 class SelectorCellWidget(QWidget):
@@ -396,6 +421,18 @@ class TableIndexCell(QTableWidgetItem):
         self.setData(Qt.EditRole, value + 1)
 
 
+class ExportProgressBarWidget(QProgressBar):
+    def __init__(self):
+        super().__init__()
+        self.setMaximum(100)
+        self.setMinimum(0)
+        self.setValue(0)
+
+    def update_progress(self, value):
+        print(value)
+        self.setValue(math.ceil(value*100))
+
+
 def make_file_if_not_exists(path):
     if not os.path.exists(path):
         os.makedirs(path)
@@ -405,6 +442,6 @@ def make_file_if_not_exists(path):
 if __name__ == '__main__':
     app = QApplication(sys.argv)
     app.setWindowIcon(ApplicationIcon())
-    main = MainWindow()
+    main = MainWindow(app)
     main.show()
     sys.exit(app.exec_())
