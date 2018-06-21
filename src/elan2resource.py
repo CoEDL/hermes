@@ -360,7 +360,6 @@ class TranslationTableWidget(QTableWidget):
         self.setSortingEnabled(False)
 
     def sort_by_index(self) -> None:
-        self.setSortingEnabled(True)
         self.sortByColumn(TABLE_COLUMNS['Index'], Qt.AscendingOrder)
 
     def show_all_rows(self) -> None:
@@ -368,6 +367,7 @@ class TranslationTableWidget(QTableWidget):
             self.showRow(row)
 
     def filter_rows(self, string: str) -> None:
+        self.setSortingEnabled(False)
         self.show_all_rows()
         for row in range(self.rowCount()):
             if string not in self.get_cell_value(row, TABLE_COLUMNS['Transcription']) and \
