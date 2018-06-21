@@ -4,11 +4,13 @@ import pympi
 import tempfile
 import shutil
 import math
+import platform
 from pygame import mixer
 from functools import partial
 from PyQt5.QtWidgets import QApplication, QFileDialog, QWidget, QLabel, QPushButton, \
     QGridLayout, QHBoxLayout, QLineEdit, QComboBox, QTableWidget, QHeaderView, \
-    QTableWidgetItem, QCheckBox, QMainWindow, QMessageBox, QProgressBar
+    QTableWidgetItem, QCheckBox, QMainWindow, QMessageBox, QProgressBar, QFrame, \
+    QAction, QMenuBar
 from PyQt5.QtGui import QIcon, QDesktopServices, QMouseEvent
 from PyQt5.QtCore import Qt, QSize, QUrl, pyqtSignal
 from moviepy.editor import AudioFileClip
@@ -34,15 +36,35 @@ class MainWindow(QMainWindow):
         self.title = 'Language Resource Creator'
         self.converter = None
         self.progress_bar = ExportProgressBarWidget()
+        self.bar = self.menuBar()
         self.init_ui()
 
-    def init_ui(self: QMainWindow) -> None:
+    def init_ui(self) -> None:
         self.setWindowTitle(self.title)
         self.converter = ConverterWidget(parent=self)
         self.setCentralWidget(self.converter)
-        self.statusBar().showMessage('Ready!')
+        self.statusBar().showMessage('Load an ELAN file to get started')
         self.statusBar().addPermanentWidget(self.progress_bar)
         self.progress_bar.hide()
+        self.init_menu()
+
+    def init_menu(self) -> None:
+        file = self.bar.addMenu('File')
+        file.addAction('Preferences')
+
+        reset = QAction('Reset', self)
+        reset.setShortcut('Ctrl+R')
+        file.addAction(reset)
+
+        quit = QAction('Quit', self)
+        quit.setShortcut('Ctrl+Q')
+        quit.triggered.connect(self.close)
+        file.addAction(quit)
+
+        help = self.bar.addMenu('Help')
+        about = QAction('About', self)
+        about.setShortcut('Ctrl+A')
+        help.addAction(about)
 
     def update_progress_bar(self, value) -> None:
         self.progress_bar.update_progress(value)
@@ -106,34 +128,37 @@ class ConverterWidget(QWidget):
         self.audio_file = self.get_audio_file()
         transcription_tier = self.transcription_menu.currentText()
         translation_tier = self.translation_menu.currentText()
-        # Fifth Row (Filter & Selector)
+        self.layout.addWidget(HorizontalLineWidget(), 4, 0, 1, 8)
+        # Sixth Row (Filter & Selector)
         filter_label = QLabel('Filter Results:')
-        self.layout.addWidget(filter_label, 4, 0, 1, 1)
+        self.layout.addWidget(filter_label, 5, 0, 1, 1)
         self.filter_field = FilterFieldWidget('', self)
-        self.layout.addWidget(self.filter_field, 4, 1, 1, 2)
+        self.layout.addWidget(self.filter_field, 5, 1, 1, 2)
         filter_clear_button = FilterClearButtonWidget('Clear', self.filter_field)
-        self.layout.addWidget(filter_clear_button, 4, 3, 1, 1)
+        self.layout.addWidget(filter_clear_button, 5, 3, 1, 1)
         select_all_button = QPushButton('Select All')
+        select_all_button.setToolTip('Select/Deselect all currently shown transcriptions\n'
+                                     'Note: has no effect on filtered (hidden) results')
         select_all_button.clicked.connect(self.on_click_select_all)
-        self.layout.addWidget(select_all_button, 4, 7, 1, 1)
-        # Sixth Row (Table)
+        self.layout.addWidget(select_all_button, 5, 7, 1, 1)
+        # Seventh Row (Table)
         self.trans_table = TranslationTableWidget(len(self.eaf_object.get_annotation_data_for_tier(transcription_tier)),
                                                   self)
         self.populate_table(transcription_tier, translation_tier)
-        self.layout.addWidget(self.trans_table, 5, 0, 1, 8)
-        # Seventh Row (Export Location)
+        self.layout.addWidget(self.trans_table, 6, 0, 1, 8)
+        # Eighth Row (Export Location)
         self.export_location_field = QLineEdit('Choose an export location')
         self.export_location_field.setReadOnly(True)
-        self.layout.addWidget(self.export_location_field, 6, 0, 1, 7)
+        self.layout.addWidget(self.export_location_field, 7, 0, 1, 7)
         choose_export_button = QPushButton('Choose')
         choose_export_button.clicked.connect(self.on_click_choose_export)
-        self.layout.addWidget(choose_export_button, 6, 7, 1, 1)
+        self.layout.addWidget(choose_export_button, 7, 7, 1, 1)
 
     def load_fourth_stage_widgets(self) -> None:
-        # Eighth Row (Export Button)
+        # Ninth Row (Export Button)
         export_button = QPushButton('Export')
         export_button.clicked.connect(self.export_resources)
-        self.layout.addWidget(export_button, 7, 0, 1, 8)
+        self.layout.addWidget(export_button, 8, 0, 1, 8)
 
     def populate_table(self, transcription_tier: str, translation_tier: str) -> None:
         self.transcription_data = self.eaf_object.get_annotation_data_for_tier(transcription_tier)
@@ -154,6 +179,7 @@ class ConverterWidget(QWidget):
             include_widget = SelectorCellWidget(self.trans_table)
             self.trans_table.setCellWidget(row, TABLE_COLUMNS['Include'], include_widget)
         self.trans_table.sort_by_index()
+        self.parent.statusBar().showMessage(f'Imported {len(self.transcription_data)} transcriptions')
 
     def on_click_load(self) -> None:
         file_name = self.open_file_dialogue()
@@ -369,6 +395,9 @@ class SelectorCellWidget(QWidget):
         self.selector.stateChanged.connect(self.update_select_count)
         self.layout.addWidget(self.selector)
         self.setLayout(self.layout)
+        tooltip = 'Check to include in export\nUncheck to exclude from export'
+        self.setToolTip(tooltip)
+        self.selector.setToolTip(tooltip)
 
     def update_select_count(self) -> None:
         self.parent.parent.parent.statusBar().showMessage(f'{self.parent.get_selected_count()} '
@@ -454,6 +483,8 @@ class FilterClearButtonWidget(QPushButton):
         super().__init__(name)
         self.field = field
         self.clicked.connect(self.clear_filter)
+        self.setToolTip('Left click to clear filters and\n'
+                        'show all imported transcriptions')
 
     def clear_filter(self) -> None:
         self.field.setText('')
@@ -477,6 +508,12 @@ class ExportProgressBarWidget(QProgressBar):
         print(value)
         self.setValue(math.ceil(value*100))
 
+
+class HorizontalLineWidget(QFrame):
+    def __init__(self) -> None:
+        super().__init__()
+        self.setFrameShape(QFrame.HLine)
+        self.setFrameShadow(QFrame.Sunken)
 
 def make_file_if_not_exists(path: str) -> str:
     if not os.path.exists(path):
