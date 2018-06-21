@@ -9,11 +9,13 @@ from functools import partial
 from PyQt5.QtWidgets import QApplication, QFileDialog, QWidget, QLabel, QPushButton, \
     QGridLayout, QHBoxLayout, QLineEdit, QComboBox, QTableWidget, QHeaderView, \
     QTableWidgetItem, QCheckBox, QMainWindow, QMessageBox, QProgressBar
-from PyQt5.QtGui import QIcon, QDesktopServices
+from PyQt5.QtGui import QIcon, QDesktopServices, QMouseEvent
 from PyQt5.QtCore import Qt, QSize, QUrl, pyqtSignal
 from moviepy.editor import AudioFileClip
 from os.path import expanduser
 from urllib.request import url2pathname
+from typing import Union
+
 
 TABLE_COLUMNS = {
     'Index': 0,
@@ -26,7 +28,7 @@ TABLE_COLUMNS = {
 
 
 class MainWindow(QMainWindow):
-    def __init__(self, app):
+    def __init__(self, app: QApplication) -> None:
         super().__init__()
         self.app = app
         self.title = 'Language Resource Creator'
@@ -34,7 +36,7 @@ class MainWindow(QMainWindow):
         self.progress_bar = ExportProgressBarWidget()
         self.init_ui()
 
-    def init_ui(self):
+    def init_ui(self: QMainWindow) -> None:
         self.setWindowTitle(self.title)
         self.converter = ConverterWidget(parent=self)
         self.setCentralWidget(self.converter)
@@ -42,13 +44,13 @@ class MainWindow(QMainWindow):
         self.statusBar().addPermanentWidget(self.progress_bar)
         self.progress_bar.hide()
 
-    def update_progress_bar(self, value):
+    def update_progress_bar(self, value) -> None:
         self.progress_bar.update_progress(value)
         self.app.processEvents()
 
 
 class ConverterWidget(QWidget):
-    def __init__(self, parent):
+    def __init__(self, parent: QMainWindow) -> None:
         super().__init__()
         self.parent = parent
         self.layout = QGridLayout()
@@ -64,15 +66,16 @@ class ConverterWidget(QWidget):
         self.image_data = None
         self.eaf_object = None
         self.trans_table = None
+        self.audio_file = None
         self.init_ui()
 
-    def init_ui(self):
+    def init_ui(self) -> None:
         self.setMinimumWidth(600)
         self.load_inital_widgets()
         self.setLayout(self.layout)
         self.show()
 
-    def load_inital_widgets(self):
+    def load_inital_widgets(self) -> None:
         # First Row (ELAN File Field)
         self.elan_file_field = QLineEdit('Load an ELAN (*.eaf) file.')
         self.elan_file_field.setReadOnly(True)
@@ -81,7 +84,7 @@ class ConverterWidget(QWidget):
         load_button.clicked.connect(self.on_click_load)
         self.layout.addWidget(load_button, 0, 7)
 
-    def load_second_stage_widgets(self):
+    def load_second_stage_widgets(self) -> None:
         self.eaf_object = pympi.Elan.Eaf(self.elan_file)
         # Second Row (Tier Selection)
         transcription_label = QLabel('Transcription Tier:')
@@ -99,7 +102,8 @@ class ConverterWidget(QWidget):
         import_button.clicked.connect(self.on_click_import)
         self.layout.addWidget(import_button, 3, 0, 1, 8)
 
-    def load_third_stage_widgets(self):
+    def load_third_stage_widgets(self) -> None:
+        self.audio_file = self.get_audio_file()
         transcription_tier = self.transcription_menu.currentText()
         translation_tier = self.translation_menu.currentText()
         # Fifth Row (Filter & Selector)
@@ -113,7 +117,8 @@ class ConverterWidget(QWidget):
         select_all_button.clicked.connect(self.on_click_select_all)
         self.layout.addWidget(select_all_button, 4, 7, 1, 1)
         # Sixth Row (Table)
-        self.trans_table = TranslationTableWidget(len(self.eaf_object.get_annotation_data_for_tier(transcription_tier)))
+        self.trans_table = TranslationTableWidget(len(self.eaf_object.get_annotation_data_for_tier(transcription_tier)),
+                                                  self)
         self.populate_table(transcription_tier, translation_tier)
         self.layout.addWidget(self.trans_table, 5, 0, 1, 8)
         # Seventh Row (Export Location)
@@ -124,13 +129,13 @@ class ConverterWidget(QWidget):
         choose_export_button.clicked.connect(self.on_click_choose_export)
         self.layout.addWidget(choose_export_button, 6, 7, 1, 1)
 
-    def load_fourth_stage_widgets(self):
+    def load_fourth_stage_widgets(self) -> None:
         # Eighth Row (Export Button)
         export_button = QPushButton('Export')
         export_button.clicked.connect(self.export_resources)
         self.layout.addWidget(export_button, 7, 0, 1, 8)
 
-    def populate_table(self, transcription_tier, translation_tier):
+    def populate_table(self, transcription_tier: str, translation_tier: str) -> None:
         self.transcription_data = self.eaf_object.get_annotation_data_for_tier(transcription_tier)
         self.translation_data = self.eaf_object.get_annotation_data_for_tier(translation_tier)
         self.image_data = [None for _ in self.translation_data]
@@ -146,10 +151,11 @@ class ConverterWidget(QWidget):
             image_button = ImageButtonWidget(self, row)
             self.trans_table.setCellWidget(row, TABLE_COLUMNS['Image'], image_button)
             # Add Inclusion Selector
-            include_widget = SelectorCellWidget()
+            include_widget = SelectorCellWidget(self.trans_table)
             self.trans_table.setCellWidget(row, TABLE_COLUMNS['Include'], include_widget)
+        self.trans_table.sort_by_index()
 
-    def on_click_load(self):
+    def on_click_load(self) -> None:
         file_name = self.open_file_dialogue()
         if file_name:
             self.elan_file = file_name
@@ -158,7 +164,7 @@ class ConverterWidget(QWidget):
             self.transcription_menu.setEnabled(True)
             self.translation_menu.setEnabled(True)
 
-    def on_click_import(self):
+    def on_click_import(self) -> None:
         if not self.image_data:
             self.load_third_stage_widgets()
         else:
@@ -169,19 +175,19 @@ class ConverterWidget(QWidget):
             if choice == QMessageBox.Yes:
                 self.load_third_stage_widgets()
 
-    def on_click_image(self, row):
+    def on_click_image(self, row: int) -> None:
         image_path = self.open_image_dialogue()
         if image_path:
             self.image_data[row] = image_path
             self.trans_table.cellWidget(row, TABLE_COLUMNS['Image']).swap_icon_yes()
 
-    def on_click_choose_export(self):
+    def on_click_choose_export(self) -> None:
         self.export_location = self.open_folder_dialogue()
         self.export_location_field.setText(self.export_location)
         if self.export_location:
             self.load_fourth_stage_widgets()
 
-    def on_click_select_all(self):
+    def on_click_select_all(self) -> None:
         if self.all_selected():
             for row in range(self.trans_table.rowCount()):
                 if not self.trans_table.isRowHidden(row):
@@ -191,7 +197,7 @@ class ConverterWidget(QWidget):
                 if not self.trans_table.isRowHidden(row):
                     self.trans_table.cellWidget(row, TABLE_COLUMNS['Include']).selector.setChecked(True)
 
-    def all_selected(self):
+    def all_selected(self) -> bool:
         for row in range(self.trans_table.rowCount()):
             if not self.trans_table.cellWidget(row, TABLE_COLUMNS['Include']).selector.isChecked() \
                     and not self.trans_table.isRowHidden(row):
@@ -199,7 +205,7 @@ class ConverterWidget(QWidget):
         return True
 
     @staticmethod
-    def open_folder_dialogue():
+    def open_folder_dialogue() -> str:
         file_dialogue = QFileDialog()
         file_dialogue.setOption(QFileDialog.ShowDirsOnly, True)
         file_name = file_dialogue.getExistingDirectory(file_dialogue,
@@ -209,7 +215,7 @@ class ConverterWidget(QWidget):
         return file_name
 
     @staticmethod
-    def open_file_dialogue():
+    def open_file_dialogue() -> str:
         file_dialogue = QFileDialog()
         options = QFileDialog.Options()
         file_name, _ = file_dialogue.getOpenFileName(file_dialogue,
@@ -220,7 +226,7 @@ class ConverterWidget(QWidget):
         return file_name
 
     @staticmethod
-    def open_image_dialogue():
+    def open_image_dialogue() -> str:
         file_dialogue = QFileDialog()
         options = QFileDialog.Options()
         file_name, _ = file_dialogue.getOpenFileName(file_dialogue,
@@ -230,7 +236,18 @@ class ConverterWidget(QWidget):
                                                      options=options)
         return file_name
 
-    def export_resources(self):
+    @staticmethod
+    def open_audio_dialogue() -> str:
+        file_dialogue = QFileDialog()
+        options = QFileDialog.Options()
+        file_name, _ = file_dialogue.getOpenFileName(file_dialogue,
+                                                     'QFileDialog.getOpenFileName()',
+                                                     '',
+                                                     'Audio Files (*.wav *.mp3)',
+                                                     options=options)
+        return file_name
+
+    def export_resources(self) -> None:
         self.parent.statusBar().clearMessage()
         self.parent.progress_bar.show()
         transcription_path = make_file_if_not_exists(os.path.join(self.export_location, 'words'))
@@ -258,31 +275,53 @@ class ConverterWidget(QWidget):
                 self.parent.update_progress_bar(completed_count/export_count)
         self.parent.progress_bar.hide()
         self.parent.statusBar().showMessage(f'Exported {str(export_count)} words to {self.export_location}')
-        export_url = QUrl.fromLocalFile(self.export_location)
+        export_url = QUrl().fromLocalFile(self.export_location)
         QDesktopServices().openUrl(export_url)
 
-    def get_audio_file(self):
+    def get_audio_file(self) -> AudioFileClip:
+        if self.audio_file:
+            return self.audio_file
         linked_files = self.eaf_object.get_linked_files()
-        relative_file_path = '/'.join(self.elan_file.split('/')[:-1])
-        media_file = url2pathname(linked_files[0]['MEDIA_URL'])
-        audio_data = AudioFileClip(media_file)
+        absolute_path_media_file = url2pathname(linked_files[0]['MEDIA_URL'])
+        relative_path_media_file = os.path.join('/'.join(self.elan_file.split('/')[:-1]),
+                                                linked_files[0]['RELATIVE_MEDIA_URL'])
+        if os.path.isfile(absolute_path_media_file):
+            audio_data = AudioFileClip(absolute_path_media_file)
+        elif os.path.isfile(relative_path_media_file):
+            audio_data = AudioFileClip(relative_path_media_file)
+        else:
+            warning_message = QMessageBox()
+            choice = warning_message.question(warning_message, 'Warning',
+                                              f'Warning: Could not find media file {absolute_path_media_file}. '
+                                              f'Would you like to locate it manually?',
+                                              QMessageBox.Yes | QMessageBox.No | QMessageBox.Warning)
+            found_path_audio_file = None
+            if choice == QMessageBox.Yes:
+                found_path_audio_file = self.open_audio_dialogue()
+            if found_path_audio_file:
+                audio_data = AudioFileClip(found_path_audio_file)
+            else:
+                audio_data = None
         return audio_data
 
-    def sample_sound(self, row):
-        audio_file = self.get_audio_file()
-        sound_file = audio_file.subclip(t_start=self.transcription_data[row][0] / 1000,
-                                        t_end=self.transcription_data[row][1] / 1000)
-        temporary_file = tempfile.mkdtemp()
-        sound_file_path = os.path.join(temporary_file, f'{str(row)}.wav')
-        sound_file.write_audiofile(sound_file_path)
-        mixer.init()
-        sound = mixer.Sound(sound_file_path)
-        sound.play()
+    def sample_sound(self, row: int) -> None:
+        if self.audio_file:
+            sound_file = self.audio_file.subclip(t_start=self.transcription_data[row][0] / 1000,
+                                                 t_end=self.transcription_data[row][1] / 1000)
+            temporary_file = tempfile.mkdtemp()
+            sound_file_path = os.path.join(temporary_file, f'{str(row)}.wav')
+            sound_file.write_audiofile(sound_file_path)
+            mixer.init()
+            sound = mixer.Sound(sound_file_path)
+            sound.play()
+        else:
+            self.audio_file = self.get_audio_file()
 
 
 class TranslationTableWidget(QTableWidget):
-    def __init__(self, num_rows):
+    def __init__(self, num_rows: int, parent: ConverterWidget) -> None:
         super().__init__(num_rows, 6)
+        self.parent = parent
         self.setMinimumHeight(200)
         self.setHorizontalHeaderLabels([''] + [column_name for column_name in list(TABLE_COLUMNS.keys())[1:]])
         self.horizontalHeader().setSectionResizeMode(TABLE_COLUMNS['Transcription'], QHeaderView.Stretch)
@@ -294,25 +333,25 @@ class TranslationTableWidget(QTableWidget):
         self.verticalHeader().hide()
         self.setSortingEnabled(False)
 
-    def sort_by_index(self):
+    def sort_by_index(self) -> None:
         self.setSortingEnabled(True)
         self.sortByColumn(TABLE_COLUMNS['Index'], Qt.AscendingOrder)
 
-    def show_all_rows(self):
+    def show_all_rows(self) -> None:
         for row in range(self.rowCount()):
             self.showRow(row)
 
-    def filter_rows(self, string):
+    def filter_rows(self, string: str) -> None:
         self.show_all_rows()
         for row in range(self.rowCount()):
             if string not in self.get_cell_value(row, TABLE_COLUMNS['Transcription']) and \
                     string not in self.get_cell_value(row, TABLE_COLUMNS['Translation']):
                 self.hideRow(row)
 
-    def get_cell_value(self, row, column):
+    def get_cell_value(self, row, column) -> str:
         return self.item(row, column).text()
 
-    def get_selected_count(self):
+    def get_selected_count(self) -> int:
         count = 0
         for row in range(self.rowCount()):
             count += 1 if self.cellWidget(row, TABLE_COLUMNS['Include']).selector.isChecked() else 0
@@ -320,18 +359,24 @@ class TranslationTableWidget(QTableWidget):
 
 
 class SelectorCellWidget(QWidget):
-    def __init__(self):
+    def __init__(self, parent: TranslationTableWidget) -> None:
         super().__init__()
+        self.parent = parent
         self.layout = QHBoxLayout()
         self.layout.setAlignment(Qt.AlignCenter)
         self.layout.setContentsMargins(0, 0, 0, 0)
         self.selector = QCheckBox()
+        self.selector.stateChanged.connect(self.update_select_count)
         self.layout.addWidget(self.selector)
         self.setLayout(self.layout)
 
+    def update_select_count(self) -> None:
+        self.parent.parent.parent.statusBar().showMessage(f'{self.parent.get_selected_count()} '
+                                                          f'items selected for export')
+
 
 class PreviewButtonWidget(QPushButton):
-    def __init__(self, parent, row):
+    def __init__(self, parent: ConverterWidget, row: int):
         super().__init__()
         self.parent = parent
         self.row = row
@@ -344,7 +389,7 @@ class PreviewButtonWidget(QPushButton):
 class ImageButtonWidget(QPushButton):
     rightClick = pyqtSignal()
 
-    def __init__(self, parent, row):
+    def __init__(self, parent: TranslationTableWidget, row: int) -> None:
         super().__init__()
         self.parent = parent
         self.row = row
@@ -356,25 +401,25 @@ class ImageButtonWidget(QPushButton):
                         'Right click to delete the existing image')
         self.rightClick.connect(self.remove_image)
 
-    def swap_icon_yes(self):
+    def swap_icon_yes(self) -> None:
         self.setIcon(self.image_icon_yes)
 
-    def swap_icon_no(self):
+    def swap_icon_no(self) -> None:
         self.setIcon(self.image_icon_no)
 
-    def mousePressEvent(self, event):
+    def mousePressEvent(self, event: QMouseEvent) -> None:
         QPushButton.mousePressEvent(self, event)
 
         if event.button() == Qt.RightButton:
             self.rightClick.emit()
 
-    def remove_image(self):
+    def remove_image(self) -> None:
         self.parent.image_data[self.row] = None
         self.swap_icon_no()
 
 
 class ApplicationIcon(QIcon):
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__()
         self.addFile('./img/language-48.png', QSize(48, 48))
         self.addFile('./img/language-96.png', QSize(96, 96))
@@ -383,21 +428,21 @@ class ApplicationIcon(QIcon):
 
 
 class LockedLineEdit(QLineEdit):
-    def __init__(self, string):
+    def __init__(self, string: str) -> None:
         super().__init__(string)
-        self.setReadOnly()
+        self.setReadOnly(True)
 
-    def mousePressEvent(self, QMouseEvent):
+    def mousePressEvent(self, event: QMouseEvent) -> None:
         pass
 
 
 class FilterFieldWidget(QLineEdit):
-    def __init__(self, string, parent):
+    def __init__(self, string: str, parent: ConverterWidget) -> None:
         super().__init__(string)
         self.parent = parent
         self.textChanged.connect(self.update_table)
 
-    def update_table(self, p_str):
+    def update_table(self, p_str) -> None:
         if p_str == '':
             self.parent.trans_table.show_all_rows()
         else:
@@ -405,43 +450,43 @@ class FilterFieldWidget(QLineEdit):
 
 
 class FilterClearButtonWidget(QPushButton):
-    def __init__(self, name, field):
+    def __init__(self, name: str, field: QLineEdit) -> None:
         super().__init__(name)
         self.field = field
         self.clicked.connect(self.clear_filter)
 
-    def clear_filter(self):
+    def clear_filter(self) -> None:
         self.field.setText('')
 
 
 class TableIndexCell(QTableWidgetItem):
-    def __init__(self, value):
+    def __init__(self, value: int) -> None:
         super().__init__()
         self.setTextAlignment(Qt.AlignCenter)
         self.setData(Qt.EditRole, value + 1)
 
 
 class ExportProgressBarWidget(QProgressBar):
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__()
         self.setMaximum(100)
         self.setMinimum(0)
         self.setValue(0)
 
-    def update_progress(self, value):
+    def update_progress(self, value: Union[float, int]) -> None:
         print(value)
         self.setValue(math.ceil(value*100))
 
 
-def make_file_if_not_exists(path):
+def make_file_if_not_exists(path: str) -> str:
     if not os.path.exists(path):
         os.makedirs(path)
     return path
 
 
 if __name__ == '__main__':
-    app = QApplication(sys.argv)
-    app.setWindowIcon(ApplicationIcon())
-    main = MainWindow(app)
-    main.show()
-    sys.exit(app.exec_())
+    App = QApplication(sys.argv)
+    App.setWindowIcon(ApplicationIcon())
+    Main = MainWindow(App)
+    Main.show()
+    sys.exit(App.exec_())
