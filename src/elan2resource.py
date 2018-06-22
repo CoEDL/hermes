@@ -75,6 +75,7 @@ class ConverterWidget(QWidget):
     def __init__(self, parent: QMainWindow) -> None:
         super().__init__()
         self.parent = parent
+        self.components = self.init_components()
         self.layout = QGridLayout()
         self.elan_file = None
         self.elan_file_field = None
@@ -90,6 +91,10 @@ class ConverterWidget(QWidget):
         self.trans_table = None
         self.audio_file = None
         self.init_ui()
+
+    def init_components(self) -> dict:
+        components = {}
+        return components
 
     def init_ui(self) -> None:
         self.setMinimumWidth(600)
@@ -514,6 +519,7 @@ class HorizontalLineWidget(QFrame):
         super().__init__()
         self.setFrameShape(QFrame.HLine)
         self.setFrameShadow(QFrame.Sunken)
+
 
 def make_file_if_not_exists(path: str) -> str:
     if not os.path.exists(path):

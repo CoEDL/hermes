@@ -14,4 +14,19 @@ Created primarily to produce language resources for the [Social Robot Project](h
 
 ![Interface](docs/img/interface.png)
 
-Images courtesy of [Icons8](https://icons8.com/icon/set/play/color).
+### Requirements:
+- Python 3.6
+
+### Install/Run Instructions:
+```bash
+git clone https://github.com/nicklambourne/elan2resource.git
+pip3 install virtualenv
+python3 -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
+cd src
+python3 elan2resource.py
+```
+
+### Acknowledgements
+Images/Icons courtesy of [Icons8](https://icons8.com/icon/set/play/color).
