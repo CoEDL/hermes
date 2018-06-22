@@ -141,6 +141,7 @@ class ConverterWidget(QWidget):
             'images': None,
             'eaf_object': None,
             'audio_file': None,
+            'transcriptions2': [],
         })
 
     def init_components(self) -> Box:
@@ -206,7 +207,7 @@ class ConverterWidget(QWidget):
         select_all_button.clicked.connect(self.on_click_select_all)
         self.layout.addWidget(select_all_button, 5, 7, 1, 1)
         # Seventh Row (Table)
-        self.populate_elan_data(transcription_tier, translation_tier)
+        self.extract_elan_data(transcription_tier, translation_tier)
         self.populate_table(self.components.table)
         self.layout.addWidget(components.table, 6, 0, 1, 8)
         # Eighth Row (Export Location)
@@ -223,27 +224,35 @@ class ConverterWidget(QWidget):
         export_button.clicked.connect(self.export_resources)
         self.layout.addWidget(export_button, 8, 0, 1, 8)
 
-    def populate_elan_data(self, transcription_tier: str, translation_tier: str) -> None:
-        self.data.transcriptions = self.data.eaf_object.get_annotation_data_for_tier(transcription_tier)
+    def extract_elan_data(self, transcription_tier: str, translation_tier: str) -> None:
         self.data.translations = self.data.eaf_object.get_annotation_data_for_tier(translation_tier)
-        self.data.images = [None for _ in self.data.translations]
+        # Reimplementation
+        elan_transcriptions = self.data.eaf_object.get_annotation_data_for_tier(transcription_tier)
+        audio_file = self.get_audio_file()
+        for index in range(len(elan_transcriptions)):
+            transcription = Transcription(index=index,
+                                          transcription=elan_transcriptions[index][2],
+                                          start=elan_transcriptions[index][0]/1000,
+                                          end=elan_transcriptions[index][1]/1000,
+                                          media=audio_file)
+            self.data.transcriptions2.append(transcription)
+        print(self.data.transcriptions2)
 
     def populate_table_row(self, row: int, table: TranslationTableWidget) -> None:
         table.setItem(row, TABLE_COLUMNS['Index'], TableIndexCell(row))
-        table.setItem(row, TABLE_COLUMNS['Transcription'],
-                      QTableWidgetItem(self.data.transcriptions[row][2]))
+        table.setItem(row,
+                      TABLE_COLUMNS['Transcription'],
+                      QTableWidgetItem(self.data.transcriptions2[row].transcription))
         table.setItem(row, TABLE_COLUMNS['Translation'], QTableWidgetItem(self.data.translations[row][2]))
-        # Add Preview Button
-        preview_button = PreviewButtonWidget(self, row)
-        table.setCellWidget(row, TABLE_COLUMNS['Preview'], preview_button)
+        PreviewButtonWidget(self, row, table)
         ImageButtonWidget(self, row, table)
         SelectorCellWidget(row, self.components.status_bar, table)
 
     def populate_table(self, table: TranslationTableWidget) -> None:
-        for row in range(len(self.data.transcriptions)):
+        for row in range(len(self.data.transcriptions2)):
             self.populate_table_row(row, table)
         table.sort_by_index()
-        self.parent.statusBar().showMessage(f'Imported {len(self.data.transcriptions)} transcriptions')
+        self.parent.statusBar().showMessage(f'Imported {len(self.data.transcriptions2)} transcriptions')
 
     def on_click_load(self) -> None:
         file_name = open_file_dialogue()
@@ -268,7 +277,7 @@ class ConverterWidget(QWidget):
     def on_click_image(self, row: int) -> None:
         image_path = open_image_dialogue()
         if image_path:
-            self.data.images[row] = image_path
+            self.data.transcriptions2[row].image = image_path
             self.components.table.cellWidget(row, TABLE_COLUMNS['Image']).swap_icon_yes()
 
     def on_click_choose_export(self) -> None:
@@ -294,7 +303,7 @@ class ConverterWidget(QWidget):
                 return False
         return True
 
-    def get_export_paths(self):
+    def get_export_paths(self) -> Box:
         return Box({
             'transcription': make_file_if_not_exists(os.path.join(self.data.export_location, 'words')),
             'translation': make_file_if_not_exists(os.path.join(self.data.export_location, 'translations')),
@@ -302,30 +311,28 @@ class ConverterWidget(QWidget):
             'image': make_file_if_not_exists(os.path.join(self.data.export_location, 'images')),
         })
 
-    def create_output_files(self, row, export_paths, audio_file):
-            sound_file = audio_file.subclip(t_start=self.data.transcriptions[row][0] / 1000,
-                                            t_end=self.data.transcriptions[row][1] / 1000)
-            sound_file.write_audiofile(f'{export_paths.sound}/word{str(row)}.wav')
-            image_path = self.data.images[row]
-            if image_path:
-                image_name, image_extension = os.path.splitext(image_path)
-                shutil.copy(self.data.images[row], f'{export_paths.image}/word{row}.{image_extension}')
-            with open(f'{export_paths.transcription}/word{row}.txt', 'w') as file:
-                file.write(f'{self.components.table.get_cell_value(row, TABLE_COLUMNS["Transcription"])}')
-            with open(f'{export_paths.translation}/word{row}.txt', 'w') as file:
-                file.write(f'{self.components.table.get_cell_value(row, TABLE_COLUMNS["Translation"])}')
+    def create_output_files(self, row: int) -> None:
+        export_paths = self.get_export_paths()
+        sound_file = self.data.transcriptions2[row].get_sample_file_object()
+        sound_file.write_audiofile(f'{export_paths.sound}/word{str(row)}.wav')
+        image_path = self.data.transcriptions2[row].image
+        if image_path:
+            image_name, image_extension = os.path.splitext(image_path)
+            shutil.copy(image_path, f'{export_paths.image}/word{row}.{image_extension}')
+        with open(f'{export_paths.transcription}/word{row}.txt', 'w') as file:
+            file.write(f'{self.components.table.get_cell_value(row, TABLE_COLUMNS["Transcription"])}')
+        with open(f'{export_paths.translation}/word{row}.txt', 'w') as file:
+            file.write(f'{self.components.table.get_cell_value(row, TABLE_COLUMNS["Translation"])}')
 
     def export_resources(self) -> None:
         self.components.status_bar.clearMessage()
         self.components.progress_bar.show()
-        export_paths = self.get_export_paths()
-        audio_file = self.get_audio_file()
         export_count = self.components.table.get_selected_count()
         completed_count = 0
         for row in range(self.components.table.rowCount()):
             if self.components.table.row_is_checked(row):
                 self.components.status_bar.showMessage(f'Exporting file {completed_count + 1} of {export_count}')
-                self.create_output_files(row, export_paths, audio_file)
+                self.create_output_files(row)
                 completed_count += 1
                 self.components.progress_bar.update_progress(completed_count / export_count)
         self.components.progress_bar.hide()
@@ -359,17 +366,10 @@ class ConverterWidget(QWidget):
         return audio_data
 
     def sample_sound(self, row: int) -> None:
-        if self.data.audio_file:
-            sound_file = self.data.audio_file.subclip(t_start=self.data.transcriptions[row][0] / 1000,
-                                                      t_end=self.data.transcriptions[row][1] / 1000)
-            temporary_file = tempfile.mkdtemp()
-            sound_file_path = os.path.join(temporary_file, f'{str(row)}.wav')
-            sound_file.write_audiofile(sound_file_path)
-            mixer.init()
-            sound = mixer.Sound(sound_file_path)
-            sound.play()
-        else:
-            self.data.audio_file = self.get_audio_file()
+        sample_file_path = self.data.transcriptions2[row].get_sample_file_path()
+        mixer.init()
+        sound = mixer.Sound(sample_file_path)
+        sound.play()
 
 
 class SelectorCellWidget(QWidget):
@@ -404,14 +404,14 @@ class PreviewButtonWidget(QPushButton):
     Custom button for previewing an audio clip.
     """
 
-    def __init__(self, parent: ConverterWidget, row: int):
+    def __init__(self, parent: ConverterWidget, row: int, table: TranslationTableWidget):
         super().__init__()
         self.parent = parent
-        self.row = row
         image_icon = QIcon('img/play.png')
         self.setIcon(image_icon)
         self.clicked.connect(partial(self.parent.sample_sound, row))
         self.setToolTip('Left click to hear a preview of the audio for this word')
+        table.setCellWidget(row, TABLE_COLUMNS['Preview'], self)
 
 
 class ImageButtonWidget(QPushButton):
@@ -447,7 +447,7 @@ class ImageButtonWidget(QPushButton):
             self.rightClick.emit()
 
     def remove_image(self) -> None:
-        self.parent.data.images[self.row] = None
+        self.parent.data.transcriptions2[self.row].image = None
         self.swap_icon_no()
 
 
@@ -550,6 +550,43 @@ class HorizontalLineWidget(QFrame):
         super().__init__()
         self.setFrameShape(QFrame.HLine)
         self.setFrameShadow(QFrame.Sunken)
+
+
+class Transcription(object):
+    def __init__(self,
+                 index: int,
+                 transcription: str,
+                 translation: str = None,
+                 image: str = None,
+                 start: int = None,
+                 end: int = None,
+                 media: AudioFileClip = None) -> None:
+        self.index = index
+        self.transcription = transcription
+        self.translation = translation
+        self.image = image
+        self.sound = Box({
+            'start': start,
+            'end': end,
+            'audio_file': media,
+            'sample_path': None,
+            'sample_object': None,
+        })
+
+    def get_sample_file_path(self):
+        if not self.sound.sample_path:
+            sample_file = self.sound.audio_file.subclip(t_start=self.sound.start,
+                                                        t_end=self.sound.end)
+            self.sound.sample_object = sample_file
+            temporary_folder = tempfile.mkdtemp()
+            sample_file_path = os.path.join(temporary_folder, f'{str(self.index)}.wav')
+            sample_file.write_audiofile(sample_file_path)
+            return sample_file_path
+        return self.sound.sample_path
+
+    def get_sample_file_object(self):
+        self.get_sample_file_path()
+        return self.sound.sample_object
 
 
 def make_file_if_not_exists(path: str) -> str:
