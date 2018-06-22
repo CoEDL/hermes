@@ -49,7 +49,7 @@ class MainWindow(QMainWindow):
         self.setCentralWidget(self.converter)
         self.statusBar().showMessage('Load an ELAN file to get started')
         self.statusBar().addPermanentWidget(self.progress_bar)
-        #self.progress_bar.hide()
+        self.progress_bar.hide()
         self.init_menu()
 
     def init_menu(self) -> None:
@@ -111,8 +111,11 @@ class TranslationTableWidget(QTableWidget):
     def get_selected_count(self) -> int:
         count = 0
         for row in range(self.rowCount()):
-            count += 1 if self.cellWidget(row, TABLE_COLUMNS['Include']).selector.isChecked() else 0
+            count += 1 if self.row_is_checked(row) else 0
         return count
+
+    def row_is_checked(self, row):
+        return self.cellWidget(row, TABLE_COLUMNS['Include']).selector.isChecked()
 
 
 class ConverterWidget(QWidget):
@@ -135,7 +138,7 @@ class ConverterWidget(QWidget):
             'export_location': None,
             'transcriptions': None,
             'translations': None,
-            'image_data': None,
+            'images': None,
             'eaf_object': None,
             'audio_file': None,
         })
@@ -153,11 +156,11 @@ class ConverterWidget(QWidget):
 
     def init_ui(self) -> None:
         self.setMinimumWidth(600)
-        self.load_inital_widgets(self.components)
+        self.load_initial_widgets(self.components)
         self.setLayout(self.layout)
         self.show()
 
-    def load_inital_widgets(self, components: Box) -> None:
+    def load_initial_widgets(self, components: Box) -> None:
         # First Row (ELAN File Field)
         components.elan_file_field = QLineEdit('Load an ELAN (*.eaf) file.')
         components.elan_file_field.setReadOnly(True)
@@ -203,7 +206,8 @@ class ConverterWidget(QWidget):
         select_all_button.clicked.connect(self.on_click_select_all)
         self.layout.addWidget(select_all_button, 5, 7, 1, 1)
         # Seventh Row (Table)
-        self.populate_table(self.components.table, transcription_tier, translation_tier)
+        self.populate_elan_data(transcription_tier, translation_tier)
+        self.populate_table(self.components.table)
         self.layout.addWidget(components.table, 6, 0, 1, 8)
         # Eighth Row (Export Location)
         components.export_location_field = QLineEdit('Choose an export location')
@@ -219,24 +223,25 @@ class ConverterWidget(QWidget):
         export_button.clicked.connect(self.export_resources)
         self.layout.addWidget(export_button, 8, 0, 1, 8)
 
-    def populate_table(self, table: TranslationTableWidget, transcription_tier: str, translation_tier: str) -> None:
+    def populate_elan_data(self, transcription_tier: str, translation_tier: str) -> None:
         self.data.transcriptions = self.data.eaf_object.get_annotation_data_for_tier(transcription_tier)
         self.data.translations = self.data.eaf_object.get_annotation_data_for_tier(translation_tier)
-        self.data.image_data = [None for _ in self.data.translations]
+        self.data.images = [None for _ in self.data.translations]
+
+    def populate_table_row(self, row: int, table: TranslationTableWidget) -> None:
+        table.setItem(row, TABLE_COLUMNS['Index'], TableIndexCell(row))
+        table.setItem(row, TABLE_COLUMNS['Transcription'],
+                      QTableWidgetItem(self.data.transcriptions[row][2]))
+        table.setItem(row, TABLE_COLUMNS['Translation'], QTableWidgetItem(self.data.translations[row][2]))
+        # Add Preview Button
+        preview_button = PreviewButtonWidget(self, row)
+        table.setCellWidget(row, TABLE_COLUMNS['Preview'], preview_button)
+        ImageButtonWidget(self, row, table)
+        SelectorCellWidget(row, self.components.status_bar, table)
+
+    def populate_table(self, table: TranslationTableWidget) -> None:
         for row in range(len(self.data.transcriptions)):
-            table.setItem(row, TABLE_COLUMNS['Index'], TableIndexCell(row))
-            table.setItem(row, TABLE_COLUMNS['Transcription'],
-                          QTableWidgetItem(self.data.transcriptions[row][2]))
-            table.setItem(row, TABLE_COLUMNS['Translation'], QTableWidgetItem(self.data.translations[row][2]))
-            # Add Preview Button
-            preview_button = PreviewButtonWidget(self, row)
-            table.setCellWidget(row, TABLE_COLUMNS['Preview'], preview_button)
-            # Add Image Button
-            image_button = ImageButtonWidget(self, row)
-            table.setCellWidget(row, TABLE_COLUMNS['Image'], image_button)
-            # Add Inclusion Selector
-            include_widget = SelectorCellWidget(self.components.status_bar, table)
-            table.setCellWidget(row, TABLE_COLUMNS['Include'], include_widget)
+            self.populate_table_row(row, table)
         table.sort_by_index()
         self.parent.statusBar().showMessage(f'Imported {len(self.data.transcriptions)} transcriptions')
 
@@ -250,7 +255,7 @@ class ConverterWidget(QWidget):
             self.components.translation_menu.setEnabled(True)
 
     def on_click_import(self) -> None:
-        if not self.data.image_data:
+        if not self.data.images:
             self.load_third_stage_widgets(self.components, self.data)
         else:
             warning_message = QMessageBox()
@@ -263,7 +268,7 @@ class ConverterWidget(QWidget):
     def on_click_image(self, row: int) -> None:
         image_path = open_image_dialogue()
         if image_path:
-            self.data.image_data[row] = image_path
+            self.data.images[row] = image_path
             self.components.table.cellWidget(row, TABLE_COLUMNS['Image']).swap_icon_yes()
 
     def on_click_choose_export(self) -> None:
@@ -289,36 +294,43 @@ class ConverterWidget(QWidget):
                 return False
         return True
 
+    def get_export_paths(self):
+        return Box({
+            'transcription': make_file_if_not_exists(os.path.join(self.data.export_location, 'words')),
+            'translation': make_file_if_not_exists(os.path.join(self.data.export_location, 'translations')),
+            'sound': make_file_if_not_exists(os.path.join(self.data.export_location, 'sounds')),
+            'image': make_file_if_not_exists(os.path.join(self.data.export_location, 'images')),
+        })
+
+    def create_output_files(self, row, export_paths, audio_file):
+            sound_file = audio_file.subclip(t_start=self.data.transcriptions[row][0] / 1000,
+                                            t_end=self.data.transcriptions[row][1] / 1000)
+            sound_file.write_audiofile(f'{export_paths.sound}/word{str(row)}.wav')
+            image_path = self.data.images[row]
+            if image_path:
+                image_name, image_extension = os.path.splitext(image_path)
+                shutil.copy(self.data.images[row], f'{export_paths.image}/word{row}.{image_extension}')
+            with open(f'{export_paths.transcription}/word{row}.txt', 'w') as file:
+                file.write(f'{self.components.table.get_cell_value(row, TABLE_COLUMNS["Transcription"])}')
+            with open(f'{export_paths.translation}/word{row}.txt', 'w') as file:
+                file.write(f'{self.components.table.get_cell_value(row, TABLE_COLUMNS["Translation"])}')
+
     def export_resources(self) -> None:
         self.components.status_bar.clearMessage()
         self.components.progress_bar.show()
-        transcription_path = make_file_if_not_exists(os.path.join(self.data.export_location, 'words'))
-        translation_path = make_file_if_not_exists(os.path.join(self.data.export_location, 'translations'))
-        sound_file_path = make_file_if_not_exists(os.path.join(self.data.export_location, 'sounds'))
-        image_file_path = make_file_if_not_exists(os.path.join(self.data.export_location, 'images'))
+        export_paths = self.get_export_paths()
         audio_file = self.get_audio_file()
         export_count = self.components.table.get_selected_count()
         completed_count = 0
         for row in range(self.components.table.rowCount()):
-            if self.components.table.cellWidget(row, TABLE_COLUMNS['Include']).selector.isChecked():
+            if self.components.table.row_is_checked(row):
                 self.components.status_bar.showMessage(f'Exporting file {completed_count + 1} of {export_count}')
-                sound_file = audio_file.subclip(t_start=self.data.transcriptions[row][0] / 1000,
-                                                t_end=self.data.transcriptions[row][1] / 1000)
-                sound_file.write_audiofile(f'{sound_file_path}/word{str(row)}.wav')
-                image_path = self.data.image_data[row]
-                if image_path:
-                    image_name, image_extension = os.path.splitext(image_path)
-                    shutil.copy(self.data.image_data[row], f'{image_file_path}/word{row}.{image_extension}')
-                with open(f'{transcription_path}/word{row}.txt', 'w') as file:
-                    file.write(f'{self.data.transcriptions[row]}')
-                with open(f'{translation_path}/word{row}.txt', 'w') as file:
-                    file.write(f'{self.data.translations[row]}')
+                self.create_output_files(row, export_paths, audio_file)
                 completed_count += 1
                 self.components.progress_bar.update_progress(completed_count / export_count)
         self.components.progress_bar.hide()
         self.components.status_bar.showMessage(f'Exported {str(export_count)} words to {self.data.export_location}')
-        export_url = QUrl().fromLocalFile(self.data.export_location)
-        QDesktopServices().openUrl(export_url)
+        QDesktopServices().openUrl(QUrl().fromLocalFile(self.data.export_location))
 
     def get_audio_file(self) -> AudioFileClip:
         if self.data.audio_file:
@@ -366,7 +378,7 @@ class SelectorCellWidget(QWidget):
     Uses a QCheckbox for selection and deselection.
     """
 
-    def __init__(self, status_bar: QStatusBar, table: TranslationTableWidget) -> None:
+    def __init__(self, row: int, status_bar: QStatusBar, table: TranslationTableWidget) -> None:
         super().__init__()
         self.status_bar = status_bar
         self.table = table
@@ -380,6 +392,7 @@ class SelectorCellWidget(QWidget):
         tooltip = 'Check to include in export\nUncheck to exclude from export'
         self.setToolTip(tooltip)
         self.selector.setToolTip(tooltip)
+        self.table.setCellWidget(row, TABLE_COLUMNS['Include'], self)
 
     def update_select_count(self) -> None:
         self.status_bar.showMessage(f'{self.table.get_selected_count()} '
@@ -408,7 +421,7 @@ class ImageButtonWidget(QPushButton):
     """
     rightClick = pyqtSignal()
 
-    def __init__(self, parent: TranslationTableWidget, row: int) -> None:
+    def __init__(self, parent: ConverterWidget, row: int, table: TranslationTableWidget) -> None:
         super().__init__()
         self.parent = parent
         self.row = row
@@ -419,6 +432,7 @@ class ImageButtonWidget(QPushButton):
         self.setToolTip('Left click to choose an image for this word\n'
                         'Right click to delete the existing image')
         self.rightClick.connect(self.remove_image)
+        table.setCellWidget(row, TABLE_COLUMNS['Image'], self)
 
     def swap_icon_yes(self) -> None:
         self.setIcon(self.image_icon_yes)
@@ -433,7 +447,7 @@ class ImageButtonWidget(QPushButton):
             self.rightClick.emit()
 
     def remove_image(self) -> None:
-        self.parent.image_data[self.row] = None
+        self.parent.data.images[self.row] = None
         self.swap_icon_no()
 
 
