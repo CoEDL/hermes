@@ -136,12 +136,11 @@ class ConverterWidget(QWidget):
         return Box({
             'elan_file': None,
             'export_location': None,
-            'transcriptions': None,
             'translations': None,
             'images': None,
             'eaf_object': None,
             'audio_file': None,
-            'transcriptions2': [],
+            'transcriptions': [],
         })
 
     def init_components(self) -> Box:
@@ -235,24 +234,24 @@ class ConverterWidget(QWidget):
                                           start=elan_transcriptions[index][0]/1000,
                                           end=elan_transcriptions[index][1]/1000,
                                           media=audio_file)
-            self.data.transcriptions2.append(transcription)
-        print(self.data.transcriptions2)
+            self.data.transcriptions.append(transcription)
+        print(self.data.transcriptions)
 
     def populate_table_row(self, row: int, table: TranslationTableWidget) -> None:
         table.setItem(row, TABLE_COLUMNS['Index'], TableIndexCell(row))
         table.setItem(row,
                       TABLE_COLUMNS['Transcription'],
-                      QTableWidgetItem(self.data.transcriptions2[row].transcription))
+                      QTableWidgetItem(self.data.transcriptions[row].transcription))
         table.setItem(row, TABLE_COLUMNS['Translation'], QTableWidgetItem(self.data.translations[row][2]))
         PreviewButtonWidget(self, row, table)
         ImageButtonWidget(self, row, table)
         SelectorCellWidget(row, self.components.status_bar, table)
 
     def populate_table(self, table: TranslationTableWidget) -> None:
-        for row in range(len(self.data.transcriptions2)):
+        for row in range(len(self.data.transcriptions)):
             self.populate_table_row(row, table)
         table.sort_by_index()
-        self.parent.statusBar().showMessage(f'Imported {len(self.data.transcriptions2)} transcriptions')
+        self.parent.statusBar().showMessage(f'Imported {len(self.data.transcriptions)} transcriptions')
 
     def on_click_load(self) -> None:
         file_name = open_file_dialogue()
@@ -277,7 +276,7 @@ class ConverterWidget(QWidget):
     def on_click_image(self, row: int) -> None:
         image_path = open_image_dialogue()
         if image_path:
-            self.data.transcriptions2[row].image = image_path
+            self.data.transcriptions[row].image = image_path
             self.components.table.cellWidget(row, TABLE_COLUMNS['Image']).swap_icon_yes()
 
     def on_click_choose_export(self) -> None:
@@ -313,9 +312,9 @@ class ConverterWidget(QWidget):
 
     def create_output_files(self, row: int) -> None:
         export_paths = self.get_export_paths()
-        sound_file = self.data.transcriptions2[row].get_sample_file_object()
+        sound_file = self.data.transcriptions[row].get_sample_file_object()
         sound_file.write_audiofile(f'{export_paths.sound}/word{str(row)}.wav')
-        image_path = self.data.transcriptions2[row].image
+        image_path = self.data.transcriptions[row].image
         if image_path:
             image_name, image_extension = os.path.splitext(image_path)
             shutil.copy(image_path, f'{export_paths.image}/word{row}.{image_extension}')
@@ -366,7 +365,7 @@ class ConverterWidget(QWidget):
         return audio_data
 
     def sample_sound(self, row: int) -> None:
-        sample_file_path = self.data.transcriptions2[row].get_sample_file_path()
+        sample_file_path = self.data.transcriptions[row].get_sample_file_path()
         mixer.init()
         sound = mixer.Sound(sample_file_path)
         sound.play()
@@ -447,7 +446,7 @@ class ImageButtonWidget(QPushButton):
             self.rightClick.emit()
 
     def remove_image(self) -> None:
-        self.parent.data.transcriptions2[self.row].image = None
+        self.parent.data.transcriptions[self.row].image = None
         self.swap_icon_no()
 
 
