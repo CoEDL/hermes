@@ -20,6 +20,7 @@ Created primarily to produce language resources for the [Social Robot Project](h
 ### Install/Run Instructions:
 ```bash
 git clone https://github.com/nicklambourne/elan2resource.git
+cd elan2resource
 pip3 install virtualenv
 python3 -m venv venv
 source venv/bin/activate

@@ -30,6 +30,9 @@ TABLE_COLUMNS = {
 
 
 class MainWindow(QMainWindow):
+    """
+    The primary window for the application which houses the Converter, menus, statusbar and progress bar.
+    """
     def __init__(self, app: QApplication) -> None:
         super().__init__()
         self.app = app
@@ -72,10 +75,14 @@ class MainWindow(QMainWindow):
 
 
 class ConverterWidget(QWidget):
+    """
+    The core widget of the application which contains all of the widgets required to convert ELAN files.
+    """
     def __init__(self, parent: QMainWindow) -> None:
         super().__init__()
         self.parent = parent
         self.components = self.init_components()
+        self.data = self.init_data()
         self.layout = QGridLayout()
         self.elan_file = None
         self.elan_file_field = None
@@ -92,9 +99,28 @@ class ConverterWidget(QWidget):
         self.audio_file = None
         self.init_ui()
 
+    def init_data(self) -> dict:
+        return {
+            'elan_file': None,
+            'export_location': None,
+            'transcriptions': None,
+            'translations': None,
+            'images': None,
+            'eaf_object': None,
+            'audio_file': None,
+        }
+
     def init_components(self) -> dict:
-        components = {}
-        return components
+        return {
+            'layout': QGridLayout(),
+            'elan_file_field': None,
+            'transcription_menu': None,
+            'translation_menu': None,
+            'filter_field': None,
+            'translation_table': None,
+            'progress_bar': self.parent.progress_bar,
+            'status_bar': self.parent.statusBar(),
+        }
 
     def init_ui(self) -> None:
         self.setMinimumWidth(600)
@@ -350,6 +376,10 @@ class ConverterWidget(QWidget):
 
 
 class TranslationTableWidget(QTableWidget):
+    """
+    A table containing transcriptions, translations and buttons for live previews, adding images and selectors for
+    inclusion in the export process.
+    """
     def __init__(self, num_rows: int, parent: ConverterWidget) -> None:
         super().__init__(num_rows, 6)
         self.parent = parent
@@ -390,6 +420,10 @@ class TranslationTableWidget(QTableWidget):
 
 
 class SelectorCellWidget(QWidget):
+    """
+    A custom selector cell for inclusion in the TranslationTable.
+    Uses a QCheckbox for selection and deselection.
+    """
     def __init__(self, parent: TranslationTableWidget) -> None:
         super().__init__()
         self.parent = parent
@@ -410,6 +444,9 @@ class SelectorCellWidget(QWidget):
 
 
 class PreviewButtonWidget(QPushButton):
+    """
+    Custom button for previewing an audio clip.
+    """
     def __init__(self, parent: ConverterWidget, row: int):
         super().__init__()
         self.parent = parent
@@ -421,6 +458,10 @@ class PreviewButtonWidget(QPushButton):
 
 
 class ImageButtonWidget(QPushButton):
+    """
+    Custom button for adding and removing images related to particular translations. For inclusion in rows of the
+    TranslationTable.
+    """
     rightClick = pyqtSignal()
 
     def __init__(self, parent: TranslationTableWidget, row: int) -> None:
@@ -453,6 +494,9 @@ class ImageButtonWidget(QPushButton):
 
 
 class ApplicationIcon(QIcon):
+    """
+    Custom icon for the application to appear in the task bar (and in the MainWindow header on Windows).
+    """
     def __init__(self) -> None:
         super().__init__()
         self.addFile('./img/language-48.png', QSize(48, 48))
@@ -462,6 +506,9 @@ class ApplicationIcon(QIcon):
 
 
 class LockedLineEdit(QLineEdit):
+    """
+    Not currently used.
+    """
     def __init__(self, string: str) -> None:
         super().__init__(string)
         self.setReadOnly(True)
@@ -471,6 +518,10 @@ class LockedLineEdit(QLineEdit):
 
 
 class FilterFieldWidget(QLineEdit):
+    """
+    Custom text input field connected to a table.
+    Text input to the field will filter the entries in the table.
+    """
     def __init__(self, string: str, parent: ConverterWidget) -> None:
         super().__init__(string)
         self.parent = parent
@@ -484,6 +535,10 @@ class FilterFieldWidget(QLineEdit):
 
 
 class FilterClearButtonWidget(QPushButton):
+    """
+    Custom button connected to a FilterFieldWidget which clears the field, triggering the associated table to show all
+    rows.
+    """
     def __init__(self, name: str, field: QLineEdit) -> None:
         super().__init__(name)
         self.field = field
@@ -496,6 +551,9 @@ class FilterClearButtonWidget(QPushButton):
 
 
 class TableIndexCell(QTableWidgetItem):
+    """
+    Custom table cell widget for displaying the index of the given row (centred).
+    """
     def __init__(self, value: int) -> None:
         super().__init__()
         self.setTextAlignment(Qt.AlignCenter)
@@ -503,6 +561,9 @@ class TableIndexCell(QTableWidgetItem):
 
 
 class ExportProgressBarWidget(QProgressBar):
+    """
+    Custom progress bar for showing the progress of exporting transcription/translation/image/sound files.
+    """
     def __init__(self) -> None:
         super().__init__()
         self.setMaximum(100)
@@ -515,6 +576,9 @@ class ExportProgressBarWidget(QProgressBar):
 
 
 class HorizontalLineWidget(QFrame):
+    """
+    Horizontal separator for delineating separate sections of the interface.
+    """
     def __init__(self) -> None:
         super().__init__()
         self.setFrameShape(QFrame.HLine)
@@ -522,6 +586,11 @@ class HorizontalLineWidget(QFrame):
 
 
 def make_file_if_not_exists(path: str) -> str:
+    """
+    Creates a folder at the given location if one does not already exists and returns the now extant folder.
+    :param path: a string representing a path to a folder that may or may not already exist.
+    :return: the same folder path it was given (now definitely exists).
+    """
     if not os.path.exists(path):
         os.makedirs(path)
     return path
