@@ -15,7 +15,7 @@ from PyQt5.QtCore import Qt, QSize, QUrl, pyqtSignal
 from moviepy.editor import AudioFileClip
 from os.path import expanduser
 from urllib.request import url2pathname
-from typing import Union
+from typing import Union, List
 from box import Box
 
 TABLE_COLUMNS = {
@@ -27,48 +27,115 @@ TABLE_COLUMNS = {
     'Include': 5,
 }
 
+MATCH_ERROR_MARGIN = 1  # Second
 
-class MainWindow(QMainWindow):
-    """
-    The primary window for the application which houses the Converter, menus, statusbar and progress bar.
-    """
 
-    def __init__(self, app: QApplication) -> None:
-        super().__init__()
-        self.app = app
-        self.title = 'Language Resource Creator'
-        self.converter = None
-        self.progress_bar = None
-        self.bar = self.menuBar()
-        self.init_ui()
+def open_folder_dialogue() -> str:
+    file_dialogue = QFileDialog()
+    file_dialogue.setOption(QFileDialog.ShowDirsOnly, True)
+    file_name = file_dialogue.getExistingDirectory(file_dialogue,
+                                                   'Choose an export folder',
+                                                   expanduser('~'),
+                                                   QFileDialog.ShowDirsOnly)
+    return file_name
 
-    def init_ui(self) -> None:
-        self.setWindowTitle(self.title)
-        self.progress_bar = ExportProgressBarWidget(self.app)
-        self.converter = ConverterWidget(parent=self)
-        self.setCentralWidget(self.converter)
-        self.statusBar().showMessage('Load an ELAN file to get started')
-        self.statusBar().addPermanentWidget(self.progress_bar)
-        self.progress_bar.hide()
-        self.init_menu()
 
-    def init_menu(self) -> None:
-        file = self.bar.addMenu('File')
-        file.addAction('Preferences')
+def open_file_dialogue() -> str:
+    file_dialogue = QFileDialog()
+    options = QFileDialog.Options()
+    file_name, _ = file_dialogue.getOpenFileName(file_dialogue,
+                                                 'QFileDialog.getOpenFileName()',
+                                                 '',
+                                                 'ELAN Files (*.eaf)',
+                                                 options=options)
+    return file_name
 
-        reset = QAction('Reset', self)
-        reset.setShortcut('Ctrl+R')
-        file.addAction(reset)
 
-        quit = QAction('Quit', self)
-        quit.setShortcut('Ctrl+Q')
-        quit.triggered.connect(self.close)
-        file.addAction(quit)
+def open_image_dialogue() -> str:
+    file_dialogue = QFileDialog()
+    options = QFileDialog.Options()
+    file_name, _ = file_dialogue.getOpenFileName(file_dialogue,
+                                                 'QFileDialog.getOpenFileName()',
+                                                 '',
+                                                 'Image Files (*.png *.jpg)',
+                                                 options=options)
+    return file_name
 
-        help = self.bar.addMenu('Help')
-        about = QAction('About', self)
-        about.setShortcut('Ctrl+A')
-        help.addAction(about)
+
+def open_audio_dialogue() -> str:
+    file_dialogue = QFileDialog()
+    options = QFileDialog.Options()
+    file_name, _ = file_dialogue.getOpenFileName(file_dialogue,
+                                                 'QFileDialog.getOpenFileName()',
+                                                 '',
+                                                 'Audio Files (*.wav *.mp3)',
+                                                 options=options)
+    return file_name
+
+
+class Translation(object):
+    def __init__(self,
+                 index: int,
+                 translation: str,
+                 start: float,
+                 end: float):
+        self.index = index
+        self.translation = translation
+        self.start = start
+        self.end = end
+
+    def __str__(self):
+        return f'<{self.translation} [{self.start}-{self.end}]>'
+
+
+class Transcription(object):
+    def __init__(self,
+                 index: int,
+                 transcription: str,
+                 translation: str = None,
+                 image: str = None,
+                 start: float = None,
+                 end: float = None,
+                 media: AudioFileClip = None) -> None:
+        self.index = index
+        self.transcription = transcription
+        self.translation = translation
+        self.image = image
+        self.sound = Box({
+            'start': start,
+            'end': end,
+            'audio_file': media,
+            'sample_path': None,
+            'sample_object': None,
+        })
+
+    def get_sample_file_path(self) -> Union[None, str]:
+        if not self.sound.sample_path:
+            sample_file = self.sound.audio_file.subclip(t_start=self.sound.start,
+                                                        t_end=self.sound.end)
+            self.sound.sample_object = sample_file
+            temporary_folder = tempfile.mkdtemp()
+            sample_file_path = os.path.join(temporary_folder, f'{str(self.index)}.wav')
+            sample_file.write_audiofile(sample_file_path)
+            return sample_file_path
+        return self.sound.sample_path
+
+    def get_sample_file_object(self) -> Union[None, AudioFileClip]:
+        self.get_sample_file_path()
+        return self.sound.sample_object
+
+    def time_matches_translation(self, translation: Translation) -> bool:
+        if abs(self.sound.start - translation.start) < MATCH_ERROR_MARGIN and \
+                abs(self.sound.end - translation.end) < MATCH_ERROR_MARGIN:
+            print(f'{translation.start - MATCH_ERROR_MARGIN} <= {self.sound.start} <= {translation.start + MATCH_ERROR_MARGIN}\n'
+                  f'{translation.end - MATCH_ERROR_MARGIN} <= {self.sound.end} <= {translation.end + MATCH_ERROR_MARGIN}')
+            print(f'{self}\n{translation}')
+            return True
+        else:
+            return False
+
+    def __str__(self):
+        return f'<{self.transcription} [{self.sound.start}-{self.sound.end}]>'
 
 
 class TranslationTableWidget(QTableWidget):
@@ -136,11 +203,11 @@ class ConverterWidget(QWidget):
         return Box({
             'elan_file': None,
             'export_location': None,
-            'translations': None,
             'images': None,
             'eaf_object': None,
             'audio_file': None,
             'transcriptions': [],
+            'translations': [],
         })
 
     def init_components(self) -> Box:
@@ -191,6 +258,7 @@ class ConverterWidget(QWidget):
         data.audio_file = self.get_audio_file()
         transcription_tier = components.transcription_menu.currentText()
         translation_tier = components.translation_menu.currentText()
+        self.extract_elan_data(transcription_tier, translation_tier)
         self.layout.addWidget(HorizontalLineWidget(), 4, 0, 1, 8)
         # Sixth Row (Filter & Selector)
         filter_label = QLabel('Filter Results:')
@@ -206,7 +274,6 @@ class ConverterWidget(QWidget):
         select_all_button.clicked.connect(self.on_click_select_all)
         self.layout.addWidget(select_all_button, 5, 7, 1, 1)
         # Seventh Row (Table)
-        self.extract_elan_data(transcription_tier, translation_tier)
         self.populate_table(self.components.table)
         self.layout.addWidget(components.table, 6, 0, 1, 8)
         # Eighth Row (Export Location)
@@ -224,25 +291,49 @@ class ConverterWidget(QWidget):
         self.layout.addWidget(export_button, 8, 0, 1, 8)
 
     def extract_elan_data(self, transcription_tier: str, translation_tier: str) -> None:
-        self.data.translations = self.data.eaf_object.get_annotation_data_for_tier(translation_tier)
-        # Reimplementation
+        self.data.transcriptions = []
+        elan_translations = self.data.eaf_object.get_annotation_data_for_tier(translation_tier)
+        self.components.progress_bar.show()
+        self.components.status_bar.showMessage('Processing translations...')
+        translation_count = len(elan_translations)
+        completed_count = 0
+        for index in range(translation_count):
+            self.components.progress_bar.update_progress(completed_count / translation_count)
+            translation = Translation(index=index,
+                                      start=int(elan_translations[index][0])/1000,
+                                      end=int(elan_translations[index][1])/1000,
+                                      translation=elan_translations[index][2])
+            self.data.translations.append(translation)
+            completed_count += 1
+        completed_count = 0
         elan_transcriptions = self.data.eaf_object.get_annotation_data_for_tier(transcription_tier)
         audio_file = self.get_audio_file()
-        for index in range(len(elan_transcriptions)):
+        self.components.status_bar.showMessage('Processing transcriptions...')
+        transcription_count = len(elan_transcriptions)
+        for index in range(transcription_count):
+            self.components.progress_bar.update_progress(completed_count / transcription_count)
             transcription = Transcription(index=index,
                                           transcription=elan_transcriptions[index][2],
-                                          start=elan_transcriptions[index][0]/1000,
-                                          end=elan_transcriptions[index][1]/1000,
+                                          start=int(elan_transcriptions[index][0])/1000,
+                                          end=int(elan_transcriptions[index][1])/1000,
                                           media=audio_file)
+            transcription.translation = self.match_translations(transcription, self.data.translations)
             self.data.transcriptions.append(transcription)
-        print(self.data.transcriptions)
+            completed_count += 1
+        self.components.progress_bar.hide()
+
+    @staticmethod
+    def match_translations(transcription: Transcription, translations: List[Translation]) -> Union[None, str]:
+        for translation in translations:
+            if transcription.time_matches_translation(translation):
+                return translation.translation
+        return None
 
     def populate_table_row(self, row: int, table: TranslationTableWidget) -> None:
         table.setItem(row, TABLE_COLUMNS['Index'], TableIndexCell(row))
-        table.setItem(row,
-                      TABLE_COLUMNS['Transcription'],
+        table.setItem(row, TABLE_COLUMNS['Transcription'],
                       QTableWidgetItem(self.data.transcriptions[row].transcription))
-        table.setItem(row, TABLE_COLUMNS['Translation'], QTableWidgetItem(self.data.translations[row][2]))
+        table.setItem(row, TABLE_COLUMNS['Translation'], QTableWidgetItem(self.data.transcriptions[row].translation))
         PreviewButtonWidget(self, row, table)
         ImageButtonWidget(self, row, table)
         SelectorCellWidget(row, self.components.status_bar, table)
@@ -263,15 +354,12 @@ class ConverterWidget(QWidget):
             self.components.translation_menu.setEnabled(True)
 
     def on_click_import(self) -> None:
-        if not self.data.images:
+        warning_message = QMessageBox()
+        choice = warning_message.question(warning_message, 'Warning',
+                                          'Warning: Any unsaved work will be overwritten. Proceed?',
+                                          QMessageBox.Yes | QMessageBox.No | QMessageBox.Warning)
+        if choice == QMessageBox.Yes:
             self.load_third_stage_widgets(self.components, self.data)
-        else:
-            warning_message = QMessageBox()
-            choice = warning_message.question(warning_message, 'Warning',
-                                              'Warning: Any unsaved work will be overwritten. Proceed?',
-                                              QMessageBox.Yes | QMessageBox.No | QMessageBox.Warning)
-            if choice == QMessageBox.Yes:
-                self.load_third_stage_widgets(self.components, self.data)
 
     def on_click_image(self, row: int) -> None:
         image_path = open_image_dialogue()
@@ -535,7 +623,6 @@ class ExportProgressBarWidget(QProgressBar):
         self.setValue(0)
 
     def update_progress(self, value: Union[float, int]) -> None:
-        print(value)
         self.setValue(math.ceil(value * 100))
         self.app.processEvents()
 
@@ -551,41 +638,47 @@ class HorizontalLineWidget(QFrame):
         self.setFrameShadow(QFrame.Sunken)
 
 
-class Transcription(object):
-    def __init__(self,
-                 index: int,
-                 transcription: str,
-                 translation: str = None,
-                 image: str = None,
-                 start: int = None,
-                 end: int = None,
-                 media: AudioFileClip = None) -> None:
-        self.index = index
-        self.transcription = transcription
-        self.translation = translation
-        self.image = image
-        self.sound = Box({
-            'start': start,
-            'end': end,
-            'audio_file': media,
-            'sample_path': None,
-            'sample_object': None,
-        })
+class MainWindow(QMainWindow):
+    """
+    The primary window for the application which houses the Converter, menus, statusbar and progress bar.
+    """
 
-    def get_sample_file_path(self):
-        if not self.sound.sample_path:
-            sample_file = self.sound.audio_file.subclip(t_start=self.sound.start,
-                                                        t_end=self.sound.end)
-            self.sound.sample_object = sample_file
-            temporary_folder = tempfile.mkdtemp()
-            sample_file_path = os.path.join(temporary_folder, f'{str(self.index)}.wav')
-            sample_file.write_audiofile(sample_file_path)
-            return sample_file_path
-        return self.sound.sample_path
+    def __init__(self, app: QApplication) -> None:
+        super().__init__()
+        self.app = app
+        self.title = 'Language Resource Creator'
+        self.converter = None
+        self.progress_bar = None
+        self.bar = self.menuBar()
+        self.init_ui()
 
-    def get_sample_file_object(self):
-        self.get_sample_file_path()
-        return self.sound.sample_object
+    def init_ui(self) -> None:
+        self.setWindowTitle(self.title)
+        self.progress_bar = ExportProgressBarWidget(self.app)
+        self.converter = ConverterWidget(parent=self)
+        self.setCentralWidget(self.converter)
+        self.statusBar().showMessage('Load an ELAN file to get started')
+        self.statusBar().addPermanentWidget(self.progress_bar)
+        self.progress_bar.hide()
+        self.init_menu()
+
+    def init_menu(self) -> None:
+        file = self.bar.addMenu('File')
+        file.addAction('Preferences')
+
+        reset = QAction('Reset', self)
+        reset.setShortcut('Ctrl+R')
+        file.addAction(reset)
+
+        quit = QAction('Quit', self)
+        quit.setShortcut('Ctrl+Q')
+        quit.triggered.connect(self.close)
+        file.addAction(quit)
+
+        help = self.bar.addMenu('Help')
+        about = QAction('About', self)
+        about.setShortcut('Ctrl+A')
+        help.addAction(about)
 
 
 def make_file_if_not_exists(path: str) -> str:
@@ -597,49 +690,6 @@ def make_file_if_not_exists(path: str) -> str:
     if not os.path.exists(path):
         os.makedirs(path)
     return path
-
-
-def open_folder_dialogue() -> str:
-    file_dialogue = QFileDialog()
-    file_dialogue.setOption(QFileDialog.ShowDirsOnly, True)
-    file_name = file_dialogue.getExistingDirectory(file_dialogue,
-                                                   'Choose an export folder',
-                                                   expanduser('~'),
-                                                   QFileDialog.ShowDirsOnly)
-    return file_name
-
-
-def open_file_dialogue() -> str:
-    file_dialogue = QFileDialog()
-    options = QFileDialog.Options()
-    file_name, _ = file_dialogue.getOpenFileName(file_dialogue,
-                                                 'QFileDialog.getOpenFileName()',
-                                                 '',
-                                                 'ELAN Files (*.eaf)',
-                                                 options=options)
-    return file_name
-
-
-def open_image_dialogue() -> str:
-    file_dialogue = QFileDialog()
-    options = QFileDialog.Options()
-    file_name, _ = file_dialogue.getOpenFileName(file_dialogue,
-                                                 'QFileDialog.getOpenFileName()',
-                                                 '',
-                                                 'Image Files (*.png *.jpg)',
-                                                 options=options)
-    return file_name
-
-
-def open_audio_dialogue() -> str:
-    file_dialogue = QFileDialog()
-    options = QFileDialog.Options()
-    file_name, _ = file_dialogue.getOpenFileName(file_dialogue,
-                                                 'QFileDialog.getOpenFileName()',
-                                                 '',
-                                                 'Audio Files (*.wav *.mp3)',
-                                                 options=options)
-    return file_name
 
 
 if __name__ == '__main__':
