@@ -1,4 +1,4 @@
-# ELAN-Resource-Creator
+# ELAN Language Resource Creator
 Cross-platform utility for turning ELAN (*.eaf) linguistic analysis files and associated media into language resources.
 
 The Language Resource creator was developed by [Nicholas Lambourne](https://ndl.im) using Python3, PyQt5, pymovie and pygame. 
