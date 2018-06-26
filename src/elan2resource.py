@@ -490,7 +490,7 @@ class PreviewButtonWidget(QPushButton):
     Custom button for previewing an audio clip.
     """
 
-    def __init__(self, parent: ConverterWidget, row: int, table: TranslationTableWidget):
+    def __init__(self, parent: ConverterWidget, row: int, table: TranslationTableWidget) -> None:
         super().__init__()
         self.parent = parent
         image_icon = QIcon('img/play.png')
@@ -638,7 +638,7 @@ class HorizontalLineWidget(QFrame):
 
 
 class AboutWindow(QDialog):
-    def __init__(self, parent=None):
+    def __init__(self, parent: QMainWindow = None) -> None:
         super().__init__(parent)
         self.layout = QGridLayout()
         self.init_ui()
@@ -649,10 +649,13 @@ class AboutWindow(QDialog):
         logo_label.setPixmap(logo_image)
         self.layout.addWidget(logo_label, 0, 1, 1, 1)
         name_label = QLabel('<b>ELAN Resource Creator</b>')
+        name_label.setAlignment(Qt.AlignCenter)
         self.layout.addWidget(name_label, 1, 0, 1, 3)
         version_label = QLabel(f'Version {VERSION}')
+        version_label.setAlignment(Qt.AlignCenter)
         self.layout.addWidget(version_label, 2, 0, 1, 3)
         link_label = QLabel(f'<a href="{REPO_LINK}">Report Issues Here</a>')
+        link_label.setAlignment(Qt.AlignCenter)
         link_label.setTextFormat(Qt.RichText)
         link_label.setTextInteractionFlags(Qt.TextBrowserInteraction)
         link_label.setOpenExternalLinks(True)
