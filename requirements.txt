@@ -2,5 +2,7 @@ pympi-ling
 requests
 numpy
 PyQt5
-moviepy
+https://github.com/nicklambourne/moviepy/archive/master.zip
+https://github.com/nicklambourne/pyinstaller/archive/develop.zip
 pygame
+python-box

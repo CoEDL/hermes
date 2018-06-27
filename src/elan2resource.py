@@ -32,6 +32,12 @@ VERSION = '0.01'
 REPO_LINK = 'https://github.com/nicklambourne/elan2resource'
 
 
+def resource_path(relative_path):
+    if hasattr(sys, '_MEIPASS'):
+        return os.path.join(sys._MEIPASS, relative_path)
+    return os.path.join(os.path.abspath('.'), relative_path)
+
+
 def open_folder_dialogue() -> str:
     file_dialogue = QFileDialog()
     file_dialogue.setOption(QFileDialog.ShowDirsOnly, True)
@@ -493,7 +499,7 @@ class PreviewButtonWidget(QPushButton):
     def __init__(self, parent: ConverterWidget, row: int, table: TranslationTableWidget) -> None:
         super().__init__()
         self.parent = parent
-        image_icon = QIcon('img/play.png')
+        image_icon = QIcon(resource_path('./img/play.png'))
         self.setIcon(image_icon)
         self.clicked.connect(partial(self.parent.sample_sound, row))
         self.setToolTip('Left click to hear a preview of the audio for this word')
@@ -511,8 +517,8 @@ class ImageButtonWidget(QPushButton):
         super().__init__()
         self.parent = parent
         self.row = row
-        self.image_icon_no = QIcon('img/image-no.png')
-        self.image_icon_yes = QIcon('img/image-yes.png')
+        self.image_icon_no = QIcon(resource_path('./img/image-no.png'))
+        self.image_icon_yes = QIcon(resource_path('./img/image-yes.png'))
         self.setIcon(self.image_icon_no)
         self.clicked.connect(partial(self.parent.on_click_image, row))
         self.setToolTip('Left click to choose an image for this word\n'
@@ -544,10 +550,10 @@ class ApplicationIcon(QIcon):
 
     def __init__(self) -> None:
         super().__init__()
-        self.addFile('./img/language-48.png', QSize(48, 48))
-        self.addFile('./img/language-96.png', QSize(96, 96))
-        self.addFile('./img/language-192.png', QSize(192, 192))
-        self.addFile('./img/language-256.png', QSize(256, 256))
+        self.addFile(resource_path('./img/language-48.png'), QSize(48, 48))
+        self.addFile(resource_path('./img/language-96.png'), QSize(96, 96))
+        self.addFile(resource_path('./img/language-192.png'), QSize(192, 192))
+        self.addFile(resource_path('./img/language-256.png'), QSize(256, 256))
 
 
 class LockedLineEdit(QLineEdit):
@@ -645,7 +651,7 @@ class AboutWindow(QDialog):
 
     def init_ui(self):
         logo_label = QLabel()
-        logo_image = QPixmap('img/language-256.png').scaledToHeight(100)
+        logo_image = QPixmap(resource_path('./img/language-256.png')).scaledToHeight(100)
         logo_label.setPixmap(logo_image)
         self.layout.addWidget(logo_label, 0, 1, 1, 1)
         name_label = QLabel('<b>ELAN Resource Creator</b>')
