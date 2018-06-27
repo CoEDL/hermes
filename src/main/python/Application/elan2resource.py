@@ -29,7 +29,7 @@ TABLE_COLUMNS = {
 
 MATCH_ERROR_MARGIN = 1  # Second
 VERSION = '0.01'
-REPO_LINK = 'https://github.com/nicklambourne/elan2resource'
+REPO_LINK = 'https://github.com/nicklambourne/Application'
 
 
 def open_folder_dialogue() -> str:

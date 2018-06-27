@@ -1,0 +1,32 @@
+{
+  "language": "french",
+  "created": "2015-03-25T12:00:00Z",
+  "author": "N. Lambourne",
+  "words": [
+    {
+      "id": "844af1a1-3a4d-45f1-91f9-834dc9e91cb7",
+      "transcription": "salut",
+      "translation": [
+        "hi"
+      ],
+      "audio": [
+        "./audio/844af1a1-3a4d-45f1-91f9-834dc9e91cb7(salut)-0.wav"
+      ],
+      "image": [
+        "./image/844af1a1-3a4d-45f1-91f9-834dc9e91cb7(salut)-0.png",
+        "./image/844af1a1-3a4d-45f1-91f9-834dc9e91cb7(salut)-1.png"
+      ]
+    },
+    {
+      "id": "84b16f81-3fc6-47c9-bfc2-b3ed2a377e40",
+      "transcription": "court",
+      "translation": [
+        "short"
+      ],
+      "audio": [
+        "./audio/84b16f81-3fc6-47c9-bfc2-b3ed2a377e40(court).wav"
+      ],
+      "image": []
+    }
+  ]
+}
