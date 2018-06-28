@@ -269,6 +269,7 @@ class ConverterWidget(QWidget):
         # Sixth Row (Filter & Selector)
         filter_label = QLabel('Filter Results:')
         self.layout.addWidget(filter_label, 5, 0, 1, 1)
+        components.table = None
         components.table = TranslationTableWidget(max(len(self.data.translations),
                                                       len(self.data.transcriptions)))
         components.filter_field = FilterFieldWidget('', components.table)
@@ -297,10 +298,11 @@ class ConverterWidget(QWidget):
         export_button.clicked.connect(self.export_resources)
         self.layout.addWidget(export_button, 8, 0, 1, 8)
 
-    def extract_translations(self, translation_tier) -> None:
+    def extract_translations(self, translation_tier) -> List[Translation]:
         elan_translations = self.data.eaf_object.get_annotation_data_for_tier(translation_tier)
         self.components.progress_bar.show()
         self.components.status_bar.showMessage('Processing translations...')
+        translations = []
         translation_count = len(elan_translations)
         completed_count = 0
         for index in range(translation_count):
@@ -309,15 +311,17 @@ class ConverterWidget(QWidget):
                                       start=int(elan_translations[index][0]) / 1000,
                                       end=int(elan_translations[index][1]) / 1000,
                                       translation=elan_translations[index][2])
-            self.data.translations.append(translation)
+            translations.append(translation)
             completed_count += 1
         self.components.progress_bar.hide()
+        return translations
 
-    def extract_transcriptions(self, transcription_tier, audio_file) -> None:
+    def extract_transcriptions(self, transcription_tier, audio_file) -> List[Transcription]:
         completed_count = 0
         elan_transcriptions = self.data.eaf_object.get_annotation_data_for_tier(transcription_tier)
         self.components.status_bar.showMessage('Processing transcriptions...')
         transcription_count = len(elan_transcriptions)
+        transcriptions = []
         for index in range(transcription_count):
             self.components.progress_bar.update_progress(completed_count / transcription_count)
             transcription = Transcription(index=index,
@@ -326,15 +330,18 @@ class ConverterWidget(QWidget):
                                           end=int(elan_transcriptions[index][1]) / 1000,
                                           media=audio_file)
             transcription.translation = self.match_translations(transcription, self.data.translations)
-            self.data.transcriptions.append(transcription)
+            transcriptions.append(transcription)
             completed_count += 1
         self.components.progress_bar.hide()
+        return transcriptions
 
     def extract_elan_data(self, transcription_tier: str, translation_tier: str) -> None:
         if translation_tier != 'None':
-            self.extract_translations(translation_tier)
+            self.data.translations = self.extract_translations(translation_tier)
+        else:
+            self.data.translations = []
         audio_file = self.get_audio_file()
-        self.extract_transcriptions(transcription_tier, audio_file)
+        self.data.transcriptions = self.extract_transcriptions(transcription_tier, audio_file)
 
     @staticmethod
     def match_translations(transcription: Transcription, translations: List[Translation]) -> Union[None, str]:
@@ -659,7 +666,7 @@ class AboutWindow(QDialog):
         self.layout = QGridLayout()
         self.init_ui()
 
-    def init_ui(self):
+    def init_ui(self) -> None:
         logo_label = QLabel()
         logo_image = QPixmap(resource_path('./img/language-256.png')).scaledToHeight(100)
         logo_label.setPixmap(logo_image)
@@ -723,7 +730,7 @@ class MainWindow(QMainWindow):
         about.triggered.connect(self.on_click_about)
         help.addAction(about)
 
-    def on_click_about(self):
+    def on_click_about(self) -> None:
         about = AboutWindow(self)
         about.show()
 
