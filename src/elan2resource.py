@@ -139,7 +139,7 @@ class Transcription(object):
         else:
             return False
 
-    def __str__(self):
+    def __str__(self) -> str:
         return f'<{self.transcription} [{self.sound.start}-{self.sound.end}]>'
 
 
@@ -213,6 +213,7 @@ class ConverterWidget(QWidget):
             'audio_file': None,
             'transcriptions': [],
             'translations': [],
+            'temp_file': None
         })
 
     def init_components(self) -> Box:
@@ -252,7 +253,7 @@ class ConverterWidget(QWidget):
         components.translation_label = QLabel('Translation Tier:')
         self.layout.addWidget(components.translation_label, 2, 4, 1, 2)
         components.translation_menu = QComboBox()
-        components.translation_menu.addItems(data.eaf_object.get_tier_names())
+        components.translation_menu.addItems(['None'] + list(data.eaf_object.get_tier_names()))
         self.layout.addWidget(components.translation_menu, 2, 6, 1, 2)
         # Third Row (Import Button)
         import_button = QPushButton('Import')
@@ -268,7 +269,8 @@ class ConverterWidget(QWidget):
         # Sixth Row (Filter & Selector)
         filter_label = QLabel('Filter Results:')
         self.layout.addWidget(filter_label, 5, 0, 1, 1)
-        components.table = TranslationTableWidget(len(data.eaf_object.get_annotation_data_for_tier(transcription_tier)))
+        components.table = TranslationTableWidget(max(len(self.data.translations),
+                                                      len(self.data.transcriptions)))
         components.filter_field = FilterFieldWidget('', components.table)
         self.layout.addWidget(components.filter_field, 5, 1, 1, 2)
         filter_clear_button = FilterClearButtonWidget('Clear', self.components.filter_field)
@@ -295,8 +297,7 @@ class ConverterWidget(QWidget):
         export_button.clicked.connect(self.export_resources)
         self.layout.addWidget(export_button, 8, 0, 1, 8)
 
-    def extract_elan_data(self, transcription_tier: str, translation_tier: str) -> None:
-        self.data.transcriptions = []
+    def extract_translations(self, translation_tier) -> None:
         elan_translations = self.data.eaf_object.get_annotation_data_for_tier(translation_tier)
         self.components.progress_bar.show()
         self.components.status_bar.showMessage('Processing translations...')
@@ -305,27 +306,35 @@ class ConverterWidget(QWidget):
         for index in range(translation_count):
             self.components.progress_bar.update_progress(completed_count / translation_count)
             translation = Translation(index=index,
-                                      start=int(elan_translations[index][0])/1000,
-                                      end=int(elan_translations[index][1])/1000,
+                                      start=int(elan_translations[index][0]) / 1000,
+                                      end=int(elan_translations[index][1]) / 1000,
                                       translation=elan_translations[index][2])
             self.data.translations.append(translation)
             completed_count += 1
+        self.components.progress_bar.hide()
+
+    def extract_transcriptions(self, transcription_tier, audio_file) -> None:
         completed_count = 0
         elan_transcriptions = self.data.eaf_object.get_annotation_data_for_tier(transcription_tier)
-        audio_file = self.get_audio_file()
         self.components.status_bar.showMessage('Processing transcriptions...')
         transcription_count = len(elan_transcriptions)
         for index in range(transcription_count):
             self.components.progress_bar.update_progress(completed_count / transcription_count)
             transcription = Transcription(index=index,
                                           transcription=elan_transcriptions[index][2],
-                                          start=int(elan_transcriptions[index][0])/1000,
-                                          end=int(elan_transcriptions[index][1])/1000,
+                                          start=int(elan_transcriptions[index][0]) / 1000,
+                                          end=int(elan_transcriptions[index][1]) / 1000,
                                           media=audio_file)
             transcription.translation = self.match_translations(transcription, self.data.translations)
             self.data.transcriptions.append(transcription)
             completed_count += 1
         self.components.progress_bar.hide()
+
+    def extract_elan_data(self, transcription_tier: str, translation_tier: str) -> None:
+        if translation_tier != 'None':
+            self.extract_translations(translation_tier)
+        audio_file = self.get_audio_file()
+        self.extract_transcriptions(transcription_tier, audio_file)
 
     @staticmethod
     def match_translations(transcription: Transcription, translations: List[Translation]) -> Union[None, str]:
@@ -338,7 +347,8 @@ class ConverterWidget(QWidget):
         table.setItem(row, TABLE_COLUMNS['Index'], TableIndexCell(row))
         table.setItem(row, TABLE_COLUMNS['Transcription'],
                       QTableWidgetItem(self.data.transcriptions[row].transcription))
-        table.setItem(row, TABLE_COLUMNS['Translation'], QTableWidgetItem(self.data.transcriptions[row].translation))
+        table.setItem(row, TABLE_COLUMNS['Translation'],
+                      QTableWidgetItem(self.data.transcriptions[row].translation))
         PreviewButtonWidget(self, row, table)
         ImageButtonWidget(self, row, table)
         SelectorCellWidget(row, self.components.status_bar, table)
