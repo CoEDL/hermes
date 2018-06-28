@@ -1,0 +1,46 @@
+{
+  "transcription-language": "French",
+  "translation-language": "English",
+  "author": "Nicholas Lambourne",
+  "created": "2015-03-25T12:00:00Z",
+  "words": [
+    {
+      "id": "d512211c-447e-47d1-b577-e45face8045d",
+      "transcription": "court",
+      "alias": [
+        "bref",
+        "petit"
+      ],
+      "translation": [
+        "short"
+      ],
+      "image": [
+        "./image/d512211c-447e-47d1-b577-e45face8045d(court)-0.png",
+        "./image/d512211c-447e-47d1-b577-e45face8045d(court)-1.jpg"
+      ],
+      "audio": [
+        "./audio/d512211c-447e-47d1-b577-e45face8045d(court)-0.wav"
+      ],
+      "video": [
+        "./video/d512211c-447e-47d1-b577-e45face8045d(court)-0.mp4"
+      ]
+    },
+    {
+      "id": "69188c0b-42b0-4eed-b855-8276fd8877c5",
+      "transcription": "requin",
+      "alias": [],
+      "translation": [
+        "shark"
+      ],
+      "image": [
+        "./image/69188c0b-42b0-4eed-b855-8276fd8877c5(requin)-0.png"
+      ],
+      "audio": [
+        "./audio/69188c0b-42b0-4eed-b855-8276fd8877c5(requin)-0.wav"
+      ],
+      "video": [
+        "./video/69188c0b-42b0-4eed-b855-8276fd8877c5(requin)-0.mp4"
+      ]
+    }
+  ]
+}
