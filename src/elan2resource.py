@@ -15,8 +15,11 @@ from PyQt5.QtCore import Qt, QSize, QUrl, pyqtSignal
 from moviepy.editor import AudioFileClip
 from os.path import expanduser
 from urllib.request import url2pathname
-from typing import Union, List
+from typing import NewType, Union, List
 from box import Box
+
+MainWindow = NewType('MainWindow', QMainWindow)
+ExportProgressBarWidget = NewType('ExportProgressBarWidget', QProgressBar)
 
 TABLE_COLUMNS = {
     'Index': 0,
@@ -28,7 +31,7 @@ TABLE_COLUMNS = {
 }
 
 MATCH_ERROR_MARGIN = 1  # Second
-VERSION = '0.01'
+VERSION = '0.02'
 REPO_LINK = 'https://github.com/nicklambourne/elan2resource'
 
 
@@ -81,12 +84,41 @@ def open_audio_dialogue() -> str:
     return file_name
 
 
+class Sample(object):
+    def __init__(self,
+                 start: float,
+                 end: float,
+                 audio_file: AudioFileClip = None,
+                 sample_path: str = None,
+                 sample_object: AudioFileClip = None):
+        self.start = start
+        self.end = end
+        self.audio_file = audio_file
+        self.sample_path = sample_path
+        self.sample_object = sample_object
+
+    def get_sample_file_path(self) -> Union[None, str]:
+        if not self.sample_path:
+            sample_file = self.audio_file.subclip(t_start=self.start,
+                                                  t_end=self.end)
+            self.sample_object = sample_file
+            temporary_folder = tempfile.mkdtemp()
+            sample_file_path = os.path.join(temporary_folder, f'{str(self.index)}.wav')
+            sample_file.write_audiofile(sample_file_path)
+            return sample_file_path
+        return self.sample_path
+
+    def get_sample_file_object(self) -> Union[None, AudioFileClip]:
+        self.get_sample_file_path()
+        return self.sample_object
+
+
 class Translation(object):
     def __init__(self,
                  index: int,
                  translation: str,
                  start: float,
-                 end: float):
+                 end: float) -> None:
         self.index = index
         self.translation = translation
         self.start = start
@@ -109,38 +141,21 @@ class Transcription(object):
         self.transcription = transcription
         self.translation = translation
         self.image = image
-        self.sound = Box({
-            'start': start,
-            'end': end,
-            'audio_file': media,
-            'sample_path': None,
-            'sample_object': None,
-        })
-
-    def get_sample_file_path(self) -> Union[None, str]:
-        if not self.sound.sample_path:
-            sample_file = self.sound.audio_file.subclip(t_start=self.sound.start,
-                                                        t_end=self.sound.end)
-            self.sound.sample_object = sample_file
-            temporary_folder = tempfile.mkdtemp()
-            sample_file_path = os.path.join(temporary_folder, f'{str(self.index)}.wav')
-            sample_file.write_audiofile(sample_file_path)
-            return sample_file_path
-        return self.sound.sample_path
-
-    def get_sample_file_object(self) -> Union[None, AudioFileClip]:
-        self.get_sample_file_path()
-        return self.sound.sample_object
+        self.sample = Sample(
+            start=start,
+            end=end,
+            audio_file=media
+        )
 
     def time_matches_translation(self, translation: Translation) -> bool:
-        if abs(self.sound.start - translation.start) < MATCH_ERROR_MARGIN and \
-                abs(self.sound.end - translation.end) < MATCH_ERROR_MARGIN:
+        if abs(self.sample.start - translation.start) < MATCH_ERROR_MARGIN and \
+                abs(self.sample.end - translation.end) < MATCH_ERROR_MARGIN:
             return True
         else:
             return False
 
     def __str__(self) -> str:
-        return f'<{self.transcription} [{self.sound.start}-{self.sound.end}]>'
+        return f'<{self.transcription} [{self.sample.start}-{self.sample.end}]>'
 
 
 class TranslationTableWidget(QTableWidget):
@@ -190,6 +205,35 @@ class TranslationTableWidget(QTableWidget):
         return self.cellWidget(row, TABLE_COLUMNS['Include']).selector.isChecked()
 
 
+class ConverterData(object):
+    def __init__(self) -> None:
+        self.elan_file = None
+        self.export_location = None
+        self.images = None
+        self.eaf_object = None
+        self.audio_file = None
+        self.transcriptions = []
+        self.translations = []
+        self.temp_file = None
+
+
+class ConverterComponents(object):
+    def __init__(self, progress_bar: ExportProgressBarWidget, status_bar: QStatusBar):
+        self.elan_file_field = None
+        self.transcription_menu = None
+        self.translation_menu = None
+        self.filter_field = None
+        self.table = None
+        self.progress_bar = progress_bar
+        self.status_bar = status_bar
+
+
+class ELANFileField(QFrame):
+    def __init__(self):
+        super().__init__()
+        self.setLayout(QGridLayout())
+
+
 class ConverterWidget(QWidget):
     """
     The core widget of the application which contains all of the widgets required to convert ELAN files.
@@ -198,34 +242,13 @@ class ConverterWidget(QWidget):
     def __init__(self, parent: QMainWindow) -> None:
         super().__init__()
         self.parent = parent
-        self.components = self.init_components()
-        self.data = self.init_data()
+        self.components = ConverterComponents(
+            progress_bar=self.parent.progress_bar,
+            status_bar=self.parent.statusBar()
+        )
+        self.data = ConverterData()
         self.layout = QGridLayout()
         self.init_ui()
-
-    @staticmethod
-    def init_data() -> Box:
-        return Box({
-            'elan_file': None,
-            'export_location': None,
-            'images': None,
-            'eaf_object': None,
-            'audio_file': None,
-            'transcriptions': [],
-            'translations': [],
-            'temp_file': None
-        })
-
-    def init_components(self) -> Box:
-        return Box({
-            'elan_file_field': None,
-            'transcription_menu': None,
-            'translation_menu': None,
-            'filter_field': None,
-            'table': None,
-            'progress_bar': self.parent.progress_bar,
-            'status_bar': self.parent.statusBar(),
-        })
 
     def init_ui(self) -> None:
         self.setMinimumWidth(600)
@@ -233,7 +256,7 @@ class ConverterWidget(QWidget):
         self.setLayout(self.layout)
         self.show()
 
-    def load_initial_widgets(self, components: Box) -> None:
+    def load_initial_widgets(self, components: ConverterComponents) -> None:
         # First Row (ELAN File Field)
         components.elan_file_field = QLineEdit('Load an ELAN (*.eaf) file.')
         components.elan_file_field.setReadOnly(True)
@@ -242,7 +265,7 @@ class ConverterWidget(QWidget):
         load_button.clicked.connect(self.on_click_load)
         self.layout.addWidget(load_button, 0, 7, 1, 1)
 
-    def load_second_stage_widgets(self, components: Box, data: Box) -> None:
+    def load_second_stage_widgets(self, components: ConverterComponents, data: ConverterData) -> None:
         data.eaf_object = pympi.Elan.Eaf(data.elan_file)
         # Second Row (Tier Selection)
         components.transcription_label = QLabel('Transcription Tier:')
@@ -260,7 +283,7 @@ class ConverterWidget(QWidget):
         import_button.clicked.connect(self.on_click_import)
         self.layout.addWidget(import_button, 3, 0, 1, 8)
 
-    def load_third_stage_widgets(self, components: Box, data: Box) -> None:
+    def load_third_stage_widgets(self, components: ConverterComponents, data: ConverterData) -> None:
         data.audio_file = self.get_audio_file()
         transcription_tier = components.transcription_menu.currentText()
         translation_tier = components.translation_menu.currentText()
@@ -422,7 +445,7 @@ class ConverterWidget(QWidget):
 
     def create_output_files(self, row: int) -> None:
         export_paths = self.get_export_paths()
-        sound_file = self.data.transcriptions[row].get_sample_file_object()
+        sound_file = self.data.transcriptions[row].sample.get_sample_file_object()
         sound_file.write_audiofile(f'{export_paths.sound}/word{str(row)}.wav')
         image_path = self.data.transcriptions[row].image
         if image_path:
@@ -475,7 +498,7 @@ class ConverterWidget(QWidget):
         return audio_data
 
     def sample_sound(self, row: int) -> None:
-        sample_file_path = self.data.transcriptions[row].get_sample_file_path()
+        sample_file_path = self.data.transcriptions[row].sample.get_sample_file_path()
         mixer.init()
         sound = mixer.Sound(sample_file_path)
         sound.play()
