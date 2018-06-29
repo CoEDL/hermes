@@ -20,6 +20,7 @@ from box import Box
 
 MainWindow = NewType('MainWindow', QMainWindow)
 ExportProgressBarWidget = NewType('ExportProgressBarWidget', QProgressBar)
+ConverterWidget = NewType('ConverterWidget', QWidget)
 
 TABLE_COLUMNS = {
     'Index': 0,
@@ -86,11 +87,13 @@ def open_audio_dialogue() -> str:
 
 class Sample(object):
     def __init__(self,
+                 index: int,
                  start: float,
                  end: float,
                  audio_file: AudioFileClip = None,
                  sample_path: str = None,
                  sample_object: AudioFileClip = None):
+        self.index = index
         self.start = start
         self.end = end
         self.audio_file = audio_file
@@ -142,6 +145,7 @@ class Transcription(object):
         self.translation = translation
         self.image = image
         self.sample = Sample(
+            index=index,
             start=start,
             end=end,
             audio_file=media
@@ -226,12 +230,78 @@ class ConverterComponents(object):
         self.table = None
         self.progress_bar = progress_bar
         self.status_bar = status_bar
+        self.tier_selector = None
 
 
-class ELANFileField(QFrame):
+class ModeSelect(QFrame):
     def __init__(self):
         super().__init__()
-        self.setLayout(QGridLayout())
+        self.layout = QGridLayout()
+        self.setLayout(self.layout)
+        elan_button = QPushButton()
+        elan_button.setIcon(QIcon(QPixmap(resource_path('./img/elan.png'))))
+        self.layout.addWidget(elan_button, 0, 0)
+
+
+class ELANFileField(QWidget):
+    def __init__(self, parent: ConverterWidget) -> None:
+        super().__init__()
+        self.parent = parent
+        self.layout = QGridLayout()
+        self.field = QLineEdit()
+        self.init_ui()
+
+    def init_ui(self) -> None:
+        self.field.setReadOnly(True)
+        self.field.setText('Load an ELAN (*.eaf) file.')
+        self.layout.addWidget(self.field, 0, 0, 1, 7)
+        load_button = QPushButton('Load')
+        load_button.clicked.connect(self.parent.on_click_load)
+        self.layout.addWidget(load_button, 0, 7, 1, 1)
+        self.setLayout(self.layout)
+
+    def set_field_text(self, file_name: str) -> None:
+        self.field.setText(file_name)
+
+
+class TierSelector(QWidget):
+    def __init__(self, parent):
+        super().__init__()
+        self.parent = parent
+        self.layout = QGridLayout()
+        self.transcription_menu = None
+        self.translation_menu = None
+        self.init_ui()
+
+    def init_ui(self):
+        transcription_label = QLabel('Transcription Tier:')
+        self.layout.addWidget(HorizontalLineWidget(), 0, 0, 1, 8)
+        self.layout.addWidget(transcription_label, 1, 0, 1, 2)
+        self.transcription_menu = QComboBox()
+        self.layout.addWidget(self.transcription_menu, 1, 2, 1, 2)
+        translation_label = QLabel('Translation Tier:')
+        self.layout.addWidget(translation_label, 1, 4, 1, 2)
+        self.translation_menu = QComboBox()
+        self.layout.addWidget(self.translation_menu, 1, 6, 1, 2)
+        import_button = QPushButton('Import')
+        import_button.clicked.connect(self.parent.on_click_import)
+        self.layout.addWidget(import_button, 2, 0, 1, 8)
+        self.setLayout(self.layout)
+
+    def populate_tiers(self, tiers: List[str]) -> None:
+        self.transcription_menu.addItems(tiers)
+        self.translation_menu.addItems(['None'] + tiers)
+
+    def get_transcription_tier(self) -> None:
+        return self.transcription_menu.currentText()
+
+    def get_translation_tier(self) -> None:
+        return self.translation_menu.currentText()
+
+
+class FilterTable(QWidget):
+    def __init__(self):
+        super().__init__()
 
 
 class ConverterWidget(QWidget):
@@ -248,45 +318,31 @@ class ConverterWidget(QWidget):
         )
         self.data = ConverterData()
         self.layout = QGridLayout()
+
         self.init_ui()
 
     def init_ui(self) -> None:
         self.setMinimumWidth(600)
+        self.layout.setVerticalSpacing(0)
         self.load_initial_widgets(self.components)
         self.setLayout(self.layout)
         self.show()
 
     def load_initial_widgets(self, components: ConverterComponents) -> None:
         # First Row (ELAN File Field)
-        components.elan_file_field = QLineEdit('Load an ELAN (*.eaf) file.')
-        components.elan_file_field.setReadOnly(True)
-        self.layout.addWidget(components.elan_file_field, 0, 0, 1, 7)
-        load_button = QPushButton('Load')
-        load_button.clicked.connect(self.on_click_load)
-        self.layout.addWidget(load_button, 0, 7, 1, 1)
+        components.elan_file_field = ELANFileField(self)
+        self.layout.addWidget(components.elan_file_field, 0, 0, 1, 8)
 
     def load_second_stage_widgets(self, components: ConverterComponents, data: ConverterData) -> None:
         data.eaf_object = pympi.Elan.Eaf(data.elan_file)
-        # Second Row (Tier Selection)
-        components.transcription_label = QLabel('Transcription Tier:')
-        self.layout.addWidget(components.transcription_label, 2, 0, 1, 2)
-        components.transcription_menu = QComboBox()
-        components.transcription_menu.addItems(data.eaf_object.get_tier_names())
-        self.layout.addWidget(components.transcription_menu, 2, 2, 1, 2)
-        components.translation_label = QLabel('Translation Tier:')
-        self.layout.addWidget(components.translation_label, 2, 4, 1, 2)
-        components.translation_menu = QComboBox()
-        components.translation_menu.addItems(['None'] + list(data.eaf_object.get_tier_names()))
-        self.layout.addWidget(components.translation_menu, 2, 6, 1, 2)
-        # Third Row (Import Button)
-        import_button = QPushButton('Import')
-        import_button.clicked.connect(self.on_click_import)
-        self.layout.addWidget(import_button, 3, 0, 1, 8)
+        components.tier_selector = TierSelector(self)
+        components.tier_selector.populate_tiers(list(data.eaf_object.get_tier_names()))
+        self.layout.addWidget(components.tier_selector, 1, 0, 1, 8)
 
     def load_third_stage_widgets(self, components: ConverterComponents, data: ConverterData) -> None:
         data.audio_file = self.get_audio_file()
-        transcription_tier = components.transcription_menu.currentText()
-        translation_tier = components.translation_menu.currentText()
+        transcription_tier = components.tier_selector.get_transcription_tier()
+        translation_tier = components.tier_selector.get_translation_tier()
         self.extract_elan_data(transcription_tier, translation_tier)
         self.layout.addWidget(HorizontalLineWidget(), 4, 0, 1, 8)
         # Sixth Row (Filter & Selector)
@@ -393,10 +449,8 @@ class ConverterWidget(QWidget):
         file_name = open_file_dialogue()
         if file_name:
             self.data.elan_file = file_name
-            self.components.elan_file_field.setText(file_name)
+            self.components.elan_file_field.set_field_text(file_name)
             self.load_second_stage_widgets(self.components, self.data)
-            self.components.transcription_menu.setEnabled(True)
-            self.components.translation_menu.setEnabled(True)
 
     def on_click_import(self) -> None:
         warning_message = QMessageBox()
