@@ -424,12 +424,12 @@ class ExportButton(QWidget):
 
     def init_ui(self):
         export_button = QPushButton('Export')
-        export_button.clicked.connect()
+        export_button.clicked.connect(self.on_click_export)
         self.layout.addWidget(export_button, 0, 0, 1, 8)
         self.setLayout(self.layout)
 
     def on_click_export(self):
-        if self.parent.data.table.get_selected_count == 0:
+        if self.parent.components.table.get_selected_count == 0:
             warning_message = WarningMessage()
             warning_message.warning(warning_message, 'Warning',
                                     f'You have not selected any items to export.\n'
@@ -577,10 +577,10 @@ class ConverterWidget(QWidget):
 
     def get_export_paths(self) -> Box:
         return Box({
-            'transcription': make_file_if_not_exists(os.path.join(self.data.export_location, 'words')),
-            'translation': make_file_if_not_exists(os.path.join(self.data.export_location, 'translations')),
-            'sound': make_file_if_not_exists(os.path.join(self.data.export_location, 'sounds')),
-            'image': make_file_if_not_exists(os.path.join(self.data.export_location, 'images')),
+            'transcription': make_file_if_not_extant(os.path.join(self.data.export_location, 'words')),
+            'translation': make_file_if_not_extant(os.path.join(self.data.export_location, 'translations')),
+            'sound': make_file_if_not_extant(os.path.join(self.data.export_location, 'sounds')),
+            'image': make_file_if_not_extant(os.path.join(self.data.export_location, 'images')),
         })
 
     def create_output_files(self,
@@ -786,7 +786,7 @@ class TableIndexCell(QTableWidgetItem):
         self.setData(Qt.EditRole, value + 1)
 
 
-class ExportProgressBarWidget(QProgressBar):
+class ProgressBarWidget(QProgressBar):
     """
     Custom progress bar for showing the progress of exporting transcription/translation/image/sound files.
     """
@@ -908,7 +908,7 @@ class MainWindow(QMainWindow):
         self.resize(0, 0)
 
 
-def make_file_if_not_exists(path: str) -> str:
+def make_file_if_not_extant(path: str) -> str:
     """
     Creates a folder at the given location if one does not already exists and returns the now extant folder.
     :param path: a string representing a path to a folder that may or may not already exist.
