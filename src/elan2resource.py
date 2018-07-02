@@ -429,8 +429,8 @@ class ExportButton(QWidget):
         self.setLayout(self.layout)
 
     def on_click_export(self):
-        if self.parent.components.table.get_selected_count == 0:
-            warning_message = WarningMessage()
+        if self.parent.components.table.get_selected_count() == 0:
+            warning_message = WarningMessage(self.parent)
             warning_message.warning(warning_message, 'Warning',
                                     f'You have not selected any items to export.\n'
                                     f'Please select at least one item to continue.',
@@ -843,7 +843,7 @@ class AboutWindow(QDialog):
 
 class WarningMessage(QMessageBox):
     def __init__(self,
-                 parent: MainWindow) -> None:
+                 parent: ConverterWidget) -> None:
         super().__init__(parent=parent)
         self.init_ui()
 
