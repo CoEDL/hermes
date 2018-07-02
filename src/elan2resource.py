@@ -256,19 +256,16 @@ class ELANFileField(QWidget):
         self.field.setText('Load an ELAN (*.eaf) file.')
         self.layout.addWidget(self.field, 0, 0, 1, 7)
         load_button = QPushButton('Load')
-        load_button.clicked.connect(self.parent.on_click_load)
+        load_button.clicked.connect(self.on_click_load)
         self.layout.addWidget(load_button, 0, 7, 1, 1)
         self.setLayout(self.layout)
-
-    def set_field_text(self, file_name: str) -> None:
-        self.field.setText(file_name)
 
     def on_click_load(self) -> None:
         file_name = open_file_dialogue()
         if file_name:
-            self.data.elan_file = file_name
-            self.components.elan_file_field.set_field_text(file_name)
-            self.load_second_stage_widgets(self.parent.components, self.parent.data)
+            self.parent.data.elan_file = file_name
+            self.field.setText(file_name)
+            self.parent.load_second_stage_widgets(self.parent.components, self.parent.data)
 
 
 class TierSelector(QWidget):
@@ -311,7 +308,7 @@ class TierSelector(QWidget):
                                           'Warning: Any unsaved work will be overwritten. Proceed?',
                                           QMessageBox.Yes | QMessageBox.No | QMessageBox.Warning)
         if choice == QMessageBox.Yes:
-            self.load_third_stage_widgets(self.parent.components, self.parent.data)
+            self.parent.load_third_stage_widgets(self.parent.components, self.parent.data)
 
 
 class FilterTable(QWidget):
@@ -390,14 +387,14 @@ class FilterTable(QWidget):
         return True
 
 
-class ExportField(QWidget):
+class ExportLocationField(QWidget):
     def __init__(self, parent: ConverterWidget) -> None:
         super().__init__()
         self.layout = QGridLayout()
         self.parent = parent
         self.data = parent.data
-        self.init_ui()
         self.export_location_field = None
+        self.init_ui()
 
     def init_ui(self) -> None:
         self.export_location_field = QLineEdit('Choose an export location')
@@ -413,6 +410,22 @@ class ExportField(QWidget):
         if self.data.export_location:
             self.export_location_field.setText(self.data.export_location)
             self.parent.load_fourth_stage_widgets()
+
+
+class ExportButton(QWidget):
+    def __init__(self,
+                 parent: ConverterWidget):
+        super().__init__()
+        self.parent = parent
+        self.layout = QGridLayout()
+        self.init_ui()
+
+    def init_ui(self):
+        export_button = QPushButton('Export')
+        export_button.clicked.connect(self.parent.export_resources)
+        self.layout.addWidget(export_button, 0, 0, 1, 8)
+        self.setLayout(self.layout)
+
 
 
 class ConverterWidget(QWidget):
@@ -464,14 +477,13 @@ class ConverterWidget(QWidget):
         self.layout.addWidget(filter_table, 2, 0, 1, 8)
         self.components.table = filter_table.table
         # Eighth Row (Export Location)
-        components.export_location_field = ExportField(self)
+        components.export_location_field = ExportLocationField(self)
         self.layout.addWidget(components.export_location_field, 3, 0, 1, 8)
 
     def load_fourth_stage_widgets(self) -> None:
         # Ninth Row (Export Button)
-        export_button = QPushButton('Export')
-        export_button.clicked.connect(self.export_resources)
-        self.layout.addWidget(export_button, 8, 0, 1, 8)
+        export_button = ExportButton(self)
+        self.layout.addWidget(export_button, 4, 0, 1, 8)
 
     def extract_translations(self, translation_tier) -> List[Translation]:
         elan_translations = self.data.eaf_object.get_annotation_data_for_tier(translation_tier)
@@ -841,6 +853,7 @@ class MainWindow(QMainWindow):
         file.addAction('Preferences')
 
         reset = QAction('Reset', self)
+        reset.triggered.connect(self.on_click_reset)
         reset.setShortcut('Ctrl+R')
         file.addAction(reset)
 
@@ -858,6 +871,10 @@ class MainWindow(QMainWindow):
     def on_click_about(self) -> None:
         about = AboutWindow(self)
         about.show()
+
+    def on_click_reset(self):
+        self.init_ui()
+        self.resize(0, 0)
 
 
 def make_file_if_not_exists(path: str) -> str:
