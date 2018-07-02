@@ -9,7 +9,7 @@ from functools import partial
 from PyQt5.QtWidgets import QApplication, QFileDialog, QWidget, QLabel, QPushButton, \
     QGridLayout, QHBoxLayout, QLineEdit, QComboBox, QTableWidget, QHeaderView, \
     QTableWidgetItem, QCheckBox, QMainWindow, QMessageBox, QProgressBar, QFrame, \
-    QAction, QStatusBar, QDialog
+    QAction, QStatusBar, QDialog, QDesktopWidget
 from PyQt5.QtGui import QIcon, QDesktopServices, QMouseEvent, QPixmap
 from PyQt5.QtCore import Qt, QSize, QUrl, pyqtSignal
 from moviepy.editor import AudioFileClip
@@ -19,7 +19,7 @@ from typing import NewType, Union, List
 from box import Box
 
 MainWindow = NewType('MainWindow', QMainWindow)
-ExportProgressBarWidget = NewType('ExportProgressBarWidget', QProgressBar)
+ProgressBarWidget = NewType('ProgressBarWidget', QProgressBar)
 ConverterWidget = NewType('ConverterWidget', QWidget)
 
 TABLE_COLUMNS = {
@@ -222,7 +222,7 @@ class ConverterData(object):
 
 
 class ConverterComponents(object):
-    def __init__(self, progress_bar: ExportProgressBarWidget, status_bar: QStatusBar):
+    def __init__(self, progress_bar: ProgressBarWidget, status_bar: QStatusBar):
         self.elan_file_field = None
         self.transcription_menu = None
         self.translation_menu = None
@@ -303,12 +303,14 @@ class TierSelector(QWidget):
         return self.translation_menu.currentText()
 
     def on_click_import(self) -> None:
-        warning_message = QMessageBox()
-        choice = warning_message.question(warning_message, 'Warning',
-                                          'Warning: Any unsaved work will be overwritten. Proceed?',
-                                          QMessageBox.Yes | QMessageBox.No | QMessageBox.Warning)
-        if choice == QMessageBox.Yes:
-            self.parent.load_third_stage_widgets(self.parent.components, self.parent.data)
+        if self.parent.components.table:
+            warning_message = WarningMessage(self.parent)
+            choice = warning_message.warning(warning_message, 'Warning',
+                                             'Warning: Any unsaved work will be overwritten. Proceed?',
+                                             QMessageBox.Yes | QMessageBox.No)
+            if choice == QMessageBox.No:
+                return
+        self.parent.load_third_stage_widgets(self.parent.components, self.parent.data)
 
 
 class FilterTable(QWidget):
@@ -422,10 +424,19 @@ class ExportButton(QWidget):
 
     def init_ui(self):
         export_button = QPushButton('Export')
-        export_button.clicked.connect(self.parent.export_resources)
+        export_button.clicked.connect()
         self.layout.addWidget(export_button, 0, 0, 1, 8)
         self.setLayout(self.layout)
 
+    def on_click_export(self):
+        if self.parent.data.table.get_selected_count == 0:
+            warning_message = WarningMessage()
+            warning_message.warning(warning_message, 'Warning',
+                                    f'You have not selected any items to export.\n'
+                                    f'Please select at least one item to continue.',
+                                    QMessageBox.Ok)
+        else:
+            self.parent.export_resources()
 
 
 class ConverterWidget(QWidget):
@@ -460,6 +471,7 @@ class ConverterWidget(QWidget):
     def load_second_stage_widgets(self,
                                   components: ConverterComponents,
                                   data: ConverterData) -> None:
+        components.status_bar.showMessage('Select transcription and translation tiers, then click import')
         data.eaf_object = pympi.Elan.Eaf(data.elan_file)
         components.tier_selector = TierSelector(self)
         components.tier_selector.populate_tiers(list(data.eaf_object.get_tier_names()))
@@ -479,11 +491,13 @@ class ConverterWidget(QWidget):
         # Eighth Row (Export Location)
         components.export_location_field = ExportLocationField(self)
         self.layout.addWidget(components.export_location_field, 3, 0, 1, 8)
+        components.status_bar.showMessage('Select words to include and choose an export location')
 
     def load_fourth_stage_widgets(self) -> None:
         # Ninth Row (Export Button)
         export_button = ExportButton(self)
         self.layout.addWidget(export_button, 4, 0, 1, 8)
+        self.components.status_bar.showMessage('Press the export button to begin the process')
 
     def extract_translations(self, translation_tier) -> List[Translation]:
         elan_translations = self.data.eaf_object.get_annotation_data_for_tier(translation_tier)
@@ -610,11 +624,11 @@ class ConverterWidget(QWidget):
         elif os.path.isfile(relative_path_media_file):
             audio_data = AudioFileClip(relative_path_media_file)
         else:
-            warning_message = QMessageBox()
-            choice = warning_message.question(warning_message, 'Warning',
-                                              f'Warning: Could not find media file {absolute_path_media_file}. '
-                                              f'Would you like to locate it manually?',
-                                              QMessageBox.Yes | QMessageBox.No | QMessageBox.Warning)
+            warning_message = WarningMessage(self)
+            choice = warning_message.warning(warning_message, 'Warning',
+                                             f'Warning: Could not find media file {absolute_path_media_file}. '
+                                             f'Would you like to locate it manually?',
+                                             QMessageBox.Yes | QMessageBox.No)
             found_path_audio_file = None
             if choice == QMessageBox.Yes:
                 found_path_audio_file = open_audio_dialogue()
@@ -631,7 +645,10 @@ class SelectorCellWidget(QWidget):
     Uses a QCheckbox for selection and deselection.
     """
 
-    def __init__(self, row: int, status_bar: QStatusBar, table: TranslationTableWidget) -> None:
+    def __init__(self,
+                 row: int,
+                 status_bar: QStatusBar,
+                 table: TranslationTableWidget) -> None:
         super().__init__()
         self.status_bar = status_bar
         self.table = table
@@ -808,7 +825,7 @@ class AboutWindow(QDialog):
         logo_image = QPixmap(resource_path('./img/language-256.png')).scaledToHeight(100)
         logo_label.setPixmap(logo_image)
         self.layout.addWidget(logo_label, 0, 1, 1, 1)
-        name_label = QLabel('<b>ELAN Resource Creator</b>')
+        name_label = QLabel('<b>Language Resource Creator</b>')
         name_label.setAlignment(Qt.AlignCenter)
         self.layout.addWidget(name_label, 1, 0, 1, 3)
         version_label = QLabel(f'Version {VERSION}')
@@ -822,6 +839,20 @@ class AboutWindow(QDialog):
         self.layout.addWidget(link_label, 3, 0, 1, 3)
         self.setLayout(self.layout)
         self.show()
+
+
+class WarningMessage(QMessageBox):
+    def __init__(self,
+                 parent: MainWindow) -> None:
+        super().__init__(parent=parent)
+        self.init_ui()
+
+    def init_ui(self) -> None:
+        self.setIcon(QMessageBox.Warning)
+        screen = QDesktopWidget().screenGeometry()
+        this = self.sizeHint()
+        self.move(screen.width() / 2 - this.width() / 2,
+                  screen.height() / 2 - this.height() / 2)
 
 
 class MainWindow(QMainWindow):
@@ -840,7 +871,7 @@ class MainWindow(QMainWindow):
 
     def init_ui(self) -> None:
         self.setWindowTitle(self.title)
-        self.progress_bar = ExportProgressBarWidget(self.app)
+        self.progress_bar = ProgressBarWidget(self.app)
         self.converter = ConverterWidget(parent=self)
         self.setCentralWidget(self.converter)
         self.statusBar().showMessage('Load an ELAN file to get started')
