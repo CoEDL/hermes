@@ -243,6 +243,28 @@ class ModeSelect(QFrame):
         self.layout.addWidget(elan_button, 0, 0)
 
 
+class ELANButton(QPushButton):
+    def __init__(self):
+        super().__init__()
+        pass
+
+
+class ScratchButton(QPushButton):
+    def __init__(self):
+        super().__init__()
+        pass
+
+
+class ModeSelection(QWidget):
+    def __init__(self):
+        super.__init__()
+        self.layout = QGridLayout()
+        self.init_ui()
+
+    def init_ui(self):
+        pass
+
+
 class ELANFileField(QWidget):
     def __init__(self, parent: ConverterWidget) -> None:
         super().__init__()
