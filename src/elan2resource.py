@@ -9,13 +9,13 @@ from functools import partial
 from PyQt5.QtWidgets import QApplication, QFileDialog, QWidget, QLabel, QPushButton, \
     QGridLayout, QHBoxLayout, QLineEdit, QComboBox, QTableWidget, QHeaderView, \
     QTableWidgetItem, QCheckBox, QMainWindow, QMessageBox, QProgressBar, QFrame, \
-    QAction, QStatusBar, QDialog, QDesktopWidget, QToolButton
+    QAction, QStatusBar, QDialog, QDesktopWidget, QLayout
 from PyQt5.QtGui import QIcon, QDesktopServices, QMouseEvent, QPixmap
 from PyQt5.QtCore import Qt, QSize, QUrl, pyqtSignal
 from moviepy.editor import AudioFileClip
 from os.path import expanduser
 from urllib.request import url2pathname
-from typing import NewType, Union, List
+from typing import NewType, Union, List, Callable
 from box import Box
 
 MainWindow = NewType('MainWindow', QMainWindow)
@@ -235,16 +235,18 @@ class ConverterComponents(object):
 
 
 class ModeButton(QPushButton):
-    def __init__(self, icon_path: str, text: str) -> None:
+    def __init__(self, icon_path: str, text: str, on_click: Callable) -> None:
         super().__init__()
         self.icon_path = icon_path
         self.text = text
+        self.on_click = on_click
         self.init_ui()
 
     def init_ui(self) -> None:
         self.setText(self.text)
         pixmap = QPixmap(resource_path(self.icon_path))
         icon = QIcon(pixmap)
+        self.clicked.connect(self.on_click)
         self.setIcon(icon)
         self.setIconSize(QSize(100, 100))
         self.setAttribute(Qt.WA_TranslucentBackground)
@@ -258,18 +260,28 @@ class ModeButton(QPushButton):
 
 
 class ModeSelection(QWidget):
-    def __init__(self, parent: ConverterWidget):
+    def __init__(self, parent: ConverterWidget) -> None:
         super().__init__()
         self.parent = parent
         self.layout = QGridLayout()
         self.init_ui()
 
-    def init_ui(self):
-        elan_button = ModeButton('./img/elan.png', 'Import ELAN File')
+    def init_ui(self) -> None:
+        elan_button = ModeButton('./img/elan.png',
+                                 'Import ELAN File',
+                                 on_click=self.on_click_elan)
         self.layout.addWidget(elan_button, 0, 0, 1, 1)
-        scratch_button = ModeButton('./img/scratch.png', 'Start From Scratch')
+        scratch_button = ModeButton('./img/scratch.png',
+                                    'Start From Scratch',
+                                    on_click=self.on_click_scratch)
         self.layout.addWidget(scratch_button, 0, 1, 1, 1)
         self.setLayout(self.layout)
+
+    def on_click_elan(self) -> None:
+        self.parent.load_initial_widgets()
+
+    def on_click_scratch(self) -> None:
+        self.parent.load_initial_widgets()
 
 
 class ELANFileField(QWidget):
@@ -473,7 +485,7 @@ class ConverterWidget(QWidget):
     The core widget of the application which contains all of the widgets required to convert ELAN files.
     """
 
-    def __init__(self, parent: QMainWindow) -> None:
+    def __init__(self, parent: MainWindow) -> None:
         super().__init__()
         self.parent = parent
         self.components = ConverterComponents(
@@ -482,24 +494,26 @@ class ConverterWidget(QWidget):
         )
         self.data = ConverterData()
         self.layout = QGridLayout()
-
         self.init_ui()
 
     def init_ui(self) -> None:
-        self.setMinimumWidth(600)
+        self.setMinimumWidth(650)
         self.layout.setVerticalSpacing(0)
         self.load_mode_choice()
         self.setLayout(self.layout)
-        self.show()
 
     def load_mode_choice(self):
+        self.components.status_bar.showMessage('Choose a mode to begin')
         self.components.mode_select = ModeSelection(self)
         self.layout.addWidget(self.components.mode_select, 0, 0, 1, 8)
 
-    def load_initial_widgets(self, components: ConverterComponents) -> None:
+    def load_initial_widgets(self) -> None:
         # First Row (ELAN File Field)
-        components.elan_file_field = ELANFileField(self)
-        self.layout.addWidget(components.elan_file_field, 1, 0, 1, 8)
+        self.components.status_bar.showMessage('Load an ELAN file to get started')
+        self.components.elan_file_field = ELANFileField(self)
+        self.components.mode_select.hide()
+        self.layout.removeWidget(self.components.mode_select)
+        self.layout.addWidget(self.components.elan_file_field, 0, 0, 1, 8)
 
     def load_second_stage_widgets(self,
                                   components: ConverterComponents,
@@ -508,7 +522,7 @@ class ConverterWidget(QWidget):
         data.eaf_object = pympi.Elan.Eaf(data.elan_file)
         components.tier_selector = TierSelector(self)
         components.tier_selector.populate_tiers(list(data.eaf_object.get_tier_names()))
-        self.layout.addWidget(components.tier_selector, 2, 0, 1, 8)
+        self.layout.addWidget(components.tier_selector, 1, 0, 1, 8)
 
     def load_third_stage_widgets(self,
                                  components: ConverterComponents,
@@ -519,17 +533,17 @@ class ConverterWidget(QWidget):
         self.extract_elan_data(transcription_tier, translation_tier)
         # Sixth Row (Filter & Selector)
         filter_table = FilterTable(self.data, self.components.status_bar)
-        self.layout.addWidget(filter_table, 3, 0, 1, 8)
+        self.layout.addWidget(filter_table, 2, 0, 1, 8)
         self.components.table = filter_table.table
         # Eighth Row (Export Location)
         components.export_location_field = ExportLocationField(self)
-        self.layout.addWidget(components.export_location_field, 4, 0, 1, 8)
+        self.layout.addWidget(components.export_location_field, 3, 0, 1, 8)
         components.status_bar.showMessage('Select words to include and choose an export location')
 
     def load_fourth_stage_widgets(self) -> None:
         # Ninth Row (Export Button)
         export_button = ExportButton(self)
-        self.layout.addWidget(export_button, 5, 0, 1, 8)
+        self.layout.addWidget(export_button, 4, 0, 1, 8)
         self.components.status_bar.showMessage('Press the export button to begin the process')
 
     def extract_translations(self, translation_tier) -> List[Translation]:
@@ -903,11 +917,11 @@ class MainWindow(QMainWindow):
         self.init_ui()
 
     def init_ui(self) -> None:
+        self.layout().setSizeConstraint(QLayout.SetFixedSize)
         self.setWindowTitle(self.title)
         self.progress_bar = ProgressBarWidget(self.app)
         self.converter = ConverterWidget(parent=self)
         self.setCentralWidget(self.converter)
-        self.statusBar().showMessage('Load an ELAN file to get started')
         self.statusBar().addPermanentWidget(self.progress_bar)
         self.progress_bar.hide()
         self.init_menu()
@@ -936,8 +950,11 @@ class MainWindow(QMainWindow):
         about = AboutWindow(self)
         about.show()
 
-    def on_click_reset(self):
+    def on_click_reset(self) -> None:
         self.init_ui()
+        self.shrink()
+
+    def shrink(self) -> None:
         self.resize(0, 0)
 
 
