@@ -17,6 +17,7 @@ from os.path import expanduser
 from urllib.request import url2pathname
 from typing import NewType, Union, List, Callable
 from box import Box
+from enum import Enum, unique
 
 MainWindow = NewType('MainWindow', QMainWindow)
 ProgressBarWidget = NewType('ProgressBarWidget', QProgressBar)
@@ -85,6 +86,12 @@ def open_audio_dialogue() -> str:
     return file_name
 
 
+@unique
+class OperationMode(Enum):
+    ELAN = 0
+    SCRATCH = 1
+
+
 class Sample(object):
     def __init__(self,
                  index: int,
@@ -115,6 +122,9 @@ class Sample(object):
         self.get_sample_file_path()
         return self.sample_object
 
+    def __str__(self):
+        return f'[{self.start}-{self.end}]'
+
 
 class Translation(object):
     def __init__(self,
@@ -144,14 +154,20 @@ class Transcription(object):
         self.transcription = transcription
         self.translation = translation
         self.image = image
-        self.sample = Sample(
-            index=index,
-            start=start,
-            end=end,
-            audio_file=media
-        )
+
+        if not (media and start and end):
+            self.sample = None
+        else:
+            self.sample = Sample(
+                index=index,
+                start=start,
+                end=end,
+                audio_file=media
+            )
 
     def time_matches_translation(self, translation: Translation) -> bool:
+        if not self.sample:
+            return False
         if abs(self.sample.start - translation.start) < MATCH_ERROR_MARGIN and \
                 abs(self.sample.end - translation.end) < MATCH_ERROR_MARGIN:
             return True
@@ -159,7 +175,7 @@ class Transcription(object):
             return False
 
     def __str__(self) -> str:
-        return f'<{self.transcription} [{self.sample.start}-{self.sample.end}]>'
+        return f'<{self.transcription} {self.sample}>'
 
 
 class TranslationTableWidget(QTableWidget):
@@ -219,6 +235,7 @@ class ConverterData(object):
         self.transcriptions = []
         self.translations = []
         self.temp_file = None
+        self.mode = None
 
 
 class ConverterComponents(object):
@@ -278,10 +295,12 @@ class ModeSelection(QWidget):
         self.setLayout(self.layout)
 
     def on_click_elan(self) -> None:
+        self.parent.data.mode = OperationMode.ELAN
         self.parent.load_initial_widgets()
 
     def on_click_scratch(self) -> None:
-        self.parent.load_initial_widgets()
+        self.parent.data.mode = OperationMode.SCRATCH
+        self.parent.load_third_stage_widgets(self.parent.components, self.parent.data)
 
 
 class ELANFileField(QWidget):
@@ -368,7 +387,8 @@ class FilterTable(QWidget):
         self.init_ui()
 
     def init_ui(self) -> None:
-        self.layout.addWidget(HorizontalLineWidget(), 0, 0, 1, 8)
+        if self.data.mode == OperationMode.ELAN:
+            self.layout.addWidget(HorizontalLineWidget(), 0, 0, 1, 8)
         filter_label = QLabel('Filter Results:')
         self.layout.addWidget(filter_label, 1, 0, 1, 1)
         self.setLayout(self.layout)
@@ -391,7 +411,7 @@ class FilterTable(QWidget):
                            QTableWidgetItem(self.data.transcriptions[row].transcription))
         self.table.setItem(row, TABLE_COLUMNS['Translation'],
                            QTableWidgetItem(self.data.transcriptions[row].translation))
-        PreviewButtonWidget(self, row, self.table)
+        PreviewButtonWidget(self, row, self.table, transcription=self.data.transcriptions[row])
         ImageButtonWidget(self, row, self.table)
         SelectorCellWidget(row, self.status_bar, self.table)
 
@@ -409,12 +429,6 @@ class FilterTable(QWidget):
             for row in range(self.table.rowCount()):
                 if not self.table.isRowHidden(row):
                     self.table.cellWidget(row, TABLE_COLUMNS['Include']).selector.setChecked(True)
-
-    def play_sample(self, row: int) -> None:
-        sample_file_path = self.data.transcriptions[row].sample.get_sample_file_path()
-        mixer.init()
-        sound = mixer.Sound(sample_file_path)
-        sound.play()
 
     def on_click_image(self, row: int) -> None:
         image_path = open_image_dialogue()
@@ -527,10 +541,15 @@ class ConverterWidget(QWidget):
     def load_third_stage_widgets(self,
                                  components: ConverterComponents,
                                  data: ConverterData) -> None:
-        data.audio_file = self.get_audio_file()
-        transcription_tier = components.tier_selector.get_transcription_tier()
-        translation_tier = components.tier_selector.get_translation_tier()
-        self.extract_elan_data(transcription_tier, translation_tier)
+        if self.data.mode == OperationMode.ELAN:
+            data.audio_file = self.get_audio_file()
+            transcription_tier = components.tier_selector.get_transcription_tier()
+            translation_tier = components.tier_selector.get_translation_tier()
+            self.extract_elan_data(transcription_tier, translation_tier)
+        else:
+            self.components.mode_select.hide()
+            self.data.transcriptions.append(Transcription(index=0,
+                                                          transcription=""))
         # Sixth Row (Filter & Selector)
         filter_table = FilterTable(self.data, self.components.status_bar)
         self.layout.addWidget(filter_table, 2, 0, 1, 8)
@@ -603,25 +622,6 @@ class ConverterWidget(QWidget):
                 return translation.translation
         return None
 
-    def populate_table_row(self,
-                           row: int,
-                           table: TranslationTableWidget) -> None:
-        table.setItem(row, TABLE_COLUMNS['Index'], TableIndexCell(row))
-        table.setItem(row, TABLE_COLUMNS['Transcription'],
-                      QTableWidgetItem(self.data.transcriptions[row].transcription))
-        table.setItem(row, TABLE_COLUMNS['Translation'],
-                      QTableWidgetItem(self.data.transcriptions[row].translation))
-        PreviewButtonWidget(self, row, table)
-        ImageButtonWidget(self, row, table)
-        SelectorCellWidget(row, self.components.status_bar, table)
-
-    def populate_table(self,
-                       table: TranslationTableWidget) -> None:
-        for row in range(len(self.data.transcriptions)):
-            self.populate_table_row(row, table)
-        table.sort_by_index()
-        self.parent.statusBar().showMessage(f'Imported {len(self.data.transcriptions)} transcriptions')
-
     def get_export_paths(self) -> Box:
         return Box({
             'transcription': make_file_if_not_extant(os.path.join(self.data.export_location, 'words')),
@@ -633,8 +633,9 @@ class ConverterWidget(QWidget):
     def create_output_files(self,
                             row: int) -> None:
         export_paths = self.get_export_paths()
-        sound_file = self.data.transcriptions[row].sample.get_sample_file_object()
-        sound_file.write_audiofile(f'{export_paths.sound}/word{str(row)}.wav')
+        if self.data.transcriptions[row].sample:
+            sound_file = self.data.transcriptions[row].sample.get_sample_file_object()
+            sound_file.write_audiofile(f'{export_paths.sound}/word{str(row)}.wav')
         image_path = self.data.transcriptions[row].image
         if image_path:
             image_name, image_extension = os.path.splitext(image_path)
@@ -720,18 +721,32 @@ class PreviewButtonWidget(QPushButton):
     """
     Custom button for previewing an audio clip.
     """
-
     def __init__(self,
                  parent: FilterTable,
                  row: int,
-                 table: TranslationTableWidget) -> None:
+                 table: TranslationTableWidget,
+                 transcription: Transcription = None) -> None:
         super().__init__()
         self.parent = parent
-        image_icon = QIcon(resource_path('./img/play.png'))
+        self.transcription = transcription
+        if self.transcription and self.transcription.sample:
+            image_icon = QIcon(resource_path('./img/play.png'))
+        else:
+            image_icon = QIcon(resource_path('./img/no_sample.png'))
         self.setIcon(image_icon)
-        self.clicked.connect(partial(self.parent.play_sample, row))
+        self.clicked.connect(partial(self.play_sample, self.transcription))
         self.setToolTip('Left click to hear a preview of the audio for this word')
         table.setCellWidget(row, TABLE_COLUMNS['Preview'], self)
+
+    def play_sample(self, transcription: Transcription) -> None:
+        if transcription.sample:
+            sample_file_path = transcription.sample.get_sample_file_path()
+            mixer.init()
+            sound = mixer.Sound(sample_file_path)
+            sound.play()
+        else:
+            self.parent.status_bar.showMessage('There is no audio for this transcription', 5000)
+
 
 
 class ImageButtonWidget(QPushButton):
