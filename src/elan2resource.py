@@ -113,9 +113,9 @@ class Sample(object):
                                                   t_end=self.end)
             self.sample_object = sample_file
             temporary_folder = tempfile.mkdtemp()
-            sample_file_path = os.path.join(temporary_folder, f'{str(self.index)}.wav')
-            sample_file.write_audiofile(sample_file_path)
-            return sample_file_path
+            self.sample_path = os.path.join(temporary_folder, f'{str(self.index)}.wav')
+            sample_file.write_audiofile(self.sample_path)
+            return self.sample_path
         return self.sample_path
 
     def get_sample_file_object(self) -> Union[None, AudioFileClip]:
@@ -876,8 +876,40 @@ class HorizontalLineWidget(QFrame):
         self.setFrameShadow(QFrame.Sunken)
 
 
+class SettingsWindow(QDialog):
+    def __init__(self,
+                 parent: MainWindow = None,
+                 converter: ConverterWidget = None
+                 ) -> None:
+        super().__init__(parent)
+        self.converter = converter
+        self.layout = QGridLayout()
+        self.init_ui()
+
+    def init_ui(self) -> None:
+        self.setWindowTitle('Settings')
+        self.setMinimumWidth(300)
+        export_mode_label = QLabel('Export Mode:')
+        self.layout.addWidget(export_mode_label, 0, 0, 1, 1)
+        export_mode_selector = QComboBox()
+        export_mode_selector.addItems(['Traditional', 'Language Manifest File'])
+        self.layout.addWidget(export_mode_selector, 0, 1, 1, 7)
+        save_button = QPushButton('Save')
+        save_button.clicked.connect(self.on_click_save)
+        self.layout.addWidget(save_button, 1, 7, 1, 1)
+        cancel_button = QPushButton('Cancel')
+        self.layout.addWidget(cancel_button, 1, 6, 1, 1)
+        self.setLayout(self.layout)
+
+    def on_click_save(self) -> None:
+        pass
+
+    def load_settings(self) -> None:
+        pass
+
+
 class AboutWindow(QDialog):
-    def __init__(self, parent: QMainWindow = None) -> None:
+    def __init__(self, parent: MainWindow = None) -> None:
         super().__init__(parent)
         self.layout = QGridLayout()
         self.init_ui()
@@ -943,7 +975,11 @@ class MainWindow(QMainWindow):
 
     def init_menu(self) -> None:
         file = self.bar.addMenu('File')
-        file.addAction('Preferences')
+
+        settings = QAction('Settings', self)
+        settings.triggered.connect(self.on_click_settings)
+        settings.setShortcut('Ctrl+B')
+        file.addAction(settings)
 
         reset = QAction('Reset', self)
         reset.triggered.connect(self.on_click_reset)
@@ -964,6 +1000,10 @@ class MainWindow(QMainWindow):
     def on_click_about(self) -> None:
         about = AboutWindow(self)
         about.show()
+
+    def on_click_settings(self) -> None:
+        settings = SettingsWindow(self, self.converter)
+        settings.show()
 
     def on_click_reset(self) -> None:
         self.init_ui()
