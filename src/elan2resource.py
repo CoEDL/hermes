@@ -501,16 +501,18 @@ class ExportButton(QWidget):
                 warning_message = WarningMessage(self.parent)
                 decision = warning_message.warning(warning_message, 'Warning',
                                                    f'There are already files in the selected output folder.\n'
-                                                   f'Existing files will be overwritten.'
+                                                   f'Existing files will be overwritten.\n'
                                                    f'Are you sure you want to continue.',
                                                    QMessageBox.Yes | QMessageBox.No)
                 if decision == QMessageBox.Yes:
                     self.parent.export_resources()
+            else:
+                self.parent.export_resources()
 
     def export_directory_empty(self) -> bool:
         if os.listdir(self.parent.data.export_location):
-            return True
-        return False
+            return False
+        return True
 
 
 class ConverterWidget(QWidget):
@@ -988,6 +990,7 @@ class MainWindow(QMainWindow):
         self.title = 'Language Resource Creator'
         self.converter = None
         self.progress_bar = None
+        self.table_menu = None
         self.bar = self.menuBar()
         self.init_ui()
         self.init_menu()
@@ -1004,32 +1007,32 @@ class MainWindow(QMainWindow):
     def init_menu(self) -> None:
         file = self.bar.addMenu('File')
 
-        settings = QAction('Settings', self)
-        settings.triggered.connect(self.on_click_settings)
-        settings.setShortcut('Ctrl+B')
-        file.addAction(settings)
+        settings_menu = QAction('Settings', self)
+        settings_menu.triggered.connect(self.on_click_settings)
+        settings_menu.setShortcut('Ctrl+B')
+        file.addAction(settings_menu)
 
-        reset = QAction('Reset', self)
-        reset.triggered.connect(self.on_click_reset)
-        reset.setShortcut('Ctrl+R')
-        file.addAction(reset)
+        reset_menu_item = QAction('Reset', self)
+        reset_menu_item.triggered.connect(self.on_click_reset)
+        reset_menu_item.setShortcut('Ctrl+R')
+        file.addAction(reset_menu_item)
 
-        quit = QAction('Quit', self)
-        quit.setShortcut('Ctrl+Q')
-        quit.triggered.connect(self.close)
-        file.addAction(quit)
+        quit_menu_item = QAction('Quit', self)
+        quit_menu_item.setShortcut('Ctrl+Q')
+        quit_menu_item.triggered.connect(self.close)
+        file.addAction(quit_menu_item)
 
-        help = self.bar.addMenu('Help')
-        about = QAction('About', self)
-        about.setShortcut('Ctrl+H')
-        about.triggered.connect(self.on_click_about)
-        help.addAction(about)
+        help_menu = self.bar.addMenu('Help')
+        about_menu_item = QAction('About', self)
+        about_menu_item.setShortcut('Ctrl+H')
+        about_menu_item.triggered.connect(self.on_click_about)
+        help_menu.addAction(about_menu_item)
 
-        table = self.bar.addMenu('Table')
-        add_row = QAction('Add Row', self)
-        add_row.setShortcut('Ctrl+N')
-        add_row.triggered.connect(self.on_click_add_row)
-        table.addAction(add_row)
+        self.table_menu = self.bar.addMenu('Table')
+        add_row_menu_item = QAction('Add Row', self)
+        add_row_menu_item.setShortcut('Ctrl+N')
+        add_row_menu_item.triggered.connect(self.on_click_add_row)
+        self.table_menu.addAction(add_row_menu_item)
 
     def on_click_about(self) -> None:
         about = AboutWindow(self)

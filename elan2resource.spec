@@ -1,9 +1,17 @@
 # -*- mode: python -*-
 
+from platform import system
+
+
+moviepy_path = './venv/lib/python3.6/site-packages/moviepy'
+
+if system() == 'Windows':
+    moviepy_path = './venv/Lib/site-packages/moviepy'
+
 block_cipher = None
 
 added_files = [
-    ( './venv/lib/python3.6/site-packages/moviepy', 'moviepy' ),
+    ( moviepy_path, 'moviepy' ),
     ( 'src/img/*', 'img' )
 ]
 
@@ -27,7 +35,7 @@ exe = EXE(pyz,
           a.zipfiles,
           a.datas,
           [],
-          name='elan2resource',
+          name='Language Resource Creator',
           debug=False,
           strip=False,
           upx=True,
