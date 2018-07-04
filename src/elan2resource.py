@@ -221,7 +221,7 @@ class TranslationTableWidget(QTableWidget):
             count += 1 if self.row_is_checked(row) else 0
         return count
 
-    def row_is_checked(self, row):
+    def row_is_checked(self, row) -> bool:
         return self.cellWidget(row, TABLE_COLUMNS['Include']).selector.isChecked()
 
 
@@ -244,6 +244,7 @@ class ConverterComponents(object):
         self.transcription_menu = None
         self.translation_menu = None
         self.filter_field = None
+        self.filter_table = None
         self.table = None
         self.progress_bar = progress_bar
         self.status_bar = status_bar
@@ -396,6 +397,10 @@ class FilterTable(QWidget):
         self.layout.addWidget(self.filter_field, 1, 1, 1, 2)
         filter_clear_button = FilterClearButtonWidget('Clear', self.filter_field)
         self.layout.addWidget(filter_clear_button, 1, 3, 1, 1)
+        add_row_button = QPushButton('Add Row')
+        add_row_button.setToolTip('Left click to add a new blank row to the table')
+        add_row_button.clicked.connect(self.add_blank_row)
+        self.layout.addWidget(add_row_button, 1, 6, 1, 1)
         select_all_button = QPushButton('Select All')
         select_all_button.setToolTip('Select/Deselect all currently shown transcriptions\n'
                                      'Note: has no effect on filtered (hidden) results')
@@ -430,18 +435,19 @@ class FilterTable(QWidget):
                 if not self.table.isRowHidden(row):
                     self.table.cellWidget(row, TABLE_COLUMNS['Include']).selector.setChecked(True)
 
-    def on_click_image(self, row: int) -> None:
-        image_path = open_image_dialogue()
-        if image_path:
-            self.data.transcriptions[row].image = image_path
-            self.table.cellWidget(row, TABLE_COLUMNS['Image']).swap_icon_yes()
-
     def all_selected(self) -> bool:
         for row in range(self.table.rowCount()):
             if not self.table.cellWidget(row, TABLE_COLUMNS['Include']).selector.isChecked() \
                     and not self.table.isRowHidden(row):
                 return False
         return True
+
+    def add_blank_row(self):
+        new_row_index = self.table.rowCount()
+        self.table.insertRow(new_row_index)
+        self.data.transcriptions.append(Transcription(index=new_row_index,
+                                                      transcription=""))
+        self.populate_table_row(self.table.rowCount() - 1)
 
 
 class ExportLocationField(QWidget):
@@ -471,27 +477,40 @@ class ExportLocationField(QWidget):
 
 class ExportButton(QWidget):
     def __init__(self,
-                 parent: ConverterWidget):
+                 parent: ConverterWidget) -> None:
         super().__init__()
         self.parent = parent
         self.layout = QGridLayout()
         self.init_ui()
 
-    def init_ui(self):
+    def init_ui(self) -> None:
         export_button = QPushButton('Export')
         export_button.clicked.connect(self.on_click_export)
         self.layout.addWidget(export_button, 0, 0, 1, 8)
         self.setLayout(self.layout)
 
-    def on_click_export(self):
+    def on_click_export(self) -> None:
         if self.parent.components.table.get_selected_count() == 0:
             warning_message = WarningMessage(self.parent)
             warning_message.warning(warning_message, 'Warning',
                                     f'You have not selected any items to export.\n'
                                     f'Please select at least one item to continue.',
-                                    QMessageBox.Ok)
+                                    QMessageBox.Yes)
         else:
-            self.parent.export_resources()
+            if not self.export_directory_empty():
+                warning_message = WarningMessage(self.parent)
+                decision = warning_message.warning(warning_message, 'Warning',
+                                                   f'There are already files in the selected output folder.\n'
+                                                   f'Existing files will be overwritten.'
+                                                   f'Are you sure you want to continue.',
+                                                   QMessageBox.Yes | QMessageBox.No)
+                if decision == QMessageBox.Yes:
+                    self.parent.export_resources()
+
+    def export_directory_empty(self) -> bool:
+        if os.listdir(self.parent.data.export_location):
+            return True
+        return False
 
 
 class ConverterWidget(QWidget):
@@ -551,9 +570,9 @@ class ConverterWidget(QWidget):
             self.data.transcriptions.append(Transcription(index=0,
                                                           transcription=""))
         # Sixth Row (Filter & Selector)
-        filter_table = FilterTable(self.data, self.components.status_bar)
-        self.layout.addWidget(filter_table, 2, 0, 1, 8)
-        self.components.table = filter_table.table
+        self.components.filter_table = FilterTable(self.data, self.components.status_bar)
+        self.layout.addWidget(self.components.filter_table, 2, 0, 1, 8)
+        self.components.table = self.components.filter_table.table
         # Eighth Row (Export Location)
         components.export_location_field = ExportLocationField(self)
         self.layout.addWidget(components.export_location_field, 3, 0, 1, 8)
@@ -651,13 +670,15 @@ class ConverterWidget(QWidget):
         export_count = self.components.table.get_selected_count()
         completed_count = 0
         for row in range(self.components.table.rowCount()):
-            if self.components.table.row_is_checked(row):
+            if self.components.table.row_is_checked(row) and \
+                    self.components.table.get_cell_value(row, TABLE_COLUMNS["Transcription"]):
                 self.components.status_bar.showMessage(f'Exporting file {completed_count + 1} of {export_count}')
                 self.create_output_files(row)
                 completed_count += 1
                 self.components.progress_bar.update_progress(completed_count / export_count)
         self.components.progress_bar.hide()
-        self.components.status_bar.showMessage(f'Exported {str(export_count)} words to {self.data.export_location}')
+        self.components.status_bar.showMessage(f'Exported {str(completed_count)} valid words to '
+                                               f'{self.data.export_location}')
         QDesktopServices().openUrl(QUrl().fromLocalFile(self.data.export_location))
 
     def get_audio_file(self) -> AudioFileClip:
@@ -676,7 +697,7 @@ class ConverterWidget(QWidget):
             choice = warning_message.warning(warning_message, 'Warning',
                                              f'Warning: Could not find media file {absolute_path_media_file}. '
                                              f'Would you like to locate it manually?',
-                                             QMessageBox.Yes | QMessageBox.No)
+                                             QMessageBox.No | QMessageBox.Yes)
             found_path_audio_file = None
             if choice == QMessageBox.Yes:
                 found_path_audio_file = open_audio_dialogue()
@@ -714,13 +735,14 @@ class SelectorCellWidget(QWidget):
 
     def update_select_count(self) -> None:
         self.status_bar.showMessage(f'{self.table.get_selected_count()} '
-                                    f'items selected for export')
+                                    f'valid items selected for export')
 
 
 class PreviewButtonWidget(QPushButton):
     """
     Custom button for previewing an audio clip.
     """
+
     def __init__(self,
                  parent: FilterTable,
                  row: int,
@@ -748,7 +770,6 @@ class PreviewButtonWidget(QPushButton):
             self.parent.status_bar.showMessage('There is no audio for this transcription', 5000)
 
 
-
 class ImageButtonWidget(QPushButton):
     """
     Custom button for adding and removing images related to particular translations. For inclusion in rows of the
@@ -766,7 +787,7 @@ class ImageButtonWidget(QPushButton):
         self.image_icon_no = QIcon(resource_path('./img/image-no.png'))
         self.image_icon_yes = QIcon(resource_path('./img/image-yes.png'))
         self.setIcon(self.image_icon_no)
-        self.clicked.connect(partial(self.parent.on_click_image, row))
+        self.clicked.connect(partial(self.on_click_image, row))
         self.setToolTip('Left click to choose an image for this word\n'
                         'Right click to delete the existing image')
         self.rightClick.connect(self.remove_image)
@@ -787,6 +808,12 @@ class ImageButtonWidget(QPushButton):
     def remove_image(self) -> None:
         self.parent.data.transcriptions[self.row].image = None
         self.swap_icon_no()
+
+    def on_click_image(self, row: int) -> None:
+        image_path = open_image_dialogue()
+        if image_path:
+            self.data.transcriptions[row].image = image_path
+            self.parent.table.cellWidget(row, TABLE_COLUMNS['Image']).swap_icon_yes()
 
 
 class ApplicationIcon(QIcon):
@@ -846,6 +873,7 @@ class TableIndexCell(QTableWidgetItem):
         super().__init__()
         self.setTextAlignment(Qt.AlignCenter)
         self.setData(Qt.EditRole, value + 1)
+        self.setFlags(self.flags() ^ (Qt.ItemIsEditable | Qt.ItemIsSelectable))
 
 
 class ProgressBarWidget(QProgressBar):
@@ -962,6 +990,7 @@ class MainWindow(QMainWindow):
         self.progress_bar = None
         self.bar = self.menuBar()
         self.init_ui()
+        self.init_menu()
 
     def init_ui(self) -> None:
         self.layout().setSizeConstraint(QLayout.SetFixedSize)
@@ -971,7 +1000,6 @@ class MainWindow(QMainWindow):
         self.setCentralWidget(self.converter)
         self.statusBar().addPermanentWidget(self.progress_bar)
         self.progress_bar.hide()
-        self.init_menu()
 
     def init_menu(self) -> None:
         file = self.bar.addMenu('File')
@@ -993,9 +1021,15 @@ class MainWindow(QMainWindow):
 
         help = self.bar.addMenu('Help')
         about = QAction('About', self)
-        about.setShortcut('Ctrl+A')
+        about.setShortcut('Ctrl+H')
         about.triggered.connect(self.on_click_about)
         help.addAction(about)
+
+        table = self.bar.addMenu('Table')
+        add_row = QAction('Add Row', self)
+        add_row.setShortcut('Ctrl+N')
+        add_row.triggered.connect(self.on_click_add_row)
+        table.addAction(add_row)
 
     def on_click_about(self) -> None:
         about = AboutWindow(self)
@@ -1008,6 +1042,10 @@ class MainWindow(QMainWindow):
     def on_click_reset(self) -> None:
         self.init_ui()
         self.shrink()
+
+    def on_click_add_row(self) -> None:
+        if self.converter.components.table:
+            self.converter.components.filter_table.add_blank_row()
 
     def shrink(self) -> None:
         self.resize(0, 0)

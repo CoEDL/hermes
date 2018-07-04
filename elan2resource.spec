@@ -35,7 +35,7 @@ exe = EXE(pyz,
           console=True )
 
 app = BUNDLE(exe,
-             name='elan2resource.app',
+             name='Language Resource Creator.app',
              info_plist={
                 'NSHighResolutionCapable': 'True'
              },
