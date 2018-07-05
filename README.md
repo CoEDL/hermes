@@ -48,8 +48,7 @@ The .app executable should appear in a new folder at the project root called bui
 ##### Windows
 ```bash
 git clone https://github.com/nicklambourne/elan2resource.git
-cd elan2resource
-pip3 install virtualenv
+cd elan2resource\
 python3 -m venv venv
 venv\Scripts\activate
 pip install -r requirements.txt

@@ -745,6 +745,8 @@ class PreviewButtonWidget(QPushButton):
     Custom button for previewing an audio clip.
     """
 
+    right_click = pyqtSignal()
+
     def __init__(self,
                  parent: FilterTable,
                  row: int,
@@ -761,6 +763,7 @@ class PreviewButtonWidget(QPushButton):
         self.clicked.connect(partial(self.play_sample, self.transcription))
         self.setToolTip('Left click to hear a preview of the audio for this word')
         table.setCellWidget(row, TABLE_COLUMNS['Preview'], self)
+        self.right_click.connect(self.open_record_window)
 
     def play_sample(self, transcription: Transcription) -> None:
         if transcription.sample:
@@ -771,13 +774,23 @@ class PreviewButtonWidget(QPushButton):
         else:
             self.parent.status_bar.showMessage('There is no audio for this transcription', 5000)
 
+    def mousePressEvent(self, event: QMouseEvent) -> None:
+        QPushButton.mousePressEvent(self, event)
+
+        if event.button() == Qt.RightButton:
+            self.right_click.emit()
+
+    def open_record_window(self):
+        record_window = RecordWindow(self.parent)
+        record_window.show()
+
 
 class ImageButtonWidget(QPushButton):
     """
     Custom button for adding and removing images related to particular translations. For inclusion in rows of the
     TranslationTable.
     """
-    rightClick = pyqtSignal()
+    right_click = pyqtSignal()
 
     def __init__(self,
                  parent: FilterTable,
@@ -792,7 +805,7 @@ class ImageButtonWidget(QPushButton):
         self.clicked.connect(partial(self.on_click_image, row))
         self.setToolTip('Left click to choose an image for this word\n'
                         'Right click to delete the existing image')
-        self.rightClick.connect(self.remove_image)
+        self.right_click.connect(self.remove_image)
         table.setCellWidget(row, TABLE_COLUMNS['Image'], self)
 
     def swap_icon_yes(self) -> None:
@@ -805,7 +818,7 @@ class ImageButtonWidget(QPushButton):
         QPushButton.mousePressEvent(self, event)
 
         if event.button() == Qt.RightButton:
-            self.rightClick.emit()
+            self.right_click.emit()
 
     def remove_image(self) -> None:
         self.parent.data.transcriptions[self.row].image = None
@@ -938,6 +951,34 @@ class SettingsWindow(QDialog):
         pass
 
 
+class RecordWindow(QDialog):
+    def __init__(self,
+                 parent: FilterTable):
+        super().__init__(parent)
+        self.layout = QGridLayout()
+        self.init_ui()
+
+    def init_ui(self):
+        self.setWindowTitle('Record')
+        self.setMinimumWidth(200)
+        instruction_label = QLabel('Click and hold the button below to record.\n'
+                                   'Releasing the button will stop the recording.')
+        instruction_label.setAlignment(Qt.AlignCenter)
+        self.layout.addWidget(instruction_label, 0, 0, 1, 3)
+        record_button = QPushButton()
+        record_button.setStyleSheet('QPushButton{background-color: red;'
+                                    '            border-radius: 50%;'
+                                    '            height: 100px;'
+                                    '            width: 100px;}\n'
+                                    'QPushButton:hover {border: 5px solid darkred}'
+                                    'QPushButton:pressed {background-color: darkred}')
+        self.layout.addWidget(record_button, 1, 1, 1, 1)
+        self.setLayout(self.layout)
+
+    def on_click_record(self):
+        pass
+
+
 class AboutWindow(QDialog):
     def __init__(self, parent: MainWindow = None) -> None:
         super().__init__(parent)
@@ -948,6 +989,7 @@ class AboutWindow(QDialog):
         logo_label = QLabel()
         logo_image = QPixmap(resource_path('./img/language-256.png')).scaledToHeight(100)
         logo_label.setPixmap(logo_image)
+        self.setWindowTitle('About')
         self.layout.addWidget(logo_label, 0, 1, 1, 1)
         name_label = QLabel('<b>Language Resource Creator</b>')
         name_label.setAlignment(Qt.AlignCenter)
@@ -1022,17 +1064,17 @@ class MainWindow(QMainWindow):
         quit_menu_item.triggered.connect(self.close)
         file.addAction(quit_menu_item)
 
-        help_menu = self.bar.addMenu('Help')
-        about_menu_item = QAction('About', self)
-        about_menu_item.setShortcut('Ctrl+H')
-        about_menu_item.triggered.connect(self.on_click_about)
-        help_menu.addAction(about_menu_item)
-
         self.table_menu = self.bar.addMenu('Table')
         add_row_menu_item = QAction('Add Row', self)
         add_row_menu_item.setShortcut('Ctrl+N')
         add_row_menu_item.triggered.connect(self.on_click_add_row)
         self.table_menu.addAction(add_row_menu_item)
+
+        help_menu = self.bar.addMenu('Help')
+        about_menu_item = QAction('About', self)
+        about_menu_item.setShortcut('Ctrl+H')
+        about_menu_item.triggered.connect(self.on_click_about)
+        help_menu.addAction(about_menu_item)
 
     def on_click_about(self) -> None:
         about = AboutWindow(self)
