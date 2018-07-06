@@ -43,7 +43,7 @@ source venv/bin/activate
 pip install -r requirements.txt
 pyinstaller elan2resource.spec --onefile --windowed 
 ```
-The .app executable should appear in a new folder at the project root called build.
+The .app executable should appear in elan2resouce/build.
 
 ##### Windows
 ```bash
@@ -54,7 +54,7 @@ venv\Scripts\activate
 pip install -r requirements.txt
 pyinstaller elan2resource.spec --onefile
 ```
-The .exe file should appear in a new folder in elan2resource/build.
+The .exe file should appear in elan2resource/build.
 
 ### Acknowledgements
 Images/Icons courtesy of [Icons8](https://icons8.com/icon/set/play/color).

@@ -12,12 +12,14 @@ from PyQt5.QtWidgets import QApplication, QFileDialog, QWidget, QLabel, QPushBut
     QAction, QStatusBar, QDialog, QDesktopWidget, QLayout
 from PyQt5.QtGui import QIcon, QDesktopServices, QMouseEvent, QPixmap
 from PyQt5.QtCore import Qt, QSize, QUrl, pyqtSignal
+from PyQt5.QtMultimedia import QAudioRecorder, QAudioEncoderSettings, QMultimedia
 from moviepy.editor import AudioFileClip
 from os.path import expanduser
 from urllib.request import url2pathname
 from typing import NewType, Union, List, Callable
 from box import Box
 from enum import Enum, unique
+
 
 MainWindow = NewType('MainWindow', QMainWindow)
 ProgressBarWidget = NewType('ProgressBarWidget', QProgressBar)
@@ -656,7 +658,7 @@ class ConverterWidget(QWidget):
         export_paths = self.get_export_paths()
         if self.data.transcriptions[row].sample:
             sound_file = self.data.transcriptions[row].sample.get_sample_file_object()
-            sound_file.write_audiofile(f'{export_paths.sound}/word{str(row)}.wav')
+            sound_file.write_audiofile(f'{export_paths.sound}/word{row}.wav')
         image_path = self.data.transcriptions[row].image
         if image_path:
             image_name, image_extension = os.path.splitext(image_path)
@@ -827,7 +829,7 @@ class ImageButtonWidget(QPushButton):
     def on_click_image(self, row: int) -> None:
         image_path = open_image_dialogue()
         if image_path:
-            self.data.transcriptions[row].image = image_path
+            self.parent.data.transcriptions[row].image = image_path
             self.parent.table.cellWidget(row, TABLE_COLUMNS['Image']).swap_icon_yes()
 
 
@@ -835,7 +837,6 @@ class ApplicationIcon(QIcon):
     """
     Custom icon for the application to appear in the task bar (and in the MainWindow header on Windows).
     """
-
     def __init__(self) -> None:
         super().__init__()
         self.addFile(resource_path('./img/language-48.png'), QSize(48, 48))
@@ -935,7 +936,7 @@ class SettingsWindow(QDialog):
         export_mode_label = QLabel('Export Mode:')
         self.layout.addWidget(export_mode_label, 0, 0, 1, 1)
         export_mode_selector = QComboBox()
-        export_mode_selector.addItems(['Traditional', 'Language Manifest File'])
+        export_mode_selector.addItems(['OPIE', 'Language Manifest File'])
         self.layout.addWidget(export_mode_selector, 0, 1, 1, 7)
         save_button = QPushButton('Save')
         save_button.clicked.connect(self.on_click_save)
