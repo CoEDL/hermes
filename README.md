@@ -6,6 +6,8 @@ It is based on a proof-of-concept built by [Dr Gautier Durantin](http://gduranti
 
 Created primarily to produce language resources for the [Social Robot Project](http://www.itee.uq.edu.au/cis/opal/ngukurr) at the [University of Queensland](https://uq.edu.au), developed in collaboration with the [Ngukurr Language Centre](http://www.ngukurrlc.org.au/).
 
+![Process](docs/img/process-flow.png)
+
 ### Features:
 - Media File Splitting & Export based on ELAN files
 - Word-Image Association & Upload
@@ -13,7 +15,7 @@ Created primarily to produce language resources for the [Social Robot Project](h
 - Transcription/Translation Search and Filter
 - Editable Translations/Transcriptions
 
-![Interface](docs/img/interface.png)
+![Features](docs/img/features.png)
 
 ### Requirements:
 - Python 3.6
@@ -43,18 +45,18 @@ source venv/bin/activate
 pip install -r requirements.txt
 pyinstaller elan2resource.spec --onefile --windowed 
 ```
-The .app executable should appear in elan2resouce/build.
+The .app executable should appear in elan2resouce/dist.
 
 ##### Windows
 ```bash
 git clone https://github.com/nicklambourne/elan2resource.git
-cd elan2resource\
+cd elan2resource
 python3 -m venv venv
 venv\Scripts\activate
 pip install -r requirements.txt
 pyinstaller elan2resource.spec --onefile
 ```
-The .exe file should appear in elan2resource/build.
+The .exe file should appear in elan2resource\dist.
 
 ### Acknowledgements
 Images/Icons courtesy of [Icons8](https://icons8.com/icon/set/play/color).

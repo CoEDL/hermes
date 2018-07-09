@@ -2,6 +2,7 @@
 
 from platform import system
 
+
 block_cipher = None
 
 added_files = [
@@ -41,7 +42,7 @@ exe = EXE(pyz,
           strip=False,
           upx=True,
           runtime_tmpdir=None,
-          console=True )
+          console=False )
 
 app = BUNDLE(exe,
              name='Language Resource Creator.app',

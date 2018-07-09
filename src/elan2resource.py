@@ -34,7 +34,7 @@ TABLE_COLUMNS = {
 }
 
 MATCH_ERROR_MARGIN = 1  # Second
-VERSION = '0.02'
+VERSION = '0.03'
 REPO_LINK = 'https://github.com/nicklambourne/elan2resource'
 
 
