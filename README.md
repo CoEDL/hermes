@@ -1,19 +1,14 @@
-# ELAN Language Resource Creator
+# Language Resource Creator
 Cross-platform utility for turning ELAN (*.eaf) linguistic analysis files and associated media into language resources.
 
-The Language Resource Creator was developed by [Nicholas Lambourne](https://ndl.im) using Python3, PyQt5, pymovie and pygame. 
-It is based on a proof-of-concept built by [Dr Gautier Durantin](http://gdurantin.com/) as part of the [UQ Winter Research Scholarship Program](https://employability.uq.edu.au/winter-research).
+This program can also be used to create language resources from scratch without an ELAN transcription.
+
+The Language Resource Creator was developed by [Nicholas Lambourne](https://ndl.im) using Python3, PyQt5, pydub, and pygame as part of the [UQ Winter Research Scholarship Program](https://employability.uq.edu.au/winter-research). 
+It is based on a proof-of-concept built by [Dr Gautier Durantin](http://gdurantin.com/).
 
 Created primarily to produce language resources for the [Social Robot Project](http://www.itee.uq.edu.au/cis/opal/ngukurr) at the [University of Queensland](https://uq.edu.au), developed in collaboration with the [Ngukurr Language Centre](http://www.ngukurrlc.org.au/).
 
 ![Process](docs/img/process-flow.png)
-
-### Features:
-- Media File Splitting & Export based on ELAN files
-- Word-Image Association & Upload
-- Live Previews of Audio Clips
-- Transcription/Translation Search and Filter
-- Editable Translations/Transcriptions
 
 ![Features](docs/img/features.png)
 
@@ -36,6 +31,7 @@ python3 elan2resource.py
 
 #### Build From Source
 ##### Mac
+**N.B: You will have to modify the root dir in the elan2resource.spec file to the absolute path of where you have cloned the repository on your machine.**
 ```bash
 git clone https://github.com/nicklambourne/elan2resource.git
 cd elan2resource
@@ -48,6 +44,7 @@ pyinstaller elan2resource.spec --onefile --windowed
 The .app executable should appear in elan2resouce/dist.
 
 ##### Windows
+**N.B: You will have to modify the root dir in the elan2resource.spec file to the absolute path of where you have cloned the repository on your machine.**
 ```bash
 git clone https://github.com/nicklambourne/elan2resource.git
 cd elan2resource
