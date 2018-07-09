@@ -12,8 +12,9 @@ root_dir = '/Users/nickl93/projects/uni/elan2resource'
 entry_point = 'src/elan2resource.py'
 
 if system() == 'Windows':
-    root_dir = 'C:\\Users\\s4261833\\PyCharmProjects\\elan2resource'
-    entry_point = 'src\\elan2resource'
+    root_dir = 'C:\\Users\\s4261833\\PycharmProjects\\elan2resource'
+    entry_point = 'src\\elan2resource.py'
+    added_files.append(( 'venv/Lib/site-packages/PyQt5/sip.pyd', 'PyQt5'))
 
 a = Analysis([entry_point],
              pathex=[root_dir],

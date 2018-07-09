@@ -3,8 +3,7 @@ requests
 numpy
 PyQt5
 pydub
-https://github.com/nicklambourne/pyinstaller/archive/develop.zip
+https://github.com/pyinstaller/pyinstaller/archive/develop.zip
 pygame
 python-box
-PyAudio
 wave
