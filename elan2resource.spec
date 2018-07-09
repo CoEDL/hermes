@@ -2,21 +2,21 @@
 
 from platform import system
 
-
-moviepy_path = './venv/lib/python3.6/site-packages/moviepy'
-
-if system() == 'Windows':
-    moviepy_path = './venv/Lib/site-packages/moviepy'
-
 block_cipher = None
 
 added_files = [
-    ( moviepy_path, 'moviepy' ),
     ( 'src/img/*', 'img' )
 ]
 
-a = Analysis(['src/elan2resource.py'],
-             pathex=['/Users/nickl93/projects/uni/elan2resource'],
+root_dir = '/Users/nickl93/projects/uni/elan2resource'
+entry_point = 'src/elan2resource.py'
+
+if system() == 'Windows':
+    root_dir = 'C:\\Users\\s4261833\\PyCharmProjects\\elan2resource'
+    entry_point = 'src\\elan2resource'
+
+a = Analysis([entry_point],
+             pathex=[root_dir],
              binaries=[],
              datas=added_files,
              hiddenimports=[],

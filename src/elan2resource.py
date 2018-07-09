@@ -12,8 +12,7 @@ from PyQt5.QtWidgets import QApplication, QFileDialog, QWidget, QLabel, QPushBut
     QAction, QStatusBar, QDialog, QDesktopWidget, QLayout
 from PyQt5.QtGui import QIcon, QDesktopServices, QMouseEvent, QPixmap
 from PyQt5.QtCore import Qt, QSize, QUrl, pyqtSignal
-from PyQt5.QtMultimedia import QAudioRecorder, QAudioEncoderSettings, QMultimedia
-from moviepy.editor import AudioFileClip
+from pydub import AudioSegment
 from os.path import expanduser
 from urllib.request import url2pathname
 from typing import NewType, Union, List, Callable
@@ -99,9 +98,9 @@ class Sample(object):
                  index: int,
                  start: float,
                  end: float,
-                 audio_file: AudioFileClip = None,
+                 audio_file: AudioSegment = None,
                  sample_path: str = None,
-                 sample_object: AudioFileClip = None):
+                 sample_object: AudioSegment = None):
         self.index = index
         self.start = start
         self.end = end
@@ -111,21 +110,20 @@ class Sample(object):
 
     def get_sample_file_path(self) -> Union[None, str]:
         if not self.sample_path:
-            sample_file = self.audio_file.subclip(t_start=self.start,
-                                                  t_end=self.end)
+            sample_file = self.audio_file[self.start:self.end]
             self.sample_object = sample_file
             temporary_folder = tempfile.mkdtemp()
             self.sample_path = os.path.join(temporary_folder, f'{str(self.index)}.wav')
-            sample_file.write_audiofile(self.sample_path)
+            sample_file.export(self.sample_path, format='wav')
             return self.sample_path
         return self.sample_path
 
-    def get_sample_file_object(self) -> Union[None, AudioFileClip]:
+    def get_sample_file_object(self) -> Union[None, AudioSegment]:
         self.get_sample_file_path()
         return self.sample_object
 
     def __str__(self):
-        return f'[{self.start}-{self.end}]'
+        return f'[{self.start/1000}-{self.end/1000}]'
 
 
 class Translation(object):
@@ -151,7 +149,7 @@ class Transcription(object):
                  image: str = None,
                  start: float = None,
                  end: float = None,
-                 media: AudioFileClip = None) -> None:
+                 media: AudioSegment = None) -> None:
         self.index = index
         self.transcription = transcription
         self.translation = translation
@@ -598,8 +596,8 @@ class ConverterWidget(QWidget):
         for index in range(translation_count):
             self.components.progress_bar.update_progress(completed_count / translation_count)
             translation = Translation(index=index,
-                                      start=int(elan_translations[index][0]) / 1000,
-                                      end=int(elan_translations[index][1]) / 1000,
+                                      start=int(elan_translations[index][0]),
+                                      end=int(elan_translations[index][1]),
                                       translation=elan_translations[index][2])
             translations.append(translation)
             completed_count += 1
@@ -618,8 +616,8 @@ class ConverterWidget(QWidget):
             self.components.progress_bar.update_progress(completed_count / transcription_count)
             transcription = Transcription(index=index,
                                           transcription=elan_transcriptions[index][2],
-                                          start=int(elan_transcriptions[index][0]) / 1000,
-                                          end=int(elan_transcriptions[index][1]) / 1000,
+                                          start=int(elan_transcriptions[index][0]),
+                                          end=int(elan_transcriptions[index][1]),
                                           media=audio_file)
             transcription.translation = self.match_translations(transcription, self.data.translations)
             transcriptions.append(transcription)
@@ -658,7 +656,7 @@ class ConverterWidget(QWidget):
         export_paths = self.get_export_paths()
         if self.data.transcriptions[row].sample:
             sound_file = self.data.transcriptions[row].sample.get_sample_file_object()
-            sound_file.write_audiofile(f'{export_paths.sound}/word{row}.wav')
+            sound_file.export(f'{export_paths.sound}/word{row}.wav', format='wav')
         image_path = self.data.transcriptions[row].image
         if image_path:
             image_name, image_extension = os.path.splitext(image_path)
@@ -685,7 +683,7 @@ class ConverterWidget(QWidget):
                                                f'{self.data.export_location}')
         QDesktopServices().openUrl(QUrl().fromLocalFile(self.data.export_location))
 
-    def get_audio_file(self) -> AudioFileClip:
+    def get_audio_file(self) -> AudioSegment:
         if self.data.audio_file:
             return self.data.audio_file
         linked_files = self.data.eaf_object.get_linked_files()
@@ -693,9 +691,9 @@ class ConverterWidget(QWidget):
         relative_path_media_file = os.path.join('/'.join(self.data.elan_file.split('/')[:-1]),
                                                 linked_files[0]['RELATIVE_MEDIA_URL'])
         if os.path.isfile(absolute_path_media_file):
-            audio_data = AudioFileClip(absolute_path_media_file)
+            audio_data = AudioSegment.from_wav(absolute_path_media_file)
         elif os.path.isfile(relative_path_media_file):
-            audio_data = AudioFileClip(relative_path_media_file)
+            audio_data = AudioSegment.from_wav(relative_path_media_file)
         else:
             warning_message = WarningMessage(self)
             choice = warning_message.warning(warning_message, 'Warning',
@@ -706,7 +704,7 @@ class ConverterWidget(QWidget):
             if choice == QMessageBox.Yes:
                 found_path_audio_file = open_audio_dialogue()
             if found_path_audio_file:
-                audio_data = AudioFileClip(found_path_audio_file)
+                audio_data = AudioSegment.from_wav(found_path_audio_file)
             else:
                 audio_data = None
         return audio_data
