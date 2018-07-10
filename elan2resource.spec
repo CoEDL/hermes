@@ -1,6 +1,7 @@
 # -*- mode: python -*-
 
 from platform import system
+from os import path
 
 
 block_cipher = None
@@ -9,11 +10,10 @@ added_files = [
     ( 'src/img/*', 'img' )
 ]
 
-root_dir = '/Users/nickl93/projects/uni/elan2resource'
+root_dir = path.join(path.abspath('.'), 'elan2resource/')
 entry_point = 'src/elan2resource.py'
 
 if system() == 'Windows':
-    root_dir = 'C:\\Users\\s4261833\\PycharmProjects\\elan2resource'
     entry_point = 'src\\elan2resource.py'
     added_files.append(( 'venv/Lib/site-packages/PyQt5/sip.pyd', 'PyQt5'))
 

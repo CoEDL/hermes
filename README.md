@@ -40,7 +40,7 @@ python3 elan2resource.py
 
 
 ### Build From Source
-**N.B: You will have to modify the root_dir for your platform variable in the elan2resource.spec file to the absolute path of where you have cloned the repository on your machine.**
+**N.B: You will have to modify the root_dir variable for your platform in the elan2resource.spec file to the absolute path of where you have cloned the repository on your machine.**
 
 #### Mac
 ```bash
