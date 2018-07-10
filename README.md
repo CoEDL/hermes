@@ -40,7 +40,13 @@ python3 elan2resource.py
 
 
 ### Build From Source
-**N.B: You will have to modify the root_dir variable for your platform in the elan2resource.spec file to the absolute path of where you have cloned the repository on your machine.**
+There is an cross-platform build script included which can be run by:
+```bash
+git clone https://github.com/nicklambourne/elan2resource.git
+cd elan2resource
+python3 build.py
+```
+If that fails, you can use the platform specific build instructions below.
 
 #### Mac
 ```bash
