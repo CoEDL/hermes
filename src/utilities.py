@@ -50,3 +50,14 @@ def open_audio_dialogue() -> str:
                                                  'Audio Files (*.wav *.mp3)',
                                                  options=options)
     return file_name
+
+
+def make_file_if_not_extant(path: str) -> str:
+    """
+    Creates a folder at the given location if one does not already exists and returns the now extant folder.
+    :param path: a string representing a path to a folder that may or may not already exist.
+    :return: the same folder path it was given (now definitely exists).
+    """
+    if not os.path.exists(path):
+        os.makedirs(path)
+    return path

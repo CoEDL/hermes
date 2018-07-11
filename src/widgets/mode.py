@@ -59,5 +59,3 @@ class ModeSelection(QWidget):
     def on_click_scratch(self) -> None:
         self.parent.data.mode = OperationMode.SCRATCH
         self.parent.load_third_stage_widgets(self.parent.components, self.parent.data)
-
-

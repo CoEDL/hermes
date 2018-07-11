@@ -2,7 +2,7 @@ import os
 import tempfile
 from enum import Enum, unique
 from pydub import AudioSegment
-from typing import NewType, Union, List, Callable
+from typing import Union
 
 
 MATCH_ERROR_MARGIN = 1  # Second
