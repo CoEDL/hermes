@@ -7,6 +7,7 @@ from typing import Union
 
 MATCH_ERROR_MARGIN = 1  # Second
 
+
 @unique
 class OperationMode(Enum):
     ELAN = 0

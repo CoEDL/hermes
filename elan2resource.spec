@@ -15,10 +15,10 @@ added_files = [
 ]
 
 root_dir = path.join(path.abspath('.'), 'elan2resource/')
-entry_point = 'src/elan2resource.py'
+entry_point = 'src/main.py'
 
 if system() == 'Windows':
-    entry_point = 'src\\elan2resource.py'
+    entry_point = 'src\\main.py'
     added_files.append(( 'venv/Lib/site-packages/PyQt5/sip.pyd', 'PyQt5'))
 
 a = Analysis([entry_point],

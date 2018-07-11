@@ -3,7 +3,7 @@ import unittest
 from PyQt5.QtWidgets import QApplication
 from PyQt5.QtTest import QTest
 from PyQt5.QtCore import Qt
-from .elan2resource import MainWindow
+from .main import MainWindow
 
 
 def setup():
