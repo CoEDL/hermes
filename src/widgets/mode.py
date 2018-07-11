@@ -1,8 +1,8 @@
 from PyQt5.QtWidgets import QPushButton, QWidget, QGridLayout
 from PyQt5.QtGui import QPixmap, QIcon
 from PyQt5.QtCore import QSize, Qt
-from datatypes import OperationMode
-from utilities import resource_path
+from datatypes.datatypes import OperationMode
+from utilities.utilities import resource_path
 from typing import Callable, NewType
 
 

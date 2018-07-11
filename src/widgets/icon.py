@@ -1,6 +1,6 @@
 from PyQt5.QtGui import QIcon
 from PyQt5.QtCore import QSize
-from utilities import resource_path
+from utilities.utilities import resource_path
 
 
 class ApplicationIcon(QIcon):

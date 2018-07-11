@@ -5,8 +5,8 @@ from PyQt5.QtGui import QIcon, QMouseEvent
 from typing import List, NewType
 from pygame import mixer
 from functools import partial
-from datatypes import OperationMode, Transcription
-from utilities import open_image_dialogue, resource_path
+from datatypes.datatypes import OperationMode, Transcription
+from utilities.utilities import open_image_dialogue, resource_path
 from .formatting import HorizontalLineWidget
 from .record import RecordWindow
 

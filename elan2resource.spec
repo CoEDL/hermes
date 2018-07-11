@@ -7,7 +7,11 @@ from os import path
 block_cipher = None
 
 added_files = [
-    ( 'src/img/*', 'img' )
+    ( 'src/img/*', 'img' ),
+    ( 'src/widgets/*', 'widgets' ),
+    ( 'src/windows/*', 'windows' ),
+    ( 'src/datatypes/*', 'datatypes' ),
+    ( 'src/utilities/*', 'utilities' )
 ]
 
 root_dir = path.join(path.abspath('.'), 'elan2resource/')
@@ -21,7 +25,7 @@ a = Analysis([entry_point],
              pathex=[root_dir],
              binaries=[],
              datas=added_files,
-             hiddenimports=[],
+             hiddenimports=['typing', 'pympi', 'box', 'pydub', 'pygame'],
              hookspath=[],
              runtime_hooks=[],
              excludes=[],

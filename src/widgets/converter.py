@@ -9,8 +9,8 @@ from PyQt5.QtCore import QUrl
 from typing import NewType, List, Union
 from pydub import AudioSegment
 from urllib.request import url2pathname
-from datatypes import OperationMode, Transcription, Translation
-from utilities import make_file_if_not_extant, open_audio_dialogue
+from datatypes.datatypes import OperationMode, Transcription, Translation
+from utilities.utilities import make_file_if_not_extant, open_audio_dialogue
 from .mode import ModeSelection
 from .elan_import import ELANFileField, TierSelector
 from .table import TABLE_COLUMNS, FilterTable

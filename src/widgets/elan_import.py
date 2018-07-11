@@ -1,7 +1,7 @@
 from PyQt5.QtWidgets import QWidget, QGridLayout, QLineEdit, QPushButton, QLabel, \
     QComboBox, QMessageBox
 from typing import NewType, List
-from utilities import open_file_dialogue
+from utilities.utilities import open_file_dialogue
 from .formatting import HorizontalLineWidget
 from .warning import WarningMessage
 
