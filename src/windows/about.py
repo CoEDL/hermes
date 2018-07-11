@@ -5,6 +5,8 @@ from typing import NewType
 from utilities import resource_path
 
 
+REPO_LINK = 'https://github.com/nicklambourne/elan2resource'
+VERSION = '0.03'
 MainWindow = NewType('MainWindow', QMainWindow)
 
 

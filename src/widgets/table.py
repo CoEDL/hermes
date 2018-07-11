@@ -2,15 +2,16 @@ from PyQt5.QtWidgets import QTableWidget, QWidget, QGridLayout, QTableWidgetItem
     QLabel, QStatusBar, QHBoxLayout, QCheckBox, QLineEdit
 from PyQt5.QtCore import Qt, pyqtSignal
 from PyQt5.QtGui import QIcon, QMouseEvent
-from typing import List
+from typing import List, NewType
 from pygame import mixer
 from functools import partial
 from datatypes import OperationMode, Transcription
 from utilities import open_image_dialogue, resource_path
-from .converter import ConverterData
 from .formatting import HorizontalLineWidget
 from .record import RecordWindow
 
+
+ConverterData = NewType('ConverterData', object)
 
 TABLE_COLUMNS = {
     'Index': 0,
