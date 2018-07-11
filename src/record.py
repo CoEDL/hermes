@@ -1,59 +1,63 @@
-import pyaudio
-import wave
+from PyQt5.QtCore import QUrl
+from PyQt5.QtMultimedia import QMultimedia, QAudioEncoderSettings, QVideoEncoderSettings, QAudioRecorder
+from PyQt5.QtWidgets import QApplication, QMainWindow, QPushButton, QWidget, QGridLayout
+import sys
+import os
 
 
-class AudioRecorder(object):
-    def __init__(self, channels=1, rate=44100, frames_per_buffer=1024):
-        self.channels = channels
-        self.rate = rate
-        self.frames_per_buffer = frames_per_buffer
-
-    def open(self, file_name, mode='wb'):
-        return WavFile(file_name, mode, self.channels, self.rate,
-                       self.frames_per_buffer)
-
-
-class WavFile(object):
-    def __init__(self, file_name, mode, channels,
-                 rate, frames_per_buffer):
-        self.file_name = file_name
-        self.mode = mode
-        self.channels = channels
-        self.rate = rate
-        self.frames_per_buffer = frames_per_buffer
-        self._pa = pyaudio.PyAudio()
-        self.wav_file = self.prepare_wav_file(self.file_name, self.mode)
-        self._stream = None
+class SimpleAudioRecorder(QAudioRecorder):
+    def __init__(self):
+        super().__init__()
 
     def start_recording(self):
-        self._stream = self._pa.open(format=pyaudio.paInt16,
-                                     channels=self.channels,
-                                     rate=self.rate,
-                                     input=True,
-                                     frames_per_buffer=self.frames_per_buffer,
-                                     stream_callback=self.get_callback())
-        self._stream.start_stream()
-        return self
+        settings = QAudioEncoderSettings()
+        settings.setCodec('audio/pcm')
+        settings.setChannelCount(1)
+        settings.setBitRate(96000)
+        settings.setSampleRate(44100)
+        settings.setQuality(QMultimedia.VeryHighQuality)
+        settings.setEncodingMode(QMultimedia.ConstantQualityEncoding)
+        container = 'audio/x-wav'
+
+        self.setEncodingSettings(settings, QVideoEncoderSettings(), container)
+
+        file_path = os.path.join(os.getcwd(), 'test.wav')
+
+        print(file_path)
+
+        self.setOutputLocation(QUrl.fromLocalFile(file_path))
+        self.record()
+        print('Started Recording')
 
     def stop_recording(self):
-        self._stream.stop_stream()
-        return self
+        self.stop()
+        print('Stopped Recording')
 
-    def get_callback(self):
-        def callback(in_data, frame_count, time_info, status):
-            self.wav_file.writeframes(in_data)
-            return in_data, pyaudio.paContinue
 
-        return callback
+class Content(QWidget):
+    def __init__(self, recorder):
+        super().__init__()
+        self.layout = QGridLayout()
+        self.recorder = recorder
+        self.init_ui()
 
-    def close(self):
-        self._stream.close()
-        self._pa.terminate()
-        self.wav_file.close()
+    def init_ui(self):
+        start_button = QPushButton('Start')
+        start_button.clicked.connect(self.recorder.start_recording)
+        self.layout.addWidget(start_button, 0, 0)
+        stop_button = QPushButton('Stop')
+        stop_button.clicked.connect(self.recorder.stop_recording)
+        self.layout.addWidget(stop_button, 0, 1)
+        self.setLayout(self.layout)
+        self.show()
 
-    def prepare_wav_file(self, file_name, mode='wb'):
-        wav_file = wave.open(file_name, mode)
-        wav_file.setnchannels(self.channels)
-        wav_file.setsampwidth(self._pa.get_sample_size(pyaudio.paInt16))
-        wav_file.setframerate(self.rate)
-        return wav_file
+
+if __name__ == '__main__':
+    App = QApplication(sys.argv)
+    Main = QMainWindow()
+    Main.show()
+    recorder = SimpleAudioRecorder()
+    content = Content(recorder)
+    Main.setCentralWidget(content)
+
+    sys.exit(App.exec_())
