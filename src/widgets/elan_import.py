@@ -1,9 +1,9 @@
 from PyQt5.QtWidgets import QWidget, QGridLayout, QLineEdit, QPushButton, QLabel, \
     QComboBox, QMessageBox
 from typing import NewType, List
-from utilities.utilities import open_file_dialogue
-from .formatting import HorizontalLineWidget
-from .warning import WarningMessage
+from utilities import open_file_dialogue
+from widgets.formatting import HorizontalLineWidget
+from widgets.warning import WarningMessage
 
 
 ConverterWidget = NewType('ConverterWidget', QWidget)

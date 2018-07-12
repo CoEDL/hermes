@@ -5,10 +5,10 @@ from PyQt5.QtGui import QIcon, QMouseEvent
 from typing import List, NewType
 from pygame import mixer
 from functools import partial
-from datatypes.datatypes import OperationMode, Transcription
-from utilities.utilities import open_image_dialogue, resource_path
-from .formatting import HorizontalLineWidget
-from .record import RecordWindow
+from datatypes import OperationMode, Transcription
+from utilities import open_image_dialogue, resource_path
+from widgets.formatting import HorizontalLineWidget
+from windows.record import RecordWindow
 
 
 ConverterData = NewType('ConverterData', object)
@@ -36,9 +36,9 @@ class TranslationTableWidget(QTableWidget):
         self.horizontalHeader().setSectionResizeMode(TABLE_COLUMNS['Transcription'], QHeaderView.Stretch)
         self.horizontalHeader().setSectionResizeMode(TABLE_COLUMNS['Translation'], QHeaderView.Stretch)
         self.setColumnWidth(TABLE_COLUMNS['Index'], 30)
-        self.setColumnWidth(TABLE_COLUMNS['Preview'], 50)
-        self.setColumnWidth(TABLE_COLUMNS['Image'], 50)
-        self.setColumnWidth(TABLE_COLUMNS['Include'], 50)
+        self.setColumnWidth(TABLE_COLUMNS['Preview'], 60)
+        self.setColumnWidth(TABLE_COLUMNS['Image'], 60)
+        self.setColumnWidth(TABLE_COLUMNS['Include'], 60)
         self.verticalHeader().hide()
         self.setSortingEnabled(False)
 

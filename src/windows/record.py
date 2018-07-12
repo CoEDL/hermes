@@ -1,14 +1,10 @@
 from PyQt5.QtWidgets import QDialog, QGridLayout, QLabel, QPushButton, QWidget
 from PyQt5.QtCore import Qt
-from typing import NewType
-
-
-FilterTable = NewType('FilterTable', QWidget)
 
 
 class RecordWindow(QDialog):
     def __init__(self,
-                 parent: FilterTable):
+                 parent: QWidget):
         super().__init__(parent)
         self.layout = QGridLayout()
         self.init_ui()

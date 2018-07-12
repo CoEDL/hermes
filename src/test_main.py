@@ -3,11 +3,11 @@ import unittest
 from PyQt5.QtWidgets import QApplication
 from PyQt5.QtTest import QTest
 from PyQt5.QtCore import Qt
-from .main import MainWindow
+from .main import PrimaryWindow
 
 
 def setup():
-    widget = MainWindow()
+    widget = PrimaryWindow()
 
 
 class BasicTest(unittest.TestCase):

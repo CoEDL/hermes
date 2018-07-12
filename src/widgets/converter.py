@@ -9,13 +9,13 @@ from PyQt5.QtCore import QUrl
 from typing import NewType, List, Union
 from pydub import AudioSegment
 from urllib.request import url2pathname
-from datatypes.datatypes import OperationMode, Transcription, Translation
-from utilities.utilities import make_file_if_not_extant, open_audio_dialogue
-from .mode import ModeSelection
-from .elan_import import ELANFileField, TierSelector
-from .table import TABLE_COLUMNS, FilterTable
-from .export import ExportLocationField, ExportButton
-from .warning import WarningMessage
+from datatypes import OperationMode, Transcription, Translation
+from utilities import make_file_if_not_extant, open_audio_dialogue
+from widgets.mode import ModeSelection
+from widgets.elan_import import ELANFileField, TierSelector
+from widgets.table import TABLE_COLUMNS, FilterTable
+from widgets.export import ExportLocationField, ExportButton
+from widgets.warning import WarningMessage
 
 
 ProgressBarWidget = NewType('ProgressBarWidget', QProgressBar)
@@ -47,6 +47,7 @@ class ConverterComponents(object):
         self.status_bar = status_bar
         self.tier_selector = None
         self.mode_select = None
+
 
 class ConverterWidget(QWidget):
     """

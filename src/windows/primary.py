@@ -2,8 +2,8 @@ import math
 from PyQt5.QtWidgets import QProgressBar, QApplication, QMainWindow, QLayout, QAction
 from typing import Union
 from widgets.converter import ConverterWidget
-from .about import AboutWindow
-from .settings import SettingsWindow
+from windows.about import AboutWindow
+from windows.settings import SettingsWindow
 
 
 class ProgressBarWidget(QProgressBar):
@@ -23,7 +23,7 @@ class ProgressBarWidget(QProgressBar):
         self.app.processEvents()
 
 
-class MainWindow(QMainWindow):
+class PrimaryWindow(QMainWindow):
     """
     The primary window for the application which houses the Converter, menus, statusbar and progress bar.
     """

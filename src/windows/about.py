@@ -2,7 +2,7 @@ from PyQt5.QtWidgets import QDialog, QGridLayout, QLabel, QMainWindow
 from PyQt5.QtGui import QPixmap
 from PyQt5.QtCore import Qt
 from typing import NewType
-from utilities.utilities import resource_path
+from utilities import resource_path
 
 
 REPO_LINK = 'https://github.com/nicklambourne/elan2resource'
