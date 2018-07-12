@@ -14,8 +14,8 @@ elif operating_system == 'Windows':
 command += 'pip install -r requirements.txt; '
 
 if operating_system == 'Darwin':
-    command += 'pyinstaller elan2resource.spec --onefile --windowed'
+    command += 'pyinstaller main.spec --onefile --windowed'
 elif operating_system == 'Windows':
-    command += 'pyinstaller elan2resource.spec --onefile'
+    command += 'pyinstaller main.spec --onefile'
 
 subprocess.run(command, shell=True, input=b'y\r\n')

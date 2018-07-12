@@ -7,11 +7,7 @@ from os import path
 block_cipher = None
 
 added_files = [
-    ( 'src/img/*', 'img' ),
-    ( 'src/widgets/*', 'widgets' ),
-    ( 'src/windows/*', 'windows' ),
-    ( 'src/datatypes/*', 'datatypes' ),
-    ( 'src/utilities/*', 'utilities' )
+    ( 'src/img/*', 'img' )
 ]
 
 root_dir = path.join(path.abspath('.'), 'elan2resource/')

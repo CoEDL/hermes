@@ -18,10 +18,6 @@ from widgets.export import ExportLocationField, ExportButton
 from widgets.warning import WarningMessage
 
 
-ProgressBarWidget = NewType('ProgressBarWidget', QProgressBar)
-MainWindow = NewType('MainWindow', QMainWindow)
-
-
 class ConverterData(object):
     def __init__(self) -> None:
         self.elan_file = None
@@ -36,7 +32,7 @@ class ConverterData(object):
 
 
 class ConverterComponents(object):
-    def __init__(self, progress_bar: ProgressBarWidget, status_bar: QStatusBar):
+    def __init__(self, progress_bar: QProgressBar, status_bar: QStatusBar):
         self.elan_file_field = None
         self.transcription_menu = None
         self.translation_menu = None
@@ -54,7 +50,7 @@ class ConverterWidget(QWidget):
     The core widget of the application which contains all of the widgets required to convert ELAN files.
     """
 
-    def __init__(self, parent: MainWindow) -> None:
+    def __init__(self, parent: QWidget) -> None:
         super().__init__()
         self.parent = parent
         self.components = ConverterComponents(

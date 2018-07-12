@@ -56,7 +56,7 @@ pip3 install virtualenv
 python3 -m venv venv
 source venv/bin/activate
 pip install -r requirements.txt
-pyinstaller elan2resource.spec --onefile --windowed 
+pyinstaller main.spec --onefile --windowed 
 ```
 The .app executable should appear in elan2resouce/dist.
 
@@ -67,7 +67,7 @@ cd elan2resource
 python3 -m venv venv
 venv\Scripts\activate
 pip install -r requirements.txt
-pyinstaller elan2resource.spec --onefile
+pyinstaller main.spec --onefile
 ```
 The .exe file should appear in elan2resource\dist.
 

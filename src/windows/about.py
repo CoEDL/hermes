@@ -1,17 +1,15 @@
 from PyQt5.QtWidgets import QDialog, QGridLayout, QLabel, QMainWindow
 from PyQt5.QtGui import QPixmap
 from PyQt5.QtCore import Qt
-from typing import NewType
 from utilities import resource_path
 
 
 REPO_LINK = 'https://github.com/nicklambourne/elan2resource'
 VERSION = '0.03'
-MainWindow = NewType('MainWindow', QMainWindow)
 
 
 class AboutWindow(QDialog):
-    def __init__(self, parent: MainWindow = None) -> None:
+    def __init__(self, parent: QMainWindow = None) -> None:
         super().__init__(parent)
         self.layout = QGridLayout()
         self.init_ui()

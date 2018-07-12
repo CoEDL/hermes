@@ -1,13 +1,9 @@
 from PyQt5.QtWidgets import QMessageBox, QDesktopWidget, QWidget
-from typing import NewType
-
-
-ConverterWidget = NewType('ConverterWidget', QWidget)
 
 
 class WarningMessage(QMessageBox):
     def __init__(self,
-                 parent: ConverterWidget) -> None:
+                 parent: QWidget) -> None:
         super().__init__(parent=parent)
         self.init_ui()
 

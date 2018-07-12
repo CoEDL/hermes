@@ -1,5 +1,5 @@
-from PyQt5.QtWidgets import QTableWidget, QWidget, QGridLayout, QTableWidgetItem, QPushButton, QHeaderView, \
-    QLabel, QStatusBar, QHBoxLayout, QCheckBox, QLineEdit
+from PyQt5.QtWidgets import QTableWidget, QWidget, QGridLayout, QTableWidgetItem, QPushButton, \
+    QHeaderView, QLabel, QStatusBar, QHBoxLayout, QCheckBox, QLineEdit
 from PyQt5.QtCore import Qt, pyqtSignal
 from PyQt5.QtGui import QIcon, QMouseEvent
 from typing import List, NewType

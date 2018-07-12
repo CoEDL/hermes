@@ -1,15 +1,12 @@
 from typing import NewType
 from PyQt5.QtWidgets import QDialog, QGridLayout, QLabel, QPushButton, QComboBox, \
-    QMainWindow, QWidget
-
-
-MainWindow = NewType('MainWindow', QMainWindow)
-ConverterWidget = NewType('ConverterWidget', QWidget)
+    QMainWindow
+from widgets.converter import ConverterWidget
 
 
 class SettingsWindow(QDialog):
     def __init__(self,
-                 parent: MainWindow = None,
+                 parent: QMainWindow = None,
                  converter: ConverterWidget = None
                  ) -> None:
         super().__init__(parent)
