@@ -2,16 +2,14 @@ from PyQt5.QtWidgets import QTableWidget, QWidget, QGridLayout, QTableWidgetItem
     QHeaderView, QLabel, QStatusBar, QHBoxLayout, QCheckBox, QLineEdit
 from PyQt5.QtCore import Qt, pyqtSignal
 from PyQt5.QtGui import QIcon, QMouseEvent
-from typing import List, NewType
+from typing import List
 from pygame import mixer
 from functools import partial
-from datatypes import OperationMode, Transcription
+from datatypes import OperationMode, Transcription, ConverterData
 from utilities import open_image_dialogue, resource_path
 from widgets.formatting import HorizontalLineWidget
 from windows.record import RecordWindow
 
-
-ConverterData = NewType('ConverterData', object)
 
 TABLE_COLUMNS = {
     'Index': 0,
@@ -36,9 +34,9 @@ class TranslationTableWidget(QTableWidget):
         self.horizontalHeader().setSectionResizeMode(TABLE_COLUMNS['Transcription'], QHeaderView.Stretch)
         self.horizontalHeader().setSectionResizeMode(TABLE_COLUMNS['Translation'], QHeaderView.Stretch)
         self.setColumnWidth(TABLE_COLUMNS['Index'], 30)
-        self.setColumnWidth(TABLE_COLUMNS['Preview'], 60)
-        self.setColumnWidth(TABLE_COLUMNS['Image'], 60)
-        self.setColumnWidth(TABLE_COLUMNS['Include'], 60)
+        self.setColumnWidth(TABLE_COLUMNS['Preview'], 50)
+        self.setColumnWidth(TABLE_COLUMNS['Image'], 50)
+        self.setColumnWidth(TABLE_COLUMNS['Include'], 50)
         self.verticalHeader().hide()
         self.setSortingEnabled(False)
 
@@ -191,11 +189,7 @@ class PreviewButtonWidget(QPushButton):
         super().__init__()
         self.parent = parent
         self.transcription = transcription
-        if self.transcription and self.transcription.sample:
-            image_icon = QIcon(resource_path('./img/play.png'))
-        else:
-            image_icon = QIcon(resource_path('./img/no_sample.png'))
-        self.setIcon(image_icon)
+        self.update_icon()
         self.clicked.connect(partial(self.play_sample, self.transcription))
         self.setToolTip('Left click to hear a preview of the audio for this word')
         table.setCellWidget(row, TABLE_COLUMNS['Preview'], self)
@@ -217,8 +211,18 @@ class PreviewButtonWidget(QPushButton):
             self.right_click.emit()
 
     def open_record_window(self):
-        record_window = RecordWindow(self.parent)
+        record_window = RecordWindow(self.parent,
+                                     self.transcription,
+                                     self.parent.data,
+                                     self.update_icon)
         record_window.show()
+
+    def update_icon(self):
+        if self.transcription and self.transcription.sample:
+            image_icon = QIcon(resource_path('./img/play.png'))
+        else:
+            image_icon = QIcon(resource_path('./img/no_sample.png'))
+        self.setIcon(image_icon)
 
 
 class ImageButtonWidget(QPushButton):

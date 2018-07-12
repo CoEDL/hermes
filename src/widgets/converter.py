@@ -6,29 +6,16 @@ from PyQt5.QtWidgets import QStatusBar, QProgressBar, QWidget, QGridLayout, QMai
     QMessageBox
 from PyQt5.QtGui import QDesktopServices
 from PyQt5.QtCore import QUrl
-from typing import NewType, List, Union
+from typing import List, Union
 from pydub import AudioSegment
 from urllib.request import url2pathname
-from datatypes import OperationMode, Transcription, Translation
+from datatypes import OperationMode, Transcription, Translation, ConverterData
 from utilities import make_file_if_not_extant, open_audio_dialogue
 from widgets.mode import ModeSelection
 from widgets.elan_import import ELANFileField, TierSelector
 from widgets.table import TABLE_COLUMNS, FilterTable
 from widgets.export import ExportLocationField, ExportButton
 from widgets.warning import WarningMessage
-
-
-class ConverterData(object):
-    def __init__(self) -> None:
-        self.elan_file = None
-        self.export_location = None
-        self.images = None
-        self.eaf_object = None
-        self.audio_file = None
-        self.transcriptions = []
-        self.translations = []
-        self.temp_file = None
-        self.mode = None
 
 
 class ConverterComponents(object):
