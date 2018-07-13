@@ -22,7 +22,7 @@ class SimpleAudioRecorder(QAudioRecorder):
         settings.setChannelCount(1)
         settings.setBitRate(96000)
         settings.setSampleRate(44100)
-        settings.setQuality(QMultimedia.VeryHighQuality)
+        settings.setQuality(self.settings.audio_quality)
         settings.setEncodingMode(QMultimedia.ConstantQualityEncoding)
         container = 'audio/x-wav'
 

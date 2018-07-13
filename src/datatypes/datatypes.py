@@ -7,9 +7,18 @@ from typing import Union
 from uuid import uuid4
 from tempfile import mkdtemp
 from PIL import Image
+from PyQt5.QtMultimedia import QMultimedia
 
 
 MATCH_ERROR_MARGIN = 1  # Second
+
+AUDIO_QUALITY = {
+    "Very Low": QMultimedia.VeryLowQuality,
+    "Low": QMultimedia.LowQuality,
+    "Normal": QMultimedia.NormalQuality,
+    "High": QMultimedia.HighQuality,
+    "Very High": QMultimedia.VeryHighQuality
+}
 
 
 @unique
@@ -114,18 +123,27 @@ class Transcription(object):
         else:
             return False
 
+    def set_image(self, path_to_image):
+        image = Image.open(path_to_image)
+        new_image_path = self.get_temp_file() + self.id + '.png'
+        image.save(new_image_path, 'PNG')
+
+
     def set_blank_sample(self):
         self.sample = Sample(index=self.index)
 
+    def refresh_preview_image(self):
+        preview_path = os.path.join(self.get_temp_file(), f'{self.id}.{self.image.format}')
+        with open(self.image, 'r+b') as file:
+            with Image.open(file) as image:
+                preview = resizeimage.resize_contain(image, [250, 250])
+                preview.save(preview_path, image.format)
+                self.preview_image = preview_path
+                return self.preview_image
+
     def get_preview_image(self):
         if self.image and not self.preview_image:
-            preview_path = os.path.join(self.get_temp_file(), f'{self.id}.{self.image.format}')
-            with open(self.image, 'r+b') as file:
-                with Image.open(file) as image:
-                    preview = resizeimage.resize_contain(image, [250, 250])
-                    preview.save(preview_path, image.format)
-                    self.preview_image = preview_path
-                    return self.preview_image
+            self.refresh_preview_image()
         return self.preview_image
 
     def get_temp_file(self):
@@ -157,7 +175,10 @@ class ConverterData(object):
 
 class AppSettings(object):
     def __init__(self,
-                 output_format: OutputMode,
-                 microphone: str = 'Default'):
+                 output_format: OutputMode = OutputMode.OPIE,
+                 microphone: str = 'Default',
+                 audio_quality: str = 'Normal'):
         self.output_format = output_format
         self.microphone = microphone
+        self.audio_quality = AUDIO_QUALITY[audio_quality]
+

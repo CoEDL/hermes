@@ -1,7 +1,7 @@
 from PyQt5.QtWidgets import QDialog, QGridLayout, QLabel, QPushButton, QWidget, QLayout
 from PyQt5.QtCore import Qt
 from utilities.recorder import SimpleAudioRecorder
-from datatypes import Transcription, ConverterData
+from datatypes import Transcription, ConverterData, AppSettings
 from typing import Callable
 
 
@@ -10,11 +10,13 @@ class RecordWindow(QDialog):
                  parent: QWidget,
                  transcription: Transcription,
                  data: ConverterData,
-                 update_button: Callable):
+                 update_button: Callable,
+                 settings: AppSettings):
         super().__init__(parent)
         self.update_button = update_button
         self.transcription = transcription
         self.data = data
+        self.settings = settings
         self.layout = QGridLayout()
         self.init_ui()
         self.recorder = None
@@ -23,8 +25,11 @@ class RecordWindow(QDialog):
     def init_ui(self):
         self.setWindowTitle('Record')
         self.setMinimumWidth(200)
-        instruction_label = QLabel('Click and hold the button below to record.\n'
-                                   'Releasing the button will stop the recording.')
+        instruction_text = f'<html>Click and hold the button below to record.<br/>' \
+                           f'Releasing the button will stop the recording.<br/>'
+        if self.transcription.transcription:
+            instruction_text += f'<br/><strong>Word: {self.transcription.transcription}</strong><br/></html>'
+        instruction_label = QLabel(instruction_text)
         instruction_label.setAlignment(Qt.AlignCenter)
         self.layout.addWidget(instruction_label, 0, 0, 1, 9)
         record_button = QPushButton()
@@ -50,7 +55,8 @@ class RecordWindow(QDialog):
 
     def on_press_record(self):
         self.recorder = SimpleAudioRecorder(data=self.data,
-                                            transcription=self.transcription)
+                                            transcription=self.transcription,
+                                            settings=self.settings)
         self.recorder.start_recording()
 
     def on_release_record(self):

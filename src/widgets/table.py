@@ -5,7 +5,7 @@ from PyQt5.QtGui import QIcon, QMouseEvent
 from typing import List
 from pygame import mixer
 from functools import partial
-from datatypes import OperationMode, Transcription, ConverterData
+from datatypes import OperationMode, Transcription, ConverterData, AppSettings
 from utilities import open_image_dialogue, resource_path
 from widgets.formatting import HorizontalLineWidget
 from windows.record import RecordWindow
@@ -26,8 +26,11 @@ class TranslationTableWidget(QTableWidget):
     inclusion in the export process.
     """
 
-    def __init__(self, num_rows: int) -> None:
+    def __init__(self,
+                 num_rows: int,
+                 data: ConverterData) -> None:
         super().__init__(num_rows, 6)
+        self.data = data
         self.setMinimumHeight(200)
         self.setHorizontalHeaderLabels([''] + [column_name for column_name in list(TABLE_COLUMNS.keys())[1:]])
         self.horizontalHeader().setSectionResizeMode(TABLE_COLUMNS['Transcription'], QHeaderView.Stretch)
@@ -38,6 +41,7 @@ class TranslationTableWidget(QTableWidget):
         self.setColumnWidth(TABLE_COLUMNS['Include'], 50)
         self.verticalHeader().hide()
         self.setSortingEnabled(False)
+        self.cellChanged.connect(self.cell_update)
 
     def sort_by_index(self) -> None:
         self.sortByColumn(TABLE_COLUMNS['Index'], Qt.AscendingOrder)
@@ -54,7 +58,7 @@ class TranslationTableWidget(QTableWidget):
                     string not in self.get_cell_value(row, TABLE_COLUMNS['Translation']):
                 self.hideRow(row)
 
-    def get_cell_value(self, row, column) -> str:
+    def get_cell_value(self, row: int, column: int) -> str:
         return self.item(row, column).text()
 
     def get_selected_count(self) -> int:
@@ -63,21 +67,30 @@ class TranslationTableWidget(QTableWidget):
             count += 1 if self.row_is_checked(row) else 0
         return count
 
-    def row_is_checked(self, row) -> bool:
+    def row_is_checked(self, row: int) -> bool:
         return self.cellWidget(row, TABLE_COLUMNS['Include']).selector.isChecked()
+
+    def cell_update(self, row, column):
+        if column == TABLE_COLUMNS['Transcription']:
+            self.data.transcriptions[row].transcription = self.get_cell_value(row, column)
+        elif column == TABLE_COLUMNS['Translation']:
+            self.data.transcriptions[row].translation = self.get_cell_value(row, column)
 
 
 class FilterTable(QWidget):
     def __init__(self,
                  data: ConverterData,
-                 status_bar) -> None:
+                 status_bar: QStatusBar,
+                 settings: AppSettings) -> None:
         super().__init__()
+        self.settings = settings
         self.status_bar = status_bar
         self.layout = QGridLayout()
-        self.table = TranslationTableWidget(max(len(data.transcriptions),
-                                                len(data.translations)))
         self.filter_field = None
         self.data = data
+        self.table = TranslationTableWidget(max(len(data.transcriptions),
+                                                len(data.translations)),
+                                            self.data)
         self.init_ui()
 
     def init_ui(self) -> None:
@@ -109,7 +122,10 @@ class FilterTable(QWidget):
                            QTableWidgetItem(self.data.transcriptions[row].transcription))
         self.table.setItem(row, TABLE_COLUMNS['Translation'],
                            QTableWidgetItem(self.data.transcriptions[row].translation))
-        PreviewButtonWidget(self, row, self.table, transcription=self.data.transcriptions[row])
+        PreviewButtonWidget(self, row,
+                            self.table,
+                            transcription=self.data.transcriptions[row],
+                            settings=self.settings)
         ImageButtonWidget(self.data, row, self.table)
         SelectorCellWidget(row, self.status_bar, self.table)
 
@@ -184,6 +200,7 @@ class PreviewButtonWidget(QPushButton):
                  parent: FilterTable,
                  row: int,
                  table: TranslationTableWidget,
+                 settings: AppSettings,
                  transcription: Transcription = None) -> None:
         super().__init__()
         self.parent = parent
@@ -207,14 +224,15 @@ class PreviewButtonWidget(QPushButton):
     def mousePressEvent(self, event: QMouseEvent) -> None:
         QPushButton.mousePressEvent(self, event)
 
-        if event.button() == Qt.RightButton:
+        if event.button() == Qt.RightButton or not self.transcription.sample:
             self.right_click.emit()
 
     def open_record_window(self):
         record_window = RecordWindow(self.parent,
                                      self.transcription,
                                      self.parent.data,
-                                     self.update_icon)
+                                     self.update_icon,
+                                     self.parent.settings)
         record_window.show()
 
     def update_icon(self):
@@ -278,8 +296,11 @@ class ImageButtonWidget(QPushButton):
         image_path = open_image_dialogue()
         if image_path:
             self.transcription.image = image_path
+            self.transcription.refresh_preview_image()
             self.table.cellWidget(row, TABLE_COLUMNS['Image']).swap_icon_yes()
             self.set_tooltip()
+        else:
+            self.table.cellWidget(row, TABLE_COLUMNS['Image']).swap_icon_no()
 
 
 class FilterFieldWidget(QLineEdit):

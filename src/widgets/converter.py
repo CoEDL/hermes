@@ -2,14 +2,14 @@ import os
 import shutil
 import pympi
 from box import Box
-from PyQt5.QtWidgets import QStatusBar, QProgressBar, QWidget, QGridLayout, QMainWindow, \
+from PyQt5.QtWidgets import QStatusBar, QProgressBar, QWidget, QGridLayout, \
     QMessageBox
 from PyQt5.QtGui import QDesktopServices
 from PyQt5.QtCore import QUrl
 from typing import List, Union
 from pydub import AudioSegment
 from urllib.request import url2pathname
-from datatypes import OperationMode, Transcription, Translation, ConverterData
+from datatypes import OperationMode, Transcription, Translation, ConverterData, AppSettings
 from utilities import make_file_if_not_extant, open_audio_dialogue
 from widgets.mode import ModeSelection
 from widgets.elan_import import ELANFileField, TierSelector
@@ -40,6 +40,7 @@ class ConverterWidget(QWidget):
     def __init__(self, parent: QWidget) -> None:
         super().__init__()
         self.parent = parent
+        self.settings = AppSettings()
         self.components = ConverterComponents(
             progress_bar=self.parent.progress_bar,
             status_bar=self.parent.statusBar()
@@ -89,7 +90,9 @@ class ConverterWidget(QWidget):
             self.data.transcriptions.append(Transcription(index=0,
                                                           transcription=""))
         # Sixth Row (Filter & Selector)
-        self.components.filter_table = FilterTable(self.data, self.components.status_bar)
+        self.components.filter_table = FilterTable(self.data,
+                                                   self.components.status_bar,
+                                                   self.settings)
         self.layout.addWidget(self.components.filter_table, 2, 0, 1, 8)
         self.components.table = self.components.filter_table.table
         # Eighth Row (Export Location)
