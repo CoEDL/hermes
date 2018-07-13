@@ -1,10 +1,12 @@
 import os
 import tempfile
+from resizeimage import resizeimage
 from enum import Enum, unique
 from pydub import AudioSegment
 from typing import Union
 from uuid import uuid4
 from tempfile import mkdtemp
+from PIL import Image
 
 
 MATCH_ERROR_MARGIN = 1  # Second
@@ -89,7 +91,9 @@ class Transcription(object):
         self.transcription = transcription
         self.translation = translation
         self.image = image
+        self.preview_image = None
         self.id = uuid4()
+        self.temp_file = None
 
         if not (media and start and end):
             self.sample = None
@@ -112,6 +116,22 @@ class Transcription(object):
 
     def set_blank_sample(self):
         self.sample = Sample(index=self.index)
+
+    def get_preview_image(self):
+        if self.image and not self.preview_image:
+            preview_path = os.path.join(self.get_temp_file(), f'{self.id}.{self.image.format}')
+            with open(self.image, 'r+b') as file:
+                with Image.open(file) as image:
+                    preview = resizeimage.resize_contain(image, [250, 250])
+                    preview.save(preview_path, image.format)
+                    self.preview_image = preview_path
+                    return self.preview_image
+        return self.preview_image
+
+    def get_temp_file(self):
+        if not self.temp_file:
+            self.temp_file = mkdtemp()
+        return self.temp_file
 
     def __str__(self) -> str:
         return f'<{self.transcription} {self.sample}>'

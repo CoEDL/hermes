@@ -7,3 +7,4 @@ https://github.com/pyinstaller/pyinstaller/archive/develop.zip
 pygame
 python-box
 wave
+python-resize-image

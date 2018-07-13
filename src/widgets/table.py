@@ -10,7 +10,6 @@ from utilities import open_image_dialogue, resource_path
 from widgets.formatting import HorizontalLineWidget
 from windows.record import RecordWindow
 
-
 TABLE_COLUMNS = {
     'Index': 0,
     'Transcription': 1,
@@ -111,7 +110,7 @@ class FilterTable(QWidget):
         self.table.setItem(row, TABLE_COLUMNS['Translation'],
                            QTableWidgetItem(self.data.transcriptions[row].translation))
         PreviewButtonWidget(self, row, self.table, transcription=self.data.transcriptions[row])
-        ImageButtonWidget(self, row, self.table)
+        ImageButtonWidget(self.data, row, self.table)
         SelectorCellWidget(row, self.status_bar, self.table)
 
     def populate_table(self, transcriptions: List[Transcription]) -> None:
@@ -191,7 +190,8 @@ class PreviewButtonWidget(QPushButton):
         self.transcription = transcription
         self.update_icon()
         self.clicked.connect(partial(self.play_sample, self.transcription))
-        self.setToolTip('Left click to hear a preview of the audio for this word')
+        self.setToolTip('Left click to hear a preview of the audio for this word\n'
+                        'Right click to record new audio')
         table.setCellWidget(row, TABLE_COLUMNS['Preview'], self)
         self.right_click.connect(self.open_record_window)
 
@@ -233,20 +233,30 @@ class ImageButtonWidget(QPushButton):
     right_click = pyqtSignal()
 
     def __init__(self,
-                 parent: FilterTable,
+                 data: ConverterData,
                  row: int,
                  table: TranslationTableWidget) -> None:
         super().__init__()
-        self.parent = parent
-        self.row = row
+        self.transcription = data.transcriptions[row]
         self.image_icon_no = QIcon(resource_path('./img/image-no.png'))
         self.image_icon_yes = QIcon(resource_path('./img/image-yes.png'))
         self.setIcon(self.image_icon_no)
         self.clicked.connect(partial(self.on_click_image, row))
-        self.setToolTip('Left click to choose an image for this word\n'
-                        'Right click to delete the existing image')
+        self.set_tooltip()
         self.right_click.connect(self.remove_image)
-        table.setCellWidget(row, TABLE_COLUMNS['Image'], self)
+        self.table = table
+        self.table.setCellWidget(row, TABLE_COLUMNS['Image'], self)
+
+    def set_tooltip(self):
+        tooltip = f'Left click to choose an image for this word\n' \
+                  f'Right click to delete the existing image'
+        if self.transcription.image:
+            tooltip = f'<html>Left click to choose an image for this word<br/>' \
+                      f'Right click to delete the existing image:<br/>' \
+                      f'<img src="{self.transcription.get_preview_image()}"/>' \
+                      f'</html>'
+        self.setToolTip(tooltip)
+        self.setStyleSheet("img {height: 100px; width: 100px;}")
 
     def swap_icon_yes(self) -> None:
         self.setIcon(self.image_icon_yes)
@@ -261,14 +271,15 @@ class ImageButtonWidget(QPushButton):
             self.right_click.emit()
 
     def remove_image(self) -> None:
-        self.parent.data.transcriptions[self.row].image = None
+        self.transcription.image = None
         self.swap_icon_no()
 
     def on_click_image(self, row: int) -> None:
         image_path = open_image_dialogue()
         if image_path:
-            self.parent.data.transcriptions[row].image = image_path
-            self.parent.table.cellWidget(row, TABLE_COLUMNS['Image']).swap_icon_yes()
+            self.transcription.image = image_path
+            self.table.cellWidget(row, TABLE_COLUMNS['Image']).swap_icon_yes()
+            self.set_tooltip()
 
 
 class FilterFieldWidget(QLineEdit):
