@@ -1,4 +1,3 @@
-from typing import NewType
 from PyQt5.QtWidgets import QDialog, QGridLayout, QLabel, QPushButton, QComboBox, \
     QMainWindow
 from widgets.converter import ConverterWidget

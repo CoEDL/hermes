@@ -11,7 +11,7 @@ class RecordWindow(QDialog):
                  transcription: Transcription,
                  data: ConverterData,
                  update_button: Callable,
-                 settings: AppSettings):
+                 settings: AppSettings) -> None:
         super().__init__(parent)
         self.update_button = update_button
         self.transcription = transcription
@@ -22,7 +22,7 @@ class RecordWindow(QDialog):
         self.recorder = None
         self.output = None
 
-    def init_ui(self):
+    def init_ui(self) -> None:
         self.setWindowTitle('Record')
         self.setMinimumWidth(200)
         instruction_text = f'<html>Click and hold the button below to record.<br/>' \
@@ -53,21 +53,24 @@ class RecordWindow(QDialog):
         self.layout.setSizeConstraint(QLayout.SetFixedSize)
         self.setLayout(self.layout)
 
-    def on_press_record(self):
+    def on_press_record(self) -> None:
         self.recorder = SimpleAudioRecorder(data=self.data,
                                             transcription=self.transcription,
                                             settings=self.settings)
         self.recorder.start_recording()
 
-    def on_release_record(self):
+    def on_release_record(self) -> None:
         self.output = self.recorder.stop_recording()
 
-    def on_click_save(self):
-        if self.output:
-            self.transcription.set_blank_sample()
-            self.transcription.sample.set_sample(self.output)
-            self.update_button()
+    def on_click_save(self) -> None:
+        try:
+            if self.output:
+                self.transcription.set_blank_sample()
+                self.transcription.sample.set_sample(self.output)
+                self.update_button()
+        except Exception:
+            pass
         self.close()
 
-    def on_click_cancel(self):
+    def on_click_cancel(self) -> None:
         self.close()
