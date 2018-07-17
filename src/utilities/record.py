@@ -2,8 +2,7 @@ import os
 from datetime import datetime
 from PyQt5.QtCore import QUrl
 from PyQt5.QtMultimedia import QMultimedia, QAudioEncoderSettings, QVideoEncoderSettings, QAudioRecorder
-from datatypes import AppSettings, Transcription
-from widgets.converter import ConverterData
+from datatypes import AppSettings, Transcription, ConverterData
 
 
 class SimpleAudioRecorder(QAudioRecorder):

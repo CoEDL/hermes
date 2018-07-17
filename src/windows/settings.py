@@ -21,7 +21,7 @@ class SettingsWindow(QDialog):
         export_mode_label = QLabel('Export Mode:')
         self.layout.addWidget(export_mode_label, 0, 0, 1, 1)
         export_mode_selector = QComboBox()
-        export_mode_selector.addItems(['OPIE', 'Language Manifest File'])
+        export_mode_selector.addItems(['OPIE', 'Language Manifest File', 'Dictionary (CSV)'])
         self.layout.addWidget(export_mode_selector, 0, 1, 1, 7)
         sound_quality_label = QLabel('Sound Quality:')
         self.layout.addWidget(sound_quality_label, 1, 0, 1, 1)

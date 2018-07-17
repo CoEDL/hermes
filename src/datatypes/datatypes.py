@@ -8,6 +8,7 @@ from uuid import uuid4
 from tempfile import mkdtemp
 from PIL import Image
 from PyQt5.QtMultimedia import QMultimedia
+from PyQt5.QtWidgets import QProgressBar, QStatusBar
 
 
 MATCH_ERROR_MARGIN = 1  # Second
@@ -171,6 +172,20 @@ class ConverterData(object):
         if not self.temp_file:
             self.temp_file = mkdtemp()
         return self.temp_file
+
+
+class ConverterComponents(object):
+    def __init__(self, progress_bar: QProgressBar, status_bar: QStatusBar):
+        self.elan_file_field = None
+        self.transcription_menu = None
+        self.translation_menu = None
+        self.filter_field = None
+        self.filter_table = None
+        self.table = None
+        self.progress_bar = progress_bar
+        self.status_bar = status_bar
+        self.tier_selector = None
+        self.mode_select = None
 
 
 class AppSettings(object):

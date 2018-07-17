@@ -1,6 +1,6 @@
 from PyQt5.QtWidgets import QDialog, QGridLayout, QLabel, QPushButton, QWidget, QLayout
 from PyQt5.QtCore import Qt
-from utilities.recorder import SimpleAudioRecorder
+from utilities.record import SimpleAudioRecorder
 from datatypes import Transcription, ConverterData, AppSettings
 from typing import Callable
 

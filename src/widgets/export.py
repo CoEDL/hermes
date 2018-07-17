@@ -49,14 +49,14 @@ class ExportButton(QWidget):
 
     def on_click_export(self) -> None:
         if self.parent.components.table.get_selected_count() == 0:
-            warning_message = WarningMessage(self.parent)
+            warning_message = WarningMessage()
             warning_message.warning(warning_message, 'Warning',
                                     f'You have not selected any items to export.\n'
                                     f'Please select at least one item to continue.',
                                     QMessageBox.Yes)
         else:
             if not self.export_directory_empty():
-                warning_message = WarningMessage(self.parent)
+                warning_message = WarningMessage()
                 decision = warning_message.warning(warning_message, 'Warning',
                                                    f'There are already files in the selected output folder.\n'
                                                    f'Existing files will be overwritten.\n'

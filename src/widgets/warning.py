@@ -2,9 +2,8 @@ from PyQt5.QtWidgets import QMessageBox, QDesktopWidget, QWidget
 
 
 class WarningMessage(QMessageBox):
-    def __init__(self,
-                 parent: QWidget) -> None:
-        super().__init__(parent=parent)
+    def __init__(self) -> None:
+        super().__init__()
         self.init_ui()
 
     def init_ui(self) -> None:
