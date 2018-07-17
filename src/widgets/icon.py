@@ -9,9 +9,9 @@ class ApplicationIcon(QIcon):
     """
     def __init__(self) -> None:
         super().__init__()
-        self.addFile(resource_path('./img/language-48.png'), QSize(48, 48))
-        self.addFile(resource_path('./img/language-96.png'), QSize(96, 96))
-        self.addFile(resource_path('./img/language-192.png'), QSize(192, 192))
-        self.addFile(resource_path('./img/language-256.png'), QSize(256, 256))
-
-
+        self.addFile(resource_path('./img/icon-2-48.png'), QSize(48, 48))
+        self.addFile(resource_path('./img/icon-2-96.png'), QSize(96, 96))
+        self.addFile(resource_path('./img/icon-2-192.png'), QSize(192, 192))
+        self.addFile(resource_path('./img/icon-2-256.png'), QSize(256, 256))
+        self.addFile(resource_path('./img/icon-2-512.png'), QSize(512, 512))
+        self.addFile(resource_path('./img/icon-2-1024.png'), QSize(1024, 1024))
