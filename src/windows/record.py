@@ -19,7 +19,9 @@ class RecordWindow(QDialog):
         self.settings = settings
         self.layout = QGridLayout()
         self.init_ui()
-        self.recorder = None
+        self.recorder = SimpleAudioRecorder(self.data,
+                                            self.transcription,
+                                            self.settings)
         self.output = None
 
     def init_ui(self) -> None:
@@ -54,22 +56,23 @@ class RecordWindow(QDialog):
         self.setLayout(self.layout)
 
     def on_press_record(self) -> None:
-        self.recorder = SimpleAudioRecorder(data=self.data,
-                                            transcription=self.transcription,
-                                            settings=self.settings)
         self.recorder.start_recording()
 
     def on_release_record(self) -> None:
-        self.output = self.recorder.stop_recording()
+        self.recorder.stop_recording()
+        try:
+            self.output = self.recorder.file_path
+        except FileNotFoundError:
+            self.output = None
 
     def on_click_save(self) -> None:
-        try:
-            if self.output:
-                self.transcription.set_blank_sample()
+        if self.output:
+            self.transcription.set_blank_sample()
+            try:
                 self.transcription.sample.set_sample(self.output)
-                self.update_button()
-        except Exception:
-            pass
+            except FileNotFoundError:
+                self.transcription.sample = None
+            self.update_button()
         self.close()
 
     def on_click_cancel(self) -> None:
