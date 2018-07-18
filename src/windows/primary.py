@@ -83,7 +83,8 @@ class PrimaryWindow(QMainWindow):
         about.show()
 
     def on_click_settings(self) -> None:
-        settings = SettingsWindow(self, self.converter)
+        settings = SettingsWindow(parent=self,
+                                  converter=self.converter)
         settings.show()
 
     def on_click_reset(self) -> None:
