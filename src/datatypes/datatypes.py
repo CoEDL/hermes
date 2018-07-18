@@ -21,6 +21,8 @@ AUDIO_QUALITY = {
     "Very High": QMultimedia.VeryHighQuality
 }
 
+AUDIO_QUALITY_REV = {v: k for k, v in AUDIO_QUALITY.items()}
+
 
 @unique
 class OperationMode(Enum):
@@ -33,6 +35,16 @@ class OutputMode(Enum):
     OPIE = 0
     LMF = 1
     DICT = 2
+
+
+OUTPUT_MODE_NAMES = {
+    0: "OPIE File Structure",
+    1: "Language Manifest File (JSON)",
+    2: "Generic Dictionary (CSV)"
+}
+
+
+OUTPUT_MODES_REV = {v: k for k, v in OUTPUT_MODE_NAMES.items()}
 
 
 class Sample(object):
@@ -196,4 +208,7 @@ class AppSettings(object):
         self.output_format = output_format
         self.microphone = microphone
         self.audio_quality = AUDIO_QUALITY[audio_quality]
+
+    def __str__(self):
+        return '\n'.join([f'{key}: {value}' for key, value in self.__dict__.items()])
 

@@ -5,6 +5,7 @@ from PyQt5.QtCore import QUrl
 from datatypes import OperationMode, Transcription, ConverterData, AppSettings, OutputMode, ConverterComponents
 from utilities.output import create_opie_files
 from utilities.parse import get_audio_file, extract_elan_data
+from utilities.settings import system_settings_exist, load_system_settings
 from widgets.mode import ModeSelection
 from widgets.elan_import import ELANFileField, TierSelector
 from widgets.table import TABLE_COLUMNS, FilterTable
@@ -19,7 +20,11 @@ class ConverterWidget(QWidget):
     def __init__(self, parent: QWidget) -> None:
         super().__init__()
         self.parent = parent
-        self.settings = AppSettings()
+        if system_settings_exist():
+            self.settings = AppSettings()
+            load_system_settings(self.settings)
+        else:
+            self.settings = AppSettings()
         self.components = ConverterComponents(
             progress_bar=self.parent.progress_bar,
             status_bar=self.parent.statusBar()

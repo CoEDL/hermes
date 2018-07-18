@@ -1,4 +1,4 @@
-# Language Resource Creator
+# Language Resource Creator ![](src/img/icon-3-128.png)
 
 Cross-platform utility for turning [ELAN](https://tla.mpi.nl/tools/tla-tools/elan/) (*.eaf) linguistic analysis files and associated media into language resources.
 
@@ -9,7 +9,15 @@ It is based on a proof-of-concept built by [Dr Gautier Durantin](http://gduranti
 
 Created primarily to produce language resources for the [Social Robot Project](http://www.itee.uq.edu.au/cis/opal/ngukurr) at the [University of Queensland](https://uq.edu.au), developed in collaboration with the [Ngukurr Language Centre](http://www.ngukurrlc.org.au/).
 
+![ProcessIt is based on a proof-of-concept built by [Dr Gautier Durantin](http://gdurantin.com/).
+
+Created primarily to produce language resources for the [Social Robot Project](http://www.itee.uq.edu.au/cis/opal/ngukurr) at the [University of Queensland](https://uq.edu.au), developed in collaboration with the [Ngukurr Language Centre](http://www.ngukurrlc.org.au/).
+
 ![Process](docs/img/process-flow.png)
+
+![Features](docs/img/features.png)
+
+## Down](docs/img/process-flow.png)
 
 ![Features](docs/img/features.png)
 
@@ -35,12 +43,12 @@ python3 -m venv venv
 source venv/bin/activate
 pip install -r requirements.txt
 cd src
-python3 elan2resource.py
+python3 main.py
 ```
 
 
 ### Build From Source
-There is an cross-platform build script included which can be run by:
+There is an MacOS build script included which can be run by:
 ```bash
 git clone https://github.com/nicklambourne/elan2resource.git
 cd elan2resource
