@@ -1,4 +1,4 @@
-# Language Resource Creator ![](src/img/icon-3-128.png)
+# Language Resource Creator ![](src/img/icon-3-48.png) 
 
 Cross-platform utility for turning [ELAN](https://tla.mpi.nl/tools/tla-tools/elan/) (*.eaf) linguistic analysis files and associated media into language resources.
 

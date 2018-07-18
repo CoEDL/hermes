@@ -15,16 +15,14 @@ def system_settings_exist() -> bool:
         return False
 
 
-def load_system_settings(app_settings: AppSettings):
+def load_system_settings(app_settings: AppSettings) -> None:
     system_settings = get_settings()
     app_settings.audio_quality = AUDIO_QUALITY[system_settings.value('Audio Quality')]
     app_settings.output_format = list(OutputMode)[int(system_settings.value('Output Format'))]
     app_settings.microphone = system_settings.value('Microphone')
-    print("loaded: ", app_settings)
 
 
-def save_system_settings(app_settings: AppSettings):
-    print("Saving:", app_settings)
+def save_system_settings(app_settings: AppSettings) -> None:
     system_settings = get_settings()
     system_settings.setValue('Audio Quality', AUDIO_QUALITY_REV[app_settings.audio_quality])
     system_settings.setValue('Output Format', app_settings.output_format.value)

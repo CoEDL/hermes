@@ -3,7 +3,7 @@ from PyQt5.QtWidgets import QDialog, QGridLayout, QLabel, QPushButton, QComboBox
     QMainWindow
 from PyQt5.QtMultimedia import QAudioRecorder
 from widgets.converter import ConverterWidget
-from datatypes import AppSettings, AUDIO_QUALITY_REV, AUDIO_QUALITY, OUTPUT_MODE_NAMES, OUTPUT_MODES_REV, OutputMode
+from datatypes import AppSettings, AUDIO_QUALITY_REV, AUDIO_QUALITY, OUTPUT_MODE_NAMES
 from utilities.settings import save_system_settings
 
 
@@ -52,7 +52,7 @@ class SettingsWindow(QDialog):
         self.setLayout(self.layout)
 
     def on_click_save(self) -> None:
-        self.settings = AppSettings(output_format=list(OutputMode)[OUTPUT_MODES_REV[self.widgets.export_mode_selector.currentText()]],
+        self.settings = AppSettings(output_format=self.widgets.export_mode_selector.currentText(),
                                     microphone=self.widgets.audio_device_selector.currentText(),
                                     audio_quality=self.widgets.sound_quality_selector.currentText())
         save_system_settings(self.settings)

@@ -202,10 +202,10 @@ class ConverterComponents(object):
 
 class AppSettings(object):
     def __init__(self,
-                 output_format: OutputMode = OutputMode.OPIE,
+                 output_format: str = OUTPUT_MODE_NAMES[0],
                  microphone: str = 'Default',
                  audio_quality: str = 'Normal'):
-        self.output_format = output_format
+        self.output_format = list(OutputMode)[OUTPUT_MODES_REV[output_format]]
         self.microphone = microphone
         self.audio_quality = AUDIO_QUALITY[audio_quality]
 
