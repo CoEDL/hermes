@@ -1,4 +1,4 @@
-# Language Resource Creator <img src="src/img/icon-3-96.png" align="right"/>
+# Hermes: The Language Resource Creator <img src="src/img/icon-3-256.png" align="right"/>
 
 Cross-platform utility for turning [ELAN](https://tla.mpi.nl/tools/tla-tools/elan/) (*.eaf) linguistic analysis files and associated media into language resources.
 
@@ -78,6 +78,13 @@ pip install -r requirements.txt
 pyinstaller main.spec --onefile
 ```
 The .exe file should appear in elan2resource\dist.
+
+
+## Citations
+This piece of software is the product of academic research at the University of Queensland by Nicholas Lambourne, Gautier Durantin and the CoEDL group. 
+If you use the software or code in an academic setting, please be sure to cite it correctly as follows:
+
+> Lambourne, N. and Durantin, G. (2018). Hermes: The Language Resource Creator. The University of Queensland: Centre of Excellence for the Dynamics of Language.
 
 
 ## Acknowledgements
