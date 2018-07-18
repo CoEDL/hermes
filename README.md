@@ -17,10 +17,6 @@ Created primarily to produce language resources for the [Social Robot Project](h
 
 ![Features](docs/img/features.png)
 
-## Down](docs/img/process-flow.png)
-
-![Features](docs/img/features.png)
-
 ## Downloads (Dependency Free):
 
 | MacOS  | Windows |
