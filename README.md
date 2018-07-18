@@ -1,15 +1,11 @@
 # Hermes: The Language Resource Creator <img src="src/img/icon-3-256.png" align="right"/>
 
-Cross-platform utility for turning [ELAN](https://tla.mpi.nl/tools/tla-tools/elan/) (*.eaf) linguistic analysis files and associated media into language resources.
+Hermes is a cross-platform utility for turning [ELAN](https://tla.mpi.nl/tools/tla-tools/elan/) (*.eaf) linguistic analysis files and associated media into language resources.
 
 This program can also be used to create language resources from scratch without an ELAN transcription file.
 
 The Language Resource Creator was developed by [Nicholas Lambourne](https://ndl.im) using Python3, PyQt5, pydub, and pygame as part of the [UQ Winter Research Scholarship Program](https://employability.uq.edu.au/winter-research). 
 It is based on a proof-of-concept built by [Dr Gautier Durantin](http://gdurantin.com/).
-
-Created primarily to produce language resources for the [Social Robot Project](http://www.itee.uq.edu.au/cis/opal/ngukurr) at the [University of Queensland](https://uq.edu.au), developed in collaboration with the [Ngukurr Language Centre](http://www.ngukurrlc.org.au/).
-
-![ProcessIt is based on a proof-of-concept built by [Dr Gautier Durantin](http://gdurantin.com/).
 
 Created primarily to produce language resources for the [Social Robot Project](http://www.itee.uq.edu.au/cis/opal/ngukurr) at the [University of Queensland](https://uq.edu.au), developed in collaboration with the [Ngukurr Language Centre](http://www.ngukurrlc.org.au/).
 
