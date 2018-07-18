@@ -37,7 +37,7 @@ exe = EXE(pyz,
           a.zipfiles,
           a.datas,
           [],
-          name='Language Resource Creator',
+          name='Hermes - Language Resource Creator',
           debug=False,
           strip=False,
           upx=True,
@@ -45,7 +45,7 @@ exe = EXE(pyz,
           console=False )
 
 app = BUNDLE(exe,
-             name='Language Resource Creator.app',
+             name='Hermes - The Language Resource Creator.app',
              info_plist={
                 'NSHighResolutionCapable': 'True'
              },

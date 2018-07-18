@@ -1,9 +1,11 @@
+import os
+import csv
 import pympi
 from PyQt5.QtWidgets import QWidget, QGridLayout
 from PyQt5.QtGui import QDesktopServices
 from PyQt5.QtCore import QUrl
 from datatypes import OperationMode, Transcription, ConverterData, AppSettings, OutputMode, ConverterComponents
-from utilities.output import create_opie_files
+from utilities.output import create_opie_files, create_dict_files, create_lmf_files
 from utilities.parse import get_audio_file, extract_elan_data
 from utilities.settings import system_settings_exist, load_system_settings
 from widgets.mode import ModeSelection
@@ -95,6 +97,10 @@ class ConverterWidget(QWidget):
         self.components.progress_bar.show()
         export_count = self.components.table.get_selected_count()
         completed_count = 0
+        if self.settings.output_format == OutputMode.DICT:
+            with open(os.path.join(self.data.export_location, 'dictionary.csv'), 'w') as file:
+                writer = csv.writer(file)
+                writer.writerow(['Transcription', 'Translation', 'Audio', 'Image'])
         for row in range(self.components.table.rowCount()):
             if self.components.table.row_is_checked(row) and \
                     self.components.table.get_cell_value(row, TABLE_COLUMNS["Transcription"]):
@@ -102,9 +108,9 @@ class ConverterWidget(QWidget):
                 if self.settings.output_format == OutputMode.OPIE:
                     create_opie_files(row, self.data, self.components)
                 elif self.settings.output_format == OutputMode.DICT:
-                    pass
+                    create_dict_files(row, self.data)
                 elif self.settings.output_format == OutputMode.LMF:
-                    pass
+                    create_lmf_files(row, self.data)
                 completed_count += 1
                 self.components.progress_bar.update_progress(completed_count / export_count)
         self.components.progress_bar.hide()

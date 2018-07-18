@@ -31,7 +31,7 @@ class PrimaryWindow(QMainWindow):
     def __init__(self, app: QApplication) -> None:
         super().__init__()
         self.app = app
-        self.title = 'Language Resource Creator'
+        self.title = 'Hermes: The Language Resource Creator'
         self.converter = None
         self.progress_bar = None
         self.table_menu = None

@@ -141,7 +141,6 @@ class Transcription(object):
         new_image_path = self.get_temp_file() + self.id + '.png'
         image.save(new_image_path, 'PNG')
 
-
     def set_blank_sample(self):
         self.sample = Sample(index=self.index)
 
@@ -150,7 +149,9 @@ class Transcription(object):
         with open(self.image, 'r+b') as file:
             with Image.open(file) as image:
                 preview = resizeimage.resize_contain(image, [250, 250])
-                preview.save(preview_path, image.format)
+                if image.format == 'RBG':
+                    preview.convert('RGBA')
+                preview.save(preview_path, 'PNG')
                 self.preview_image = preview_path
                 return self.preview_image
 
@@ -172,7 +173,6 @@ class ConverterData(object):
     def __init__(self) -> None:
         self.elan_file = None
         self.export_location = None
-        self.images = None
         self.eaf_object = None
         self.audio_file = None
         self.transcriptions = []

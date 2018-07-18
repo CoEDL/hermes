@@ -8,3 +8,4 @@ pygame
 python-box
 wave
 python-resize-image
+imageio
