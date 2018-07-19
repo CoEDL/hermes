@@ -21,7 +21,7 @@ class AboutWindow(QDialog):
         logo_label.setPixmap(logo_image)
         self.setWindowTitle('About')
         self.layout.addWidget(logo_label, 0, 1, 1, 1)
-        name_label = QLabel('<b>Language Resource Creator</b>')
+        name_label = QLabel('<b>Hermes</b><i>The Language Resource Creator</i></b>')
         name_label.setAlignment(Qt.AlignCenter)
         self.layout.addWidget(name_label, 1, 0, 1, 3)
         version_label = QLabel(f'Version {VERSION}')

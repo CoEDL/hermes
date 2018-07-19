@@ -17,7 +17,7 @@ It was originally created to produce language resources for the [Social Robot Pr
 
 | MacOS  | Windows |
 | ------ | ------- |
-| [Link](https://www.dropbox.com/s/bps2auxy4plwrif/Language%20Resource%20Creator.app.zip?dl=1) | [Link](https://www.dropbox.com/s/rs3g7ps05w2rqxl/Language%20Resource%20Creator.exe?dl=1) |
+| [Link](https://www.dropbox.com/s/5lqk8tvqfjvyg4x/Hermes%20-%20The%20Language%20Resource%20Creator.app.zip?dl=1) | [Link](https://www.dropbox.com/s/rs3g7ps05w2rqxl/Language%20Resource%20Creator.exe?dl=1) |
 
 
 ## Build Requirements:

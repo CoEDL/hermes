@@ -15,7 +15,6 @@ entry_point = 'src/main.py'
 
 if system() == 'Windows':
     entry_point = 'src\\main.py'
-    added_files.append(( 'venv/Lib/site-packages/PyQt5/sip.pyd', 'PyQt5'))
 
 a = Analysis([entry_point],
              pathex=[root_dir],
@@ -37,7 +36,7 @@ exe = EXE(pyz,
           a.zipfiles,
           a.datas,
           [],
-          name='Hermes - Language Resource Creator',
+          name='Hermes - The Language Resource Creator',
           debug=False,
           strip=False,
           upx=True,
