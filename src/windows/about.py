@@ -17,11 +17,11 @@ class AboutWindow(QDialog):
     def init_ui(self) -> None:
         self.layout.setSizeConstraint(QLayout.SetFixedSize)
         logo_label = QLabel()
-        logo_image = QPixmap(resource_path('./img/icon-3-128.png'))
+        logo_image = QPixmap(resource_path('./img/icon-5-128.png'))
         logo_label.setPixmap(logo_image)
         self.setWindowTitle('About')
         self.layout.addWidget(logo_label, 0, 1, 1, 1)
-        name_label = QLabel('<b>Hermes</b><i>The Language Resource Creator</i></b>')
+        name_label = QLabel('<b>Hermes</b><br/><i>The Language Resource Creator</i></b>')
         name_label.setAlignment(Qt.AlignCenter)
         self.layout.addWidget(name_label, 1, 0, 1, 3)
         version_label = QLabel(f'Version {VERSION}')
