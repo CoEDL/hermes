@@ -1,11 +1,11 @@
-from PyQt5.QtWidgets import QDialog, QGridLayout, QLabel, QMainWindow
+from PyQt5.QtWidgets import QDialog, QGridLayout, QLabel, QMainWindow, QLayout
 from PyQt5.QtGui import QPixmap
 from PyQt5.QtCore import Qt
 from utilities import resource_path
 
 
 REPO_LINK = 'https://github.com/nicklambourne/elan2resource'
-VERSION = '0.03'
+VERSION = '0.04'
 
 
 class AboutWindow(QDialog):
@@ -15,8 +15,9 @@ class AboutWindow(QDialog):
         self.init_ui()
 
     def init_ui(self) -> None:
+        self.layout.setSizeConstraint(QLayout.SetFixedSize)
         logo_label = QLabel()
-        logo_image = QPixmap(resource_path('./img/language-256.png')).scaledToHeight(100)
+        logo_image = QPixmap(resource_path('./img/icon-3-128.png'))
         logo_label.setPixmap(logo_image)
         self.setWindowTitle('About')
         self.layout.addWidget(logo_label, 0, 1, 1, 1)
