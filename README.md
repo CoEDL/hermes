@@ -1,4 +1,4 @@
-# Hermes: The Language Resource Creator <img src="src/img/icon-3-256.png" align="right"/>
+# Hermes: The Language Resource Creator <img src="src/img/icon-5-256.png" align="right"/>
 
 Hermes is a cross-platform utility for turning [ELAN](https://tla.mpi.nl/tools/tla-tools/elan/) (*.eaf) linguistic analysis files and associated media into language resources.
 
@@ -28,8 +28,8 @@ It was originally created to produce language resources for the [Social Robot Pr
 ## Install/Run Instructions:
 ### As a Script (Mac, Windows, Linux)
 ```bash
-git clone https://github.com/nicklambourne/elan2resource.git
-cd elan2resource
+git clone https://github.com/nicklambourne/hermes.git
+cd hermes
 pip3 install virtualenv
 python3 -m venv venv
 source venv/bin/activate
@@ -42,16 +42,16 @@ python3 main.py
 ### Build From Source
 There is an MacOS build script included which can be run by:
 ```bash
-git clone https://github.com/nicklambourne/elan2resource.git
-cd elan2resource
+git clone https://github.com/nicklambourne/hermes.git
+cd hermes
 python3 build.py
 ```
 If that fails, you can use the platform specific build instructions below.
 
 #### Mac
 ```bash
-git clone https://github.com/nicklambourne/elan2resource.git
-cd elan2resource
+git clone https://github.com/nicklambourne/hermes.git
+cd hermes
 pip3 install virtualenv
 python3 -m venv venv
 source venv/bin/activate
@@ -62,8 +62,8 @@ The .app executable should appear in elan2resouce/dist.
 
 #### Windows
 ```bash
-git clone https://github.com/nicklambourne/elan2resource.git
-cd elan2resource
+git clone https://github.com/nicklambourne/hermes.git
+cd hermes
 python3 -m venv venv
 venv\Scripts\activate
 pip install -r requirements.txt
@@ -74,7 +74,7 @@ The .exe file should appear in elan2resource\dist.
 
 ## Citations
 This piece of software is the product of academic research at the University of Queensland by Nicholas Lambourne, Gautier Durantin and the CoEDL group. 
-If you use the software or code in an academic setting, please be sure to cite it correctly as follows:
+If you use the software or code in an academic setting, please be sure to cite it appropriately as follows:
 
 > Lambourne, N. and Durantin, G. (2018). Hermes: The Language Resource Creator. The University of Queensland: Centre of Excellence for the Dynamics of Language.
 
