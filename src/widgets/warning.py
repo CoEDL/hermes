@@ -1,4 +1,4 @@
-from PyQt5.QtWidgets import QMessageBox, QDesktopWidget, QWidget
+from PyQt5.QtWidgets import QMessageBox, QDesktopWidget
 
 
 class WarningMessage(QMessageBox):

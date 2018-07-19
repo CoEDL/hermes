@@ -1,5 +1,6 @@
 import os
 import tempfile
+from datetime import datetime
 from resizeimage import resizeimage
 from enum import Enum, unique
 from pydub import AudioSegment
@@ -9,7 +10,6 @@ from tempfile import mkdtemp
 from PIL import Image
 from PyQt5.QtMultimedia import QMultimedia
 from PyQt5.QtWidgets import QProgressBar, QStatusBar
-
 
 MATCH_ERROR_MARGIN = 1  # Second
 
@@ -43,8 +43,19 @@ OUTPUT_MODE_NAMES = {
     2: "Generic Dictionary (CSV)"
 }
 
-
 OUTPUT_MODES_REV = {v: k for k, v in OUTPUT_MODE_NAMES.items()}
+
+
+def create_lmf(transcription_language: str,
+               translation_language: str,
+               author: str):
+    return {
+        "transcription-language": transcription_language,
+        "translation-language": translation_language,
+        "author": author,
+        "created": str(datetime.now()),
+        "words": []
+    }
 
 
 class Sample(object):
@@ -179,6 +190,7 @@ class ConverterData(object):
         self.translations = []
         self.temp_file = None
         self.mode = None
+        self.lmf = dict()
 
     def get_temp_file(self):
         if not self.temp_file:
@@ -211,4 +223,3 @@ class AppSettings(object):
 
     def __str__(self):
         return '\n'.join([f'{key}: {value}' for key, value in self.__dict__.items()])
-

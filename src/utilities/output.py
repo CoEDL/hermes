@@ -64,4 +64,24 @@ def create_dict_files(row: int,
 
 def create_lmf_files(row: int,
                      data: ConverterData) -> None:
-    pass
+    lmf = data.lmf
+    transcription = data.transcriptions[row]
+    json_entry = {
+        "id": str(transcription.id),
+        "transcription": transcription.transcription,
+        "translation": [transcription.translation, ],
+    }
+    if transcription.sample:
+        sound_export_path = make_file_if_not_extant(os.path.join(data.export_location, 'sounds'))
+        sound_file = data.transcriptions[row].sample.get_sample_file_object()
+        sound_file_path = f'{sound_export_path}/{transcription.transcription}-{row}.wav'
+        sound_file.export(sound_file_path, format='wav')
+        json_entry['audio'] = [sound_file_path, ]
+    if transcription.image:
+        image_export_path = make_file_if_not_extant(os.path.join(data.export_location, 'images'))
+        _, image_extension = os.path.splitext(transcription.image)
+        image_file_path = os.path.join(image_export_path,
+                                       f'{transcription.transcription}-{row}{image_extension}')
+        shutil.copy(transcription.image, image_file_path)
+        json_entry['image'] = [image_file_path, ]
+    lmf['words'].append(json_entry)

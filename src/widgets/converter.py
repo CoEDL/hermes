@@ -1,7 +1,8 @@
 import os
 import csv
 import pympi
-from PyQt5.QtWidgets import QWidget, QGridLayout
+import json
+from PyQt5.QtWidgets import QWidget, QGridLayout, QMessageBox
 from PyQt5.QtGui import QDesktopServices
 from PyQt5.QtCore import QUrl
 from datatypes import OperationMode, Transcription, ConverterData, AppSettings, OutputMode, ConverterComponents
@@ -12,6 +13,7 @@ from widgets.mode import ModeSelection
 from widgets.elan_import import ELANFileField, TierSelector
 from widgets.table import TABLE_COLUMNS, FilterTable
 from widgets.export import ExportLocationField, ExportButton
+from windows.manifest import ManifestWindow
 
 
 class ConverterWidget(QWidget):
@@ -101,6 +103,9 @@ class ConverterWidget(QWidget):
             with open(os.path.join(self.data.export_location, 'dictionary.csv'), 'w') as file:
                 writer = csv.writer(file)
                 writer.writerow(['Transcription', 'Translation', 'Audio', 'Image'])
+        elif self.settings.output_format == OutputMode.LMF:
+            lmf_manifest_window = ManifestWindow(self.data)
+            return_value = lmf_manifest_window.exec()
         for row in range(self.components.table.rowCount()):
             if self.components.table.row_is_checked(row) and \
                     self.components.table.get_cell_value(row, TABLE_COLUMNS["Transcription"]):
@@ -114,6 +119,10 @@ class ConverterWidget(QWidget):
                 completed_count += 1
                 self.components.progress_bar.update_progress(completed_count / export_count)
         self.components.progress_bar.hide()
+        if self.settings.output_format == OutputMode.LMF:
+            manifest_file_path = os.path.join(self.data.export_location, 'manifest.json')
+            with open(manifest_file_path, 'w') as manifest_file:
+                json.dump(self.data.lmf, manifest_file, indent=4)
         self.components.status_bar.showMessage(f'Exported {str(completed_count)} valid words to '
                                                f'{self.data.export_location}')
         QDesktopServices().openUrl(QUrl().fromLocalFile(self.data.export_location))

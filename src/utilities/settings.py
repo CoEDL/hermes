@@ -1,6 +1,6 @@
 import os
 from PyQt5.QtCore import QSettings
-from datatypes import AppSettings, AUDIO_QUALITY, AUDIO_QUALITY_REV, OutputMode, OUTPUT_MODES_REV
+from datatypes import AppSettings, AUDIO_QUALITY, AUDIO_QUALITY_REV, OutputMode, OUTPUT_MODE_NAMES
 
 
 def get_settings() -> QSettings:
@@ -17,9 +17,9 @@ def system_settings_exist() -> bool:
 
 def print_system_settings() -> None:
     system_settings = get_settings()
-    print(system_settings.value('Audio Quality'))
-    print(system_settings.value('Output Format'))
-    print(system_settings.value('Microphone'))
+    print(f'Audio Quality: {system_settings.value("Audio Quality")}\n'
+          f'Output Format: {OUTPUT_MODE_NAMES[system_settings.value("Output Format")]}\n'
+          f'Microphone: {system_settings.value("Microphone")}')
 
 
 def load_system_settings(app_settings: AppSettings) -> None:
