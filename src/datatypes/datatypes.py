@@ -13,6 +13,7 @@ from PyQt5.QtWidgets import QProgressBar, QStatusBar
 
 MATCH_ERROR_MARGIN = 1  # Second
 
+# Mapping of text-description to QMultimedia format.
 AUDIO_QUALITY = {
     "Very Low": QMultimedia.VeryLowQuality,
     "Low": QMultimedia.LowQuality,
@@ -26,15 +27,21 @@ AUDIO_QUALITY_REV = {v: k for k, v in AUDIO_QUALITY.items()}
 
 @unique
 class OperationMode(Enum):
-    ELAN = 0
-    SCRATCH = 1
+    """
+    The usage mode that the program will utilise.
+    """
+    ELAN = 0  # Import data from an ELAN file.
+    SCRATCH = 1  # Enter your own transcriptions/translations/recordings.
 
 
 @unique
 class OutputMode(Enum):
-    OPIE = 0
-    LMF = 1
-    DICT = 2
+    """
+    Represents the file structure in which the products of the converter will be output.
+    """
+    OPIE = 0  # The original OPIE structure: (.txt transcription/translations, sound/image folders)
+    LMF = 1  # Language Manifest File: JSON with image/sound folders.
+    DICT = 2  # Generic Dictionary: CSV with image/sound folders.
 
 
 OUTPUT_MODE_NAMES = {
