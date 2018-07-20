@@ -32,7 +32,7 @@ Instructions for using Hermes to produce language resources can be found [here](
 ## Install/Run Instructions:
 ### As a Script (Mac, Windows, Linux)
 ```bash
-git clone https://github.com/nicklambourne/hermes.git
+git clone https://github.com/CoEDL/hermes.git
 cd hermes
 pip3 install virtualenv
 python3 -m venv venv
@@ -46,7 +46,7 @@ python3 main.py
 ### Build From Source
 There is an MacOS build script included which can be run by:
 ```bash
-git clone https://github.com/nicklambourne/hermes.git
+git clone https://github.com/CoEDL/hermes.git
 cd hermes
 python3 build.py
 ```
@@ -54,7 +54,7 @@ If that fails, you can use the platform specific build instructions below.
 
 #### Mac
 ```bash
-git clone https://github.com/nicklambourne/hermes.git
+git clone https://github.com/CoEDL/hermes.git
 cd hermes
 pip3 install virtualenv
 python3 -m venv venv
@@ -66,7 +66,7 @@ The .app executable should appear in elan2resouce/dist.
 
 #### Windows
 ```bash
-git clone https://github.com/nicklambourne/hermes.git
+git clone https://github.com/CoEDL/hermes.git
 cd hermes
 python3 -m venv venv
 venv\Scripts\activate
