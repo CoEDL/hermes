@@ -7,11 +7,15 @@ This program can also be used to create language resources from scratch without 
 Hermes was developed by [Nicholas Lambourne](https://ndl.im) using Python3, PyQt5, pydub, and pygame as part of the [UQ Winter Research Scholarship Program](https://employability.uq.edu.au/winter-research). 
 It is based on a proof-of-concept built by [Dr Gautier Durantin](http://gdurantin.com/).
 
-It was originally created to produce language resources for the [Social Robot Project](http://www.itee.uq.edu.au/cis/opal/ngukurr) at the [University of Queensland](https://uq.edu.au), which developed in collaboration with the [Ngukurr Language Centre](http://www.ngukurrlc.org.au/).
+It was originally created to produce language resources for the [Social Robot Project](http://www.itee.uq.edu.au/cis/opal/ngukurr) at the [University of Queensland](https://uq.edu.au),
+ which is developed in collaboration with the [Ngukurr Language Centre](http://www.ngukurrlc.org.au/).
 
 ![Process](docs/img/process-flow.png)
 
 ![Features](docs/img/features.png)
+
+## Usage Instructions
+Instructions for using Hermes to produce language resources can be found [here](docs/README.md).
 
 ## Downloads (Dependency Free):
 

@@ -70,7 +70,7 @@ class TierSelector(QWidget):
 
     def on_click_import(self) -> None:
         if self.parent.components.table:
-            warning_message = WarningMessage(self.parent)
+            warning_message = WarningMessage()
             choice = warning_message.warning(warning_message, 'Warning',
                                              'Warning: Any unsaved work will be overwritten. Proceed?',
                                              QMessageBox.Yes | QMessageBox.No)
