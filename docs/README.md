@@ -2,8 +2,6 @@
 
 ## Creating Resources from an ELAN (*.eaf) File
 
-![ELAN Mode Example GIF](img/elan-example.gif)
-
 1. Launch Hermes and select the 'Import ELAN File' mode button.
 2. Click the 'Load' button and use the file window that opens to select the 
 ELAN file you would like to create resources from.
@@ -29,6 +27,8 @@ to begin the export process.
     -  Exporting to the LMF format will prompt you for additional information about the
     transcription and translation languages, as well as the resource author.
     
+<img src="img/elan-example.gif" align="center" width="590"/>
+    
 ## Creating Resources from Scratch
 1. Launch Hermes and select the 'Start From Scratch' mode button.
 2. Input transcriptions and translations as required.
@@ -49,6 +49,8 @@ to begin the export process.
     -  Exporting to the LMF format will prompt you for additional information about the
     transcription and translation languages, as well as the resource author.
     
+<img src="img/scratch-example.gif" align="center" width="590"/>
+
 ### Note: Installing the FFMPEG Plugin
 - By default, Hermes only includes support for WAV audio.
 If you need to work with other formats, please install the FFMPEG plugin
