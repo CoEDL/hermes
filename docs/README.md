@@ -27,7 +27,9 @@ to begin the export process.
     -  Exporting to the LMF format will prompt you for additional information about the
     transcription and translation languages, as well as the resource author.
     
-<img src="img/elan-example.gif" align="center" width="590"/>
+<p align="centre">
+<img src="img/elan-example.gif" width="590"/>
+</p>
     
 ## Creating Resources from Scratch
 1. Launch Hermes and select the 'Start From Scratch' mode button.
@@ -49,7 +51,9 @@ to begin the export process.
     -  Exporting to the LMF format will prompt you for additional information about the
     transcription and translation languages, as well as the resource author.
     
-<img src="img/scratch-example.gif" align="center" width="590"/>
+<p align="centre">
+<img src="img/scratch-example.gif" width="590"/>
+</p>
 
 ### Note: Installing the FFMPEG Plugin
 - By default, Hermes only includes support for WAV audio.
