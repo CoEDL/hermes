@@ -4,7 +4,7 @@ from PyQt5.QtWidgets import QDialog, QGridLayout, QLabel, QPushButton, QComboBox
 from PyQt5.QtMultimedia import QAudioRecorder
 from widgets.converter import ConverterWidget
 from datatypes import AppSettings, AUDIO_QUALITY_REV, AUDIO_QUALITY, OUTPUT_MODE_NAMES
-from utilities.settings import save_system_settings, load_system_settings
+from utilities.settings import save_system_settings
 
 
 class SettingsWindow(QDialog):

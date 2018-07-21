@@ -1,6 +1,9 @@
 # Using Hermes to Create Resources <img src="../src/img/icon-5-256.png" align="right"/>
 
 ## Creating Resources from an ELAN (*.eaf) File
+
+![ELAN Mode Example GIF](img/elan-example.gif)
+
 1. Launch Hermes and select the 'Import ELAN File' mode button.
 2. Click the 'Load' button and use the file window that opens to select the 
 ELAN file you would like to create resources from.
