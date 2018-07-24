@@ -11,7 +11,8 @@ It is based on a proof-of-concept built by [Dr Gautier Durantin](http://gduranti
 
 It was originally created to produce language resources for the [Social Robot Project](http://www.itee.uq.edu.au/cis/opal/ngukurr) 
  at the [University of Queensland](https://uq.edu.au),
- which is developed in collaboration with the [Ngukurr Language Centre](http://www.ngukurrlc.org.au/).
+ which is developed in collaboration with the [Ngukurr Language Centre](http://www.ngukurrlc.org.au/) and
+ the [Australian Research Council Centre of Excellence for the Dynamics of Language](http://www.dynamicsoflanguage.edu.au/).
 
 ![Process](docs/img/process-flow.png)
 

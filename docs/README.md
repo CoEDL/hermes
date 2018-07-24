@@ -24,10 +24,10 @@ to select an output location.
 to begin the export process.
     -  If you want to change the output format (OPIE, JSON, CSV), you may do so in the
     Settings/Preferences menu, which is accessible from the toolbar or via (⌘ + B).
-    -  Exporting to the LMF format will prompt you for additional information about the
+    -  Exporting to the LMF (JSON) format will prompt you for additional information about the
     transcription and translation languages, as well as the resource author.
     
-<p align="centre">
+<p align="center">
 <img src="img/elan-example.gif" width="590"/>
 </p>
     
@@ -48,10 +48,10 @@ to select an output location.
 to begin the export process.
     -  If you want to change the output format (OPIE, JSON, CSV), you may do so in the
     Settings/Preferences menu, which is accessible from the toolbar or via (⌘ + B).
-    -  Exporting to the LMF format will prompt you for additional information about the
+    -  Exporting to the LMF (JSON) format will prompt you for additional information about the
     transcription and translation languages, as well as the resource author.
     
-<p align="centre">
+<p align="center">
 <img src="img/scratch-example.gif" width="590"/>
 </p>
 

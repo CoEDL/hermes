@@ -11,6 +11,7 @@ from PIL import Image
 from PyQt5.QtMultimedia import QMultimedia
 from PyQt5.QtWidgets import QProgressBar, QStatusBar
 
+
 MATCH_ERROR_MARGIN = 1  # Second
 
 # Mapping of text-description to QMultimedia format.
@@ -22,6 +23,7 @@ AUDIO_QUALITY = {
     "Very High": QMultimedia.VeryHighQuality
 }
 
+# Mapping of QMultimedia formats to text-descriptions.
 AUDIO_QUALITY_REV = {v: k for k, v in AUDIO_QUALITY.items()}
 
 
@@ -44,18 +46,27 @@ class OutputMode(Enum):
     DICT = 2  # Generic Dictionary: CSV with image/sound folders.
 
 
+# Mapping of mode numbers to full names.
 OUTPUT_MODE_NAMES = {
     0: "OPIE File Structure",
     1: "Language Manifest File (JSON)",
     2: "Generic Dictionary (CSV)"
 }
 
+# Mapping of mode names to mode numbers.
 OUTPUT_MODES_REV = {v: k for k, v in OUTPUT_MODE_NAMES.items()}
 
 
 def create_lmf(transcription_language: str,
                translation_language: str,
-               author: str):
+               author: str) -> dict:
+    """
+
+    :param transcription_language: string representation of the name of the transcription language.
+    :param translation_language: string representation of the name of the translation language.
+    :param author: string representation of the language resource creator's name.
+    :return: a new dictionary representing an empty language manifest.
+    """
     return {
         "transcription-language": transcription_language,
         "translation-language": translation_language,
@@ -66,13 +77,17 @@ def create_lmf(transcription_language: str,
 
 
 class Sample(object):
+    """
+    Representation of a media clip based on a media file split based on ELAN data or recorded by
+    the user using the RecordWindow.
+    """
     def __init__(self,
                  index: int,
                  start: float = None,
                  end: float = None,
                  audio_file: AudioSegment = None,
                  sample_path: str = None,
-                 sample_object: AudioSegment = None):
+                 sample_object: AudioSegment = None) -> None:
         self.index = index
         self.start = start
         self.end = end
@@ -104,6 +119,10 @@ class Sample(object):
 
 
 class Translation(object):
+    """
+    Represents a translation parsed from an ELAN file or created empty in the 'from scratch' mode.
+    Parsed Translations will be matched with a Transcription or discarded.
+    """
     def __init__(self,
                  index: int,
                  translation: str,
@@ -119,6 +138,10 @@ class Translation(object):
 
 
 class Transcription(object):
+    """
+    The core data structure of the program, storing the transcription, translation, samples, and
+    images. Each is uniquely identified by a uuid and provides convenience methods for data access.
+    """
     def __init__(self,
                  index: int,
                  transcription: str,
@@ -188,6 +211,9 @@ class Transcription(object):
 
 
 class ConverterData(object):
+    """
+    Data storage object for all data used by the ConverterWidget.
+    """
     def __init__(self) -> None:
         self.elan_file = None
         self.export_location = None
@@ -206,6 +232,9 @@ class ConverterData(object):
 
 
 class ConverterComponents(object):
+    """
+    Reference storage for the components that make up (or are referenced by) the ConverterWidget.
+    """
     def __init__(self, progress_bar: QProgressBar, status_bar: QStatusBar):
         self.elan_file_field = None
         self.transcription_menu = None
@@ -220,6 +249,10 @@ class ConverterComponents(object):
 
 
 class AppSettings(object):
+    """
+    In-memory representation of the application settings.
+    Generally populated from computer's AppData on start-up.
+    """
     def __init__(self,
                  output_format: str = OUTPUT_MODE_NAMES[0],
                  microphone: str = 'Default',
