@@ -9,7 +9,7 @@ Hermes was developed by [Nicholas Lambourne](https://ndl.im) using Python3, PyQt
  [UQ Winter Research Scholarship Program](https://employability.uq.edu.au/winter-research). 
 It is based on a proof-of-concept built by [Dr Gautier Durantin](http://gdurantin.com/).
 
-It was originally created to produce language resources for the [Social Robot Project](http://www.itee.uq.edu.au/cis/opal/ngukurr) 
+It was originally created to produce language resources for the [NgukurrOPIE Project](http://www.itee.uq.edu.au/cis/opal/ngukurr) 
  at the [University of Queensland](https://uq.edu.au),
  which is developed in collaboration with the [Ngukurr Language Centre](http://www.ngukurrlc.org.au/) and
  the [Australian Research Council Centre of Excellence for the Dynamics of Language](http://www.dynamicsoflanguage.edu.au/).
@@ -66,7 +66,7 @@ source venv/bin/activate
 pip install -r requirements.txt
 pyinstaller main.spec --onefile --windowed 
 ```
-The .app executable should appear in elan2resouce/dist.
+The .app executable should appear in hermes/dist.
 
 #### Windows
 ```bash
@@ -77,7 +77,7 @@ venv\Scripts\activate
 pip install -r requirements.txt
 pyinstaller main.spec --onefile
 ```
-The .exe file should appear in elan2resource\dist.
+The .exe file should appear in hermes\dist.
 
 
 ## Citations
