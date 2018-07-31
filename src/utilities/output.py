@@ -12,7 +12,7 @@ def get_opie_paths(base_export_location: str) -> Box:
         'transcription': make_file_if_not_extant(os.path.join(base_export_location, 'words')),
         'translation': make_file_if_not_extant(os.path.join(base_export_location, 'translations')),
         'sound': make_file_if_not_extant(os.path.join(base_export_location, 'sounds')),
-        'image': make_file_if_not_extant(os.path.join(base_export_location, 'images')),
+        'image': make_file_if_not_extant(os.path.join(base_export_location, 'pictures')),
     })
 
 
@@ -26,7 +26,7 @@ def create_opie_files(row: int,
     image_path = data.transcriptions[row].image
     if image_path:
         image_name, image_extension = os.path.splitext(image_path)
-        shutil.copy(image_path, f'{export_paths.image}/word{row}{image_extension}')
+        shutil.copy(image_path, f'{export_paths.image}/pic{row}{image_extension}')
     with open(f'{export_paths.transcription}/word{row}.txt', 'w') as file:
         file.write(f'{components.table.get_cell_value(row, TABLE_COLUMNS["Transcription"])}')
     with open(f'{export_paths.translation}/word{row}.txt', 'w') as file:

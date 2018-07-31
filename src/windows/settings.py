@@ -4,7 +4,8 @@ from PyQt5.QtWidgets import QDialog, QGridLayout, QLabel, QPushButton, QComboBox
 from PyQt5.QtMultimedia import QAudioRecorder
 from widgets.converter import ConverterWidget
 from datatypes import AppSettings, AUDIO_QUALITY_REV, AUDIO_QUALITY, OUTPUT_MODE_NAMES
-from utilities.settings import save_system_settings
+from utilities.files import open_folder_dialogue
+from utilities.settings import save_system_settings, set_ffmpeg_location
 
 
 class SettingsWindow(QDialog):
@@ -70,6 +71,12 @@ class SettingsWindow(QDialog):
     def on_click_cancel(self) -> None:
         self.close()
 
-    @staticmethod
-    def on_click_ffmpeg() -> None:
-        imageio.plugins.ffmpeg.download(force_download=True)
+    def on_click_ffmpeg(self) -> None:
+        app_settings = self.converter.settings
+        ffmpeg_location = open_folder_dialogue()
+        if ffmpeg_location:
+            print(ffmpeg_location)
+            imageio.plugins.ffmpeg.download(directory=ffmpeg_location,
+                                            force_download=True)
+            set_ffmpeg_location(app_settings=app_settings,
+                                path=ffmpeg_location)

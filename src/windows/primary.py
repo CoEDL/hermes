@@ -1,6 +1,9 @@
 import math
+import pydub
 from PyQt5.QtWidgets import QProgressBar, QApplication, QMainWindow, QLayout, QAction
 from typing import Union
+from datatypes import AppSettings
+from utilities.settings import load_system_settings, system_settings_exist
 from widgets.converter import ConverterWidget
 from windows.about import AboutWindow
 from windows.settings import SettingsWindow
@@ -35,6 +38,7 @@ class PrimaryWindow(QMainWindow):
         self.converter = None
         self.progress_bar = None
         self.table_menu = None
+        self.settings = None
         self.bar = self.menuBar()
         self.init_ui()
         self.init_menu()
@@ -43,7 +47,14 @@ class PrimaryWindow(QMainWindow):
         self.layout().setSizeConstraint(QLayout.SetFixedSize)
         self.setWindowTitle(self.title)
         self.progress_bar = ProgressBarWidget(self.app)
-        self.converter = ConverterWidget(parent=self)
+        if system_settings_exist():
+            self.settings = load_system_settings()
+            if self.settings.ffmpeg_location:
+                pydub.AudioSegment.converter = self.settings.ffmpeg_location
+        else:
+            self.settings = AppSettings()
+        self.converter = ConverterWidget(parent=self,
+                                         settings=self.settings)
         self.setCentralWidget(self.converter)
         self.statusBar().addPermanentWidget(self.progress_bar)
         self.progress_bar.hide()

@@ -2,13 +2,12 @@ import os
 import csv
 import pympi
 import json
-from PyQt5.QtWidgets import QWidget, QGridLayout, QMessageBox
+from PyQt5.QtWidgets import QWidget, QGridLayout
 from PyQt5.QtGui import QDesktopServices
 from PyQt5.QtCore import QUrl
 from datatypes import OperationMode, Transcription, ConverterData, AppSettings, OutputMode, ConverterComponents
 from utilities.output import create_opie_files, create_dict_files, create_lmf_files
 from utilities.parse import get_audio_file, extract_elan_data
-from utilities.settings import system_settings_exist, load_system_settings
 from widgets.mode import ModeSelection
 from widgets.elan_import import ELANFileField, TierSelector
 from widgets.table import TABLE_COLUMNS, FilterTable
@@ -21,14 +20,12 @@ class ConverterWidget(QWidget):
     The core widget of the application which contains all of the widgets required to convert ELAN files.
     """
 
-    def __init__(self, parent: QWidget) -> None:
+    def __init__(self,
+                 parent: QWidget,
+                 settings: AppSettings) -> None:
         super().__init__()
         self.parent = parent
-        if system_settings_exist():
-            self.settings = AppSettings()
-            load_system_settings(self.settings)
-        else:
-            self.settings = AppSettings()
+        self.settings = settings
         self.components = ConverterComponents(
             progress_bar=self.parent.progress_bar,
             status_bar=self.parent.statusBar()
@@ -105,7 +102,7 @@ class ConverterWidget(QWidget):
                 writer.writerow(['Transcription', 'Translation', 'Audio', 'Image'])
         elif self.settings.output_format == OutputMode.LMF:
             lmf_manifest_window = ManifestWindow(self.data)
-            return_value = lmf_manifest_window.exec()
+            _ = lmf_manifest_window.exec()
         for row in range(self.components.table.rowCount()):
             if self.components.table.row_is_checked(row) and \
                     self.components.table.get_cell_value(row, TABLE_COLUMNS["Transcription"]):

@@ -79,6 +79,9 @@ def get_audio_file(data: ConverterData) -> AudioSegment:
     absolute_path_media_file = url2pathname(linked_files[0]['MEDIA_URL'])
     relative_path_media_file = os.path.join('/'.join(data.elan_file.split('/')[:-1]),
                                             linked_files[0]['RELATIVE_MEDIA_URL'])
+
+    # TODO: Change all of this to AudioSegment.from_file(path, format)
+
     if os.path.isfile(absolute_path_media_file):
         audio_data = AudioSegment.from_wav(absolute_path_media_file)
     elif os.path.isfile(relative_path_media_file):

@@ -256,10 +256,12 @@ class AppSettings(object):
     def __init__(self,
                  output_format: str = OUTPUT_MODE_NAMES[0],
                  microphone: str = 'Default',
-                 audio_quality: str = 'Normal'):
+                 audio_quality: str = 'Normal',
+                 ffmpeg_location: str = None):
         self.output_format = list(OutputMode)[OUTPUT_MODES_REV[output_format]]
         self.microphone = microphone
         self.audio_quality = AUDIO_QUALITY[audio_quality]
+        self.ffmpeg_location = ffmpeg_location
 
     def __str__(self):
         return '\n'.join([f'{key}: {value}' for key, value in self.__dict__.items()])
