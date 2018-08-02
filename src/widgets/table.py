@@ -1,5 +1,5 @@
 from PyQt5.QtWidgets import QTableWidget, QWidget, QGridLayout, QTableWidgetItem, QPushButton, \
-    QHeaderView, QLabel, QStatusBar, QHBoxLayout, QCheckBox, QLineEdit
+    QHeaderView, QLabel, QStatusBar, QHBoxLayout, QCheckBox, QLineEdit, QSizePolicy
 from PyQt5.QtCore import Qt, pyqtSignal
 from PyQt5.QtGui import QIcon, QMouseEvent
 from typing import List
@@ -36,9 +36,9 @@ class TranslationTableWidget(QTableWidget):
         self.horizontalHeader().setSectionResizeMode(TABLE_COLUMNS['Transcription'], QHeaderView.Stretch)
         self.horizontalHeader().setSectionResizeMode(TABLE_COLUMNS['Translation'], QHeaderView.Stretch)
         self.setColumnWidth(TABLE_COLUMNS['Index'], 30)
-        self.setColumnWidth(TABLE_COLUMNS['Preview'], 50)
-        self.setColumnWidth(TABLE_COLUMNS['Image'], 50)
-        self.setColumnWidth(TABLE_COLUMNS['Include'], 50)
+        self.setColumnWidth(TABLE_COLUMNS['Preview'], 75)
+        self.setColumnWidth(TABLE_COLUMNS['Image'], 75)
+        self.setColumnWidth(TABLE_COLUMNS['Include'], 75)
         self.verticalHeader().hide()
         self.setSortingEnabled(False)
         self.cellChanged.connect(self.cell_update)
@@ -206,6 +206,7 @@ class PreviewButtonWidget(QPushButton):
         self.parent = parent
         self.transcription = transcription
         self.update_icon()
+        self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         self.clicked.connect(partial(self.play_sample, self.transcription))
         self.setToolTip('Left click to hear a preview of the audio for this word\n'
                         'Right click to record new audio')
@@ -260,6 +261,7 @@ class ImageButtonWidget(QPushButton):
         self.image_icon_yes = QIcon(resource_path('./img/image-yes.png'))
         self.setIcon(self.image_icon_no)
         self.clicked.connect(partial(self.on_click_image, row))
+        self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         self.set_tooltip()
         self.right_click.connect(self.remove_image)
         self.table = table

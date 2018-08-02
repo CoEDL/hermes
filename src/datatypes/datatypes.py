@@ -4,7 +4,6 @@ from datetime import datetime
 from resizeimage import resizeimage
 from enum import Enum, unique
 from pydub import AudioSegment
-from pathlib import Path
 from typing import Union
 from uuid import uuid4
 from tempfile import mkdtemp
