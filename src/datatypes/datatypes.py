@@ -4,6 +4,7 @@ from datetime import datetime
 from resizeimage import resizeimage
 from enum import Enum, unique
 from pydub import AudioSegment
+from pathlib import Path
 from typing import Union
 from uuid import uuid4
 from tempfile import mkdtemp
@@ -181,12 +182,14 @@ class Transcription(object):
         image = Image.open(path_to_image)
         new_image_path = self.get_temp_file() + self.id + '.png'
         image.save(new_image_path, 'PNG')
+        self.image = path_to_image
 
     def set_blank_sample(self):
         self.sample = Sample(index=self.index)
 
     def refresh_preview_image(self):
-        preview_path = os.path.join(self.get_temp_file(), f'{self.id}.{self.image.format}')
+        preview_path = os.path.join(self.get_temp_file(), f'{self.id}.png')
+        print(preview_path)
         with open(self.image, 'r+b') as file:
             with Image.open(file) as image:
                 preview = resizeimage.resize_contain(image, [250, 250])
