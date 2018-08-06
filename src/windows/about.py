@@ -5,7 +5,7 @@ from utilities import resource_path
 
 
 REPO_LINK = 'https://github.com/nicklambourne/elan2resource'
-VERSION = '0.04'
+VERSION = '0.05'
 
 
 class AboutWindow(QDialog):
