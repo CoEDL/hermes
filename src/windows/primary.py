@@ -1,8 +1,9 @@
 import math
 import pydub
-from PyQt5.QtWidgets import QProgressBar, QApplication, QMainWindow, QLayout, QAction
+from PyQt5.QtWidgets import QProgressBar, QApplication, QMainWindow, QAction, QFileDialog
 from typing import Union
 from datatypes import AppSettings
+from utilities.session import SessionFile
 from utilities.settings import load_system_settings, system_settings_exist
 from widgets.converter import ConverterWidget
 from windows.about import AboutWindow
@@ -39,6 +40,7 @@ class PrimaryWindow(QMainWindow):
         self.progress_bar = None
         self.table_menu = None
         self.settings = None
+        self.session = SessionFile()
         self.bar = self.menuBar()
         self.init_ui()
         self.init_menu()
@@ -61,6 +63,11 @@ class PrimaryWindow(QMainWindow):
 
     def init_menu(self) -> None:
         file = self.bar.addMenu('File')
+
+        open_menu = QAction('Open', self)
+        open_menu.triggered.connect(self.on_click_open)
+        open_menu.setShortcut('Ctrl+O')
+        file.addAction(open_menu)
 
         save_menu = QAction('Save', self)
         save_menu.triggered.connect(self.on_click_save)
@@ -117,10 +124,13 @@ class PrimaryWindow(QMainWindow):
             self.converter.components.filter_table.add_blank_row()
 
     def on_click_save_as(self) -> None:
-        print("Clicked save as!")
+        self.session.save_as_file()
 
     def on_click_save(self) -> None:
-        print("Clicked save!")
+        self.session.save_file()
+
+    def on_click_open(self) -> None:
+        self.session.open_file()
 
     def shrink(self) -> None:
         self.resize(0, 0)
