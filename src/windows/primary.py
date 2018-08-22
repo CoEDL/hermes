@@ -62,6 +62,16 @@ class PrimaryWindow(QMainWindow):
     def init_menu(self) -> None:
         file = self.bar.addMenu('File')
 
+        save_menu = QAction('Save', self)
+        save_menu.triggered.connect(self.on_click_save)
+        save_menu.setShortcut('Ctrl+S')
+        file.addAction(save_menu)
+
+        save_as_menu = QAction('Save As', self)
+        save_as_menu.triggered.connect(self.on_click_save_as)
+        save_as_menu.setShortcut('Ctrl+Shift+S')
+        file.addAction(save_as_menu)
+
         settings_menu = QAction('Settings', self)
         settings_menu.triggered.connect(self.on_click_settings)
         settings_menu.setShortcut('Ctrl+B')
@@ -105,6 +115,12 @@ class PrimaryWindow(QMainWindow):
     def on_click_add_row(self) -> None:
         if self.converter.components.table:
             self.converter.components.filter_table.add_blank_row()
+
+    def on_click_save_as(self) -> None:
+        print("Clicked save as!")
+
+    def on_click_save(self) -> None:
+        print("Clicked save!")
 
     def shrink(self) -> None:
         self.resize(0, 0)
