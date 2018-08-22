@@ -10,7 +10,7 @@ added_files = [
     ( 'src/img/*', 'img' )
 ]
 
-root_dir = path.join(path.abspath('.'), 'elan2resource/')
+root_dir = path.join(path.abspath('.'), 'hermes/')
 entry_point = 'src/main.py'
 
 if system() == 'Windows':
