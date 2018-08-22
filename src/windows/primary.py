@@ -3,7 +3,7 @@ import pydub
 from PyQt5.QtWidgets import QProgressBar, QApplication, QMainWindow, QAction, QFileDialog
 from typing import Union
 from datatypes import AppSettings
-from utilities.session import SessionFile
+from utilities.session import SessionManager
 from utilities.settings import load_system_settings, system_settings_exist
 from widgets.converter import ConverterWidget
 from windows.about import AboutWindow
@@ -40,7 +40,7 @@ class PrimaryWindow(QMainWindow):
         self.progress_bar = None
         self.table_menu = None
         self.settings = None
-        self.session = SessionFile()
+        self.session = SessionManager()
         self.bar = self.menuBar()
         self.init_ui()
         self.init_menu()
