@@ -40,7 +40,7 @@ class PrimaryWindow(QMainWindow):
         self.progress_bar = None
         self.table_menu = None
         self.settings = None
-        self.session = SessionManager()
+        self.session = None
         self.bar = self.menuBar()
         self.init_ui()
         self.init_menu()
@@ -60,6 +60,7 @@ class PrimaryWindow(QMainWindow):
         self.setCentralWidget(self.converter)
         self.statusBar().addPermanentWidget(self.progress_bar)
         self.progress_bar.hide()
+        self.session = SessionManager(self.converter)
 
     def init_menu(self) -> None:
         file = self.bar.addMenu('File')
