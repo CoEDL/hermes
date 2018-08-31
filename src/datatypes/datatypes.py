@@ -209,7 +209,7 @@ class Transcription(object):
         return self.temp_file
 
     def __str__(self) -> str:
-        return f'<{self.transcription} {self.sample}>'
+        return f'<{self.transcription} {self.translation} {self.image} {self.sample}>'
 
 
 class ConverterData(object):

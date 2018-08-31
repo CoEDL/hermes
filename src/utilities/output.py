@@ -82,6 +82,9 @@ def create_lmf_files(row: int,
         _, image_extension = os.path.splitext(transcription.image)
         image_file_path = os.path.join(image_export_path,
                                        f'{transcription.transcription}-{row}{image_extension}')
-        shutil.copy(transcription.image, image_file_path)
+        try:
+            shutil.copy(transcription.image, image_file_path)
+        except shutil.SameFileError:
+            pass
         json_entry['image'] = [image_file_path, ]
     lmf['words'].append(json_entry)

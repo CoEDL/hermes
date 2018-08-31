@@ -1,9 +1,9 @@
 import math
 import pydub
-from PyQt5.QtWidgets import QProgressBar, QApplication, QMainWindow, QAction, QFileDialog
+from PyQt5.QtWidgets import QProgressBar, QApplication, QMainWindow, QAction
 from typing import Union
 from datatypes import AppSettings
-from utilities.session import SessionManager
+from widgets.session import SessionManager
 from utilities.settings import load_system_settings, system_settings_exist
 from widgets.converter import ConverterWidget
 from windows.about import AboutWindow

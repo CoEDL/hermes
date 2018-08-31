@@ -1,10 +1,12 @@
-from PyQt5.QtWidgets import QFileDialog, QMessageBox, QErrorMessage
+from PyQt5.QtWidgets import QFileDialog, QErrorMessage
 from utilities.output import create_lmf_files
+from utilities.files import open_folder_dialogue
 from windows.manifest import ManifestWindow
 from widgets.converter import ConverterWidget
-from datatypes import create_lmf
+from datatypes import create_lmf, Transcription
 import json
 import logging
+import os
 
 
 LOG = logging.getLogger("SessionManager")
@@ -12,7 +14,7 @@ LOG = logging.getLogger("SessionManager")
 
 class SessionManager(object):
     """
-    Session Manager handles session operations.
+    Session Manager handles session operations, providing functionality for Save, Save As, and Open.
     """
 
     def __init__(self, converter: ConverterWidget):
@@ -26,6 +28,26 @@ class SessionManager(object):
         self.session_data = SessionFile(file_name)
 
         # TODO: Parse Opened File
+        with open(file_name, 'r') as f:
+            loaded_data = json.loads(f.read())
+            LOG.info("Data loaded: {}".format(loaded_data))
+
+        # Populate manifest in converter data
+        self.populate_initial_lmf_fields(loaded_data)
+        LOG.info("Manifest: {}".format(self.converter.data.lmf))
+
+        # Add transcriptions
+        self.converter.data.transcriptions = list()
+        for i, word in enumerate(loaded_data['words']):
+            self.converter.data.transcriptions.append(Transcription(index=i-1,
+                                                                    transcription=word['transcription'],
+                                                                    translation=word['translation'][0],
+                                                                    image=word.get('image')[0] if word.get('image') else '')
+                                                      )
+            LOG.info("Transcriptions loaded: {}".format(self.converter.data.transcriptions[i]))
+
+        for n in range(len(self.converter.data.transcriptions)):
+            self.converter.components.filter_table.add_blank_row()
 
         LOG.info("File opened from: {}".format(self.session_data.file_name))
 
@@ -47,6 +69,9 @@ class SessionManager(object):
         else:
             file_name = self.session_data.file_name
 
+        if not self.converter.data.export_location:
+            self.converter.data.export_location = open_folder_dialogue()
+
         # Empty lmf word list first, otherwise it will duplicate entries.
         self.converter.data.lmf['words'] = list()
         for row in range(self.converter.components.table.rowCount()):
@@ -65,23 +90,36 @@ class SessionManager(object):
         """Creates a new language manifest file prior to new save file."""
         lmf_manifest_window = ManifestWindow(self.converter.data)
         _ = lmf_manifest_window.exec()
-        self.converter.data.lmf = create_lmf(
-            transcription_language=lmf_manifest_window.widgets.transcription_language_field.text(),
-            translation_language=lmf_manifest_window.widgets.translation_language_field.text(),
-            author=lmf_manifest_window.widgets.author_name_field.text()
-        )
+        self.populate_initial_lmf_fields(lmf_manifest_window)
         lmf_manifest_window.close()
 
-    def update_session(self, file_name: str):
+    def populate_initial_lmf_fields(self, source) -> None:
+        """
+        Populates a language manifest file's descriptive data.
+
+        If source is a new ManifestWindow, then user will enter information for languages, and authorship.
+
+        Otherwise, source is a loaded file.
+
+        Keyword arguments:
+            source -- ManifestWindow for input, or loaded .hermes (json) file with information to be extracted.
+        """
+        if isinstance(source, ManifestWindow):
+            self.converter.data.lmf = create_lmf(
+                transcription_language=source.widgets.transcription_language_field.text(),
+                translation_language=source.widgets.translation_language_field.text(),
+                author=source.widgets.author_name_field.text()
+            )
+        else:
+            self.converter.data.lmf = create_lmf(
+                transcription_language=source['transcription-language'],
+                translation_language=source['translation-language'],
+                author=source['author']
+            )
+
+    def update_session(self, file_name: str) -> None:
         self.session_data = SessionFile(file_name)
         self.parse(self.session_data.file_name)
-
-    def parse(self, file_name: str):
-        try:
-            with open(file_name, 'r') as file:
-                self.session_data.parse_data(file.readlines())
-        except (OSError, IOError) as e:
-            print("No file to open: {}".format(e))
 
 
 class SessionFile(object):
