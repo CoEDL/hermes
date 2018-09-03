@@ -1,9 +1,11 @@
 from PyQt5.QtWidgets import QFileDialog, QErrorMessage
+from datatypes import create_lmf, Transcription
 from utilities.output import create_lmf_files
 from utilities.files import open_folder_dialogue
 from windows.manifest import ManifestWindow
 from widgets.converter import ConverterWidget
-from datatypes import create_lmf, Transcription
+from widgets.table import TABLE_COLUMNS
+
 import json
 import logging
 
@@ -37,6 +39,7 @@ class SessionManager(object):
 
         # Add transcriptions
         self.converter.data.transcriptions = list()
+        self.converter.components.filter_table.clear_table()
         for i, word in enumerate(loaded_data['words']):
             self.converter.data.transcriptions.append(Transcription(index=i,
                                                                     transcription=word['transcription'],
@@ -45,7 +48,7 @@ class SessionManager(object):
                                                       )
             SESSION_LOG.info("Transcriptions loaded: {}".format(self.converter.data.transcriptions[i]))
 
-        for n in range(len(loaded_data['words'])):
+        for n in range(len(loaded_data['words']) + 1):
             self.converter.components.filter_table.add_blank_row()
         self.converter.components.filter_table.populate_table(self.converter.data.transcriptions)
 
@@ -75,7 +78,8 @@ class SessionManager(object):
         # Empty lmf word list first, otherwise it will duplicate entries.
         self.converter.data.lmf['words'] = list()
         for row in range(self.converter.components.table.rowCount()):
-            create_lmf_files(row, self.converter.data)
+            if self.converter.components.table.get_cell_value(row, TABLE_COLUMNS["Transcription"]):
+                create_lmf_files(row, self.converter.data)
 
         # Save to json format
         if file_name:

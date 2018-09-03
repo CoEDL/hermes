@@ -49,12 +49,12 @@ class PrimaryWindow(QMainWindow):
         # self.layout().setSizeConstraint(QLayout.SetFixedSize)
         self.setWindowTitle(self.title)
         self.progress_bar = ProgressBarWidget(self.app)
-        if system_settings_exist():
-            self.settings = load_system_settings()
-            if self.settings.ffmpeg_location:
-                pydub.AudioSegment.converter = self.settings.ffmpeg_location
-        else:
-            self.settings = AppSettings()
+        # if system_settings_exist():
+        #     self.settings = load_system_settings()
+        #     if self.settings.ffmpeg_location:
+        #         pydub.AudioSegment.converter = self.settings.ffmpeg_location
+        # else:
+        self.settings = AppSettings()
         self.converter = ConverterWidget(parent=self,
                                          settings=self.settings)
         self.setCentralWidget(self.converter)
