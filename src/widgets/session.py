@@ -1,10 +1,11 @@
-from PyQt5.QtWidgets import QFileDialog, QErrorMessage
+from PyQt5.QtWidgets import QFileDialog, QMessageBox
 from datatypes import create_lmf, Transcription
 from utilities.output import create_lmf_files
 from utilities.files import open_folder_dialogue
-from windows.manifest import ManifestWindow
 from widgets.converter import ConverterWidget
+from windows.manifest import ManifestWindow
 from widgets.table import TABLE_COLUMNS
+from widgets.warning import WarningMessage
 
 import json
 import logging
@@ -22,6 +23,7 @@ class SessionManager(object):
         self.session_data = None
         self._file_dialog = QFileDialog()
         self.converter = converter
+        file_not_found_msg()
 
     def open_file(self):
         file_name, _ = self._file_dialog.getOpenFileName(self._file_dialog,
@@ -148,6 +150,7 @@ class SessionFile(object):
 
 
 def file_not_found_msg():
-    warn = QErrorMessage()
-    warn.showMessage("File not found, please enter or select a valid file.")
-    warn.show()
+    file_not_found_warn = WarningMessage()
+    file_not_found_warn.warning(file_not_found_warn, 'Warning',
+                                f'The file you selected was not found.\n',
+                                QMessageBox.Ok)
