@@ -1,5 +1,6 @@
 import math
 import pydub
+import logging
 from PyQt5.QtWidgets import QProgressBar, QApplication, QMainWindow, QAction
 from typing import Union
 from datatypes import AppSettings
@@ -8,6 +9,9 @@ from utilities.settings import load_system_settings, system_settings_exist
 from widgets.converter import ConverterWidget
 from windows.about import AboutWindow
 from windows.settings import SettingsWindow
+
+
+PRIMARY_LOG = logging.getLogger("PrimaryWindow")
 
 
 class ProgressBarWidget(QProgressBar):
@@ -34,6 +38,7 @@ class PrimaryWindow(QMainWindow):
 
     def __init__(self, app: QApplication) -> None:
         super().__init__()
+        self.primary_log = logging.getLogger("PrimaryWindow")
         self.app = app
         self.title = 'Hermes: The Language Resource Creator'
         self.converter = None
@@ -63,6 +68,8 @@ class PrimaryWindow(QMainWindow):
         self.session = SessionManager(self.converter)
 
     def init_menu(self, save_flag: bool = False) -> None:
+        self.primary_log.info(f'Menu Bar initialised with save: {save_flag}')
+
         self.bar.clear()
         file = self.bar.addMenu('File')
 

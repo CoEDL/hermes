@@ -11,33 +11,29 @@ import json
 import logging
 
 
-SESSION_LOG = logging.getLogger("SessionManager")
-
-
 class SessionManager(object):
     """
     Session Manager handles session operations, providing functionality for Save, Save As, and Open.
     """
 
     def __init__(self, converter: ConverterWidget):
+        self.session_log = logging.getLogger("SessionManager")
         self.session_data = None
         self._file_dialog = QFileDialog()
         self.converter = converter
-        file_not_found_msg()
 
     def open_file(self):
         file_name, _ = self._file_dialog.getOpenFileName(self._file_dialog,
                                                          "Open Hermes Session", "", "hermes (*.hermes)")
         self.session_data = SessionFile(file_name)
+        self.session_log.info(f"File opened from: {self.session_data.file_name}")
 
-        # TODO: Parse Opened File
         with open(file_name, 'r') as f:
             loaded_data = json.loads(f.read())
-            SESSION_LOG.info("Data loaded: {}".format(loaded_data))
+            self.session_log.info(f"Data loaded: {loaded_data}")
 
         # Populate manifest in converter data
         self.populate_initial_lmf_fields(loaded_data)
-        SESSION_LOG.info("Manifest: {}".format(self.converter.data.lmf))
 
         # Add transcriptions
         self.converter.data.transcriptions = list()
@@ -49,13 +45,11 @@ class SessionManager(object):
                                                                     image=word.get('image')[0] if word.get('image') else '',
                                                                     media=word.get('audio')[0] if word.get('audio') else '')
                                                       )
-            SESSION_LOG.info("Transcriptions loaded: {}".format(self.converter.data.transcriptions[i]))
+            self.session_log.info(f"Transcription loaded: {self.converter.data.transcriptions[i]}")
 
         for n in range(len(loaded_data['words']) + 1):
             self.converter.components.filter_table.add_blank_row()
         self.converter.components.filter_table.populate_table(self.converter.data.transcriptions)
-
-        SESSION_LOG.info("File opened from: {}".format(self.session_data.file_name))
 
     def save_as_file(self):
         file_name, _ = self._file_dialog.getSaveFileName(self._file_dialog,
@@ -65,7 +59,7 @@ class SessionManager(object):
         else:
             self.session_data.file_name = file_name
         self.create_session_lmf()
-        SESSION_LOG.info("New file created with Save AS: {}".format(self.session_data.file_name))
+        self.session_log.info(f'New File created with Save As: {self.session_data.file_name}')
         self.save_file()
 
     def save_file(self):
@@ -77,6 +71,7 @@ class SessionManager(object):
 
         if not self.converter.data.export_location:
             self.converter.data.export_location = open_folder_dialogue()
+        self.session_log.info(f'Export location set: {self.converter.data.export_location}')
 
         # Empty lmf word list first, otherwise it will duplicate entries.
         self.converter.data.lmf['words'] = list()
@@ -91,7 +86,7 @@ class SessionManager(object):
         else:
             file_not_found_msg()
 
-        SESSION_LOG.info("File saved at {}".format(self.session_data.file_name))
+        self.session_log.info(f"File saved at {self.session_data.file_name}")
 
     def create_session_lmf(self):
         """Creates a new language manifest file prior to new save file."""
