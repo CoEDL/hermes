@@ -47,7 +47,7 @@ class SessionManager(object):
 
         for n in range(len(loaded_data['words'])):
             self.converter.components.filter_table.add_blank_row()
-            self.converter.components.filter_table.populate_table(self.converter.data.transcriptions)
+        self.converter.components.filter_table.populate_table(self.converter.data.transcriptions)
 
         SESSION_LOG.info("File opened from: {}".format(self.session_data.file_name))
 
