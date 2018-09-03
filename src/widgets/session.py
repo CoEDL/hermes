@@ -6,10 +6,9 @@ from widgets.converter import ConverterWidget
 from datatypes import create_lmf, Transcription
 import json
 import logging
-import os
 
 
-LOG = logging.getLogger("SessionManager")
+SESSION_LOG = logging.getLogger("SessionManager")
 
 
 class SessionManager(object):
@@ -30,26 +29,27 @@ class SessionManager(object):
         # TODO: Parse Opened File
         with open(file_name, 'r') as f:
             loaded_data = json.loads(f.read())
-            LOG.info("Data loaded: {}".format(loaded_data))
+            SESSION_LOG.info("Data loaded: {}".format(loaded_data))
 
         # Populate manifest in converter data
         self.populate_initial_lmf_fields(loaded_data)
-        LOG.info("Manifest: {}".format(self.converter.data.lmf))
+        SESSION_LOG.info("Manifest: {}".format(self.converter.data.lmf))
 
         # Add transcriptions
         self.converter.data.transcriptions = list()
         for i, word in enumerate(loaded_data['words']):
-            self.converter.data.transcriptions.append(Transcription(index=i-1,
+            self.converter.data.transcriptions.append(Transcription(index=i,
                                                                     transcription=word['transcription'],
                                                                     translation=word['translation'][0],
                                                                     image=word.get('image')[0] if word.get('image') else '')
                                                       )
-            LOG.info("Transcriptions loaded: {}".format(self.converter.data.transcriptions[i]))
+            SESSION_LOG.info("Transcriptions loaded: {}".format(self.converter.data.transcriptions[i]))
 
-        for n in range(len(self.converter.data.transcriptions)):
+        for n in range(len(loaded_data['words'])):
             self.converter.components.filter_table.add_blank_row()
+            self.converter.components.filter_table.populate_table(self.converter.data.transcriptions)
 
-        LOG.info("File opened from: {}".format(self.session_data.file_name))
+        SESSION_LOG.info("File opened from: {}".format(self.session_data.file_name))
 
     def save_as_file(self):
         file_name, _ = self._file_dialog.getSaveFileName(self._file_dialog,
@@ -59,7 +59,7 @@ class SessionManager(object):
         else:
             self.session_data.file_name = file_name
         self.create_session_lmf()
-        LOG.info("New file created with Save AS: {}".format(self.session_data.file_name))
+        SESSION_LOG.info("New file created with Save AS: {}".format(self.session_data.file_name))
         self.save_file()
 
     def save_file(self):
@@ -84,7 +84,7 @@ class SessionManager(object):
         else:
             file_not_found_msg()
 
-        LOG.info("File saved at {}".format(self.session_data.file_name))
+        SESSION_LOG.info("File saved at {}".format(self.session_data.file_name))
 
     def create_session_lmf(self):
         """Creates a new language manifest file prior to new save file."""
