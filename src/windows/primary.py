@@ -62,23 +62,27 @@ class PrimaryWindow(QMainWindow):
         self.progress_bar.hide()
         self.session = SessionManager(self.converter)
 
-    def init_menu(self) -> None:
+    def init_menu(self, save_flag: bool = False) -> None:
+        self.bar.clear()
         file = self.bar.addMenu('File')
 
         open_menu = QAction('Open', self)
         open_menu.triggered.connect(self.on_click_open)
         open_menu.setShortcut('Ctrl+O')
         file.addAction(open_menu)
+        open_menu.setEnabled(save_flag)
 
         save_menu = QAction('Save', self)
         save_menu.triggered.connect(self.on_click_save)
         save_menu.setShortcut('Ctrl+S')
         file.addAction(save_menu)
+        save_menu.setEnabled(save_flag)
 
         save_as_menu = QAction('Save As', self)
         save_as_menu.triggered.connect(self.on_click_save_as)
         save_as_menu.setShortcut('Ctrl+Shift+S')
         file.addAction(save_as_menu)
+        save_as_menu.setEnabled(save_flag)
 
         settings_menu = QAction('Settings', self)
         settings_menu.triggered.connect(self.on_click_settings)
@@ -118,6 +122,7 @@ class PrimaryWindow(QMainWindow):
 
     def on_click_reset(self) -> None:
         self.init_ui()
+        self.init_menu()
         self.shrink()
 
     def on_click_add_row(self) -> None:
