@@ -84,7 +84,7 @@ class ConverterWidget(QWidget):
         components.export_location_field = ExportLocationField(self)
         self.layout.addWidget(components.export_location_field, 3, 0, 1, 8)
         components.status_bar.showMessage('Select words to include and choose an export location')
-        # Reinit menu to allow for Open/Save functionality.
+        # Re-init menu to allow for Open/Save functionality now that table widget exists.
         self.parent.init_menu(True)
 
     def load_fourth_stage_widgets(self) -> None:

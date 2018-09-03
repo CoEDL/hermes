@@ -44,7 +44,8 @@ class SessionManager(object):
             self.converter.data.transcriptions.append(Transcription(index=i,
                                                                     transcription=word['transcription'],
                                                                     translation=word['translation'][0],
-                                                                    image=word.get('image')[0] if word.get('image') else '')
+                                                                    image=word.get('image')[0] if word.get('image') else '',
+                                                                    media=word.get('audio')[0] if word.get('audio') else '')
                                                       )
             SESSION_LOG.info("Transcriptions loaded: {}".format(self.converter.data.transcriptions[i]))
 
