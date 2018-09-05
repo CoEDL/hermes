@@ -12,6 +12,7 @@ Run tests with pytest in ./hermes root directory, or python -m pytest.
 -v for verbose, -s to output print
 '''
 
+
 class TestMain:
 
     @pytest.fixture(scope="class")

@@ -25,7 +25,7 @@ def print_system_settings() -> None:
 
 def load_system_settings() -> AppSettings:
     app_settings = AppSettings()
-    print_system_settings()
+    # print_system_settings()
     system_settings = get_settings()
     app_settings.audio_quality = AUDIO_QUALITY[system_settings.value('Audio Quality')]
     app_settings.output_format = list(OutputMode)[int(system_settings.value('Output Format'))]

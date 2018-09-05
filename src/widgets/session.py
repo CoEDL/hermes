@@ -18,15 +18,15 @@ class SessionManager(object):
 
     def __init__(self, converter: ConverterWidget):
         self.session_log = logging.getLogger("SessionManager")
-        self.session_data = None
+        self.session_filename = None
         self._file_dialog = QFileDialog()
         self.converter = converter
 
     def open_file(self):
         file_name, _ = self._file_dialog.getOpenFileName(self._file_dialog,
                                                          "Open Hermes Session", "", "hermes (*.hermes)")
-        self.session_data = SessionFile(file_name)
-        self.session_log.info(f"File opened from: {self.session_data.file_name}")
+        self.session_filename = file_name
+        self.session_log.info(f"File opened from: {self.session_filename}")
 
         with open(file_name, 'r') as f:
             loaded_data = json.loads(f.read())
@@ -54,20 +54,16 @@ class SessionManager(object):
     def save_as_file(self):
         file_name, _ = self._file_dialog.getSaveFileName(self._file_dialog,
                                                          "Save As", "mysession.hermes", "hermes (*.hermes)")
-        if self.session_data is None:
-            self.session_data = SessionFile(file_name)
-        else:
-            self.session_data.file_name = file_name
+        self.session_filename = file_name
         self.create_session_lmf()
-        self.session_log.info(f'New File created with Save As: {self.session_data.file_name}')
+        self.session_log.info(f'New File created with Save As: {self.session_filename}')
         self.save_file()
 
     def save_file(self):
         # If no file then save as
-        if not self.session_data:
+        if not self.session_filename:
             self.save_as_file()
-        else:
-            file_name = self.session_data.file_name
+            return
 
         if not self.converter.data.export_location:
             self.converter.data.export_location = open_folder_dialogue()
@@ -80,13 +76,13 @@ class SessionManager(object):
                 create_lmf_files(row, self.converter.data)
 
         # Save to json format
-        if file_name:
-            with open(file_name, 'w+') as f:
+        if self.session_filename:
+            with open(self.session_filename, 'w+') as f:
                 json.dump(self.converter.data.lmf, f, indent=4)
         else:
             file_not_found_msg()
 
-        self.session_log.info(f"File saved at {self.session_data.file_name}")
+        self.session_log.info(f"File saved at {self.session_filename}")
 
     def create_session_lmf(self):
         """Creates a new language manifest file prior to new save file."""
@@ -118,30 +114,6 @@ class SessionManager(object):
                 translation_language=source['translation-language'],
                 author=source['author']
             )
-
-    def update_session(self, file_name: str) -> None:
-        self.session_data = SessionFile(file_name)
-        self.parse(self.session_data.file_name)
-
-
-class SessionFile(object):
-    """Data structure holding stored data from a session."""
-
-    def __init__(self, file_name: str):
-        self._file_name = file_name
-        self._data = None
-
-    @property
-    def file_name(self):
-        return self._file_name
-
-    @file_name.setter
-    def file_name(self, name: str):
-        self._file_name = name
-
-    def parse_data(self, data):
-        # TODO: Actual data structure and parse.
-        self._data = data
 
 
 def file_not_found_msg():

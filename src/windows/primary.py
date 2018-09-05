@@ -5,7 +5,7 @@ from PyQt5.QtWidgets import QProgressBar, QApplication, QMainWindow, QAction
 from typing import Union
 from datatypes import AppSettings
 from widgets.session import SessionManager
-from utilities.settings import load_system_settings, system_settings_exist
+from utilities.settings import load_system_settings, system_settings_exist, save_system_settings
 from widgets.converter import ConverterWidget
 from windows.about import AboutWindow
 from windows.settings import SettingsWindow
@@ -54,12 +54,12 @@ class PrimaryWindow(QMainWindow):
         # self.layout().setSizeConstraint(QLayout.SetFixedSize)
         self.setWindowTitle(self.title)
         self.progress_bar = ProgressBarWidget(self.app)
-        # if system_settings_exist():
-        #     self.settings = load_system_settings()
-        #     if self.settings.ffmpeg_location:
-        #         pydub.AudioSegment.converter = self.settings.ffmpeg_location
-        # else:
-        self.settings = AppSettings()
+        if system_settings_exist():
+            self.settings = load_system_settings()
+            if self.settings.ffmpeg_location:
+                pydub.AudioSegment.converter = self.settings.ffmpeg_location
+        else:
+            self.settings = AppSettings()
         self.converter = ConverterWidget(parent=self,
                                          settings=self.settings)
         self.setCentralWidget(self.converter)
@@ -138,9 +138,11 @@ class PrimaryWindow(QMainWindow):
 
     def on_click_save_as(self) -> None:
         self.session.save_as_file()
+        save_system_settings(self.settings)
 
     def on_click_save(self) -> None:
         self.session.save_file()
+        save_system_settings(self.settings)
 
     def on_click_open(self) -> None:
         self.session.open_file()
