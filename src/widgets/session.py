@@ -23,6 +23,8 @@ class SessionManager(object):
         self.converter = converter
 
     def open_file(self):
+        self.converter.components.status_bar.clearMessage()
+
         file_name, _ = self._file_dialog.getOpenFileName(self._file_dialog,
                                                          "Open Hermes Session", "", "hermes (*.hermes)")
         self.session_filename = file_name
@@ -50,6 +52,7 @@ class SessionManager(object):
         for n in range(len(loaded_data['words']) + 1):
             self.converter.components.filter_table.add_blank_row()
         self.converter.components.filter_table.populate_table(self.converter.data.transcriptions)
+        self.converter.components.status_bar.showMessage(f"Data opened from: {self.session_filename}", 5000)
 
     def save_as_file(self):
         file_name, _ = self._file_dialog.getSaveFileName(self._file_dialog,
@@ -71,9 +74,18 @@ class SessionManager(object):
 
         # Empty lmf word list first, otherwise it will duplicate entries.
         self.converter.data.lmf['words'] = list()
+
+        # Progress bar
+        self.converter.components.status_bar.clearMessage()
+        self.converter.components.progress_bar.show()
+        complete_count = 0
+        to_save_count = self.converter.components.table.rowCount()
+
         for row in range(self.converter.components.table.rowCount()):
             if self.converter.components.table.get_cell_value(row, TABLE_COLUMNS["Transcription"]):
                 create_lmf_files(row, self.converter.data)
+            complete_count += 1
+            self.converter.components.progress_bar.update_progress(complete_count / to_save_count)
 
         # Save to json format
         if self.session_filename:
@@ -81,6 +93,9 @@ class SessionManager(object):
                 json.dump(self.converter.data.lmf, f, indent=4)
         else:
             file_not_found_msg()
+
+        self.converter.components.progress_bar.hide()
+        self.converter.components.status_bar.showMessage(f"Data saved at: {self.session_filename}", 5000)
 
         self.session_log.info(f"File saved at {self.session_filename}")
 
