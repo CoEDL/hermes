@@ -52,7 +52,6 @@ class SessionManager(object):
                                                                     media=word.get('audio')[0] if word.get('audio') else '')
                                                       )
             if word.get('audio')[0]:
-                print(word.get('audio')[0])
                 self.converter.data.transcriptions[i].set_blank_sample()
                 self.converter.data.transcriptions[i].sample.set_sample(word.get('audio')[0])
 
