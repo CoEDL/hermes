@@ -1,4 +1,5 @@
 from PyQt5.QtWidgets import QFileDialog, QMessageBox
+from PyQt5.QtCore import QThread, QTimer
 from datatypes import create_lmf, Transcription
 from utilities.output import create_lmf_files
 from utilities.files import open_folder_dialogue
@@ -19,6 +20,9 @@ class SessionManager(object):
     def __init__(self, converter: ConverterWidget):
         self.session_log = logging.getLogger("SessionManager")
         self.session_filename = None
+        self.autosave = AutosaveThread(self)
+        # self.autosave.start()
+        self.autosave_timer = QTimer()
         self._file_dialog = QFileDialog()
         self.converter = converter
 
@@ -47,6 +51,11 @@ class SessionManager(object):
                                                                     image=word.get('image')[0] if word.get('image') else '',
                                                                     media=word.get('audio')[0] if word.get('audio') else '')
                                                       )
+            if word.get('audio')[0]:
+                print(word.get('audio')[0])
+                self.converter.data.transcriptions[i].set_blank_sample()
+                self.converter.data.transcriptions[i].sample.set_sample(word.get('audio')[0])
+
             self.session_log.info(f"Transcription loaded: {self.converter.data.transcriptions[i]}")
 
         for n in range(len(loaded_data['words']) + 1):
@@ -129,6 +138,28 @@ class SessionManager(object):
                 translation_language=source['translation-language'],
                 author=source['author']
             )
+
+    def autosave_thread_function(self):
+        print("Entered Thread")
+        self.autosave_timer = QTimer()
+        self.autosave_timer.timeout.connect(self.run_autosave)
+        self.autosave_timer.start(1000)
+        print(f'Time remaining {self.autosave_timer.remainingTime()}')
+        print(f'Time active {self.autosave_timer.isActive()}')
+
+    def run_autosave(self):
+        print(f'Autosaved!')
+
+class AutosaveThread(QThread):
+    """Threaded autosave to avoid interruption."""
+
+    def __init__(self, session: SessionManager):
+        QThread.__init__(self)
+        self.session = session
+
+    def run(self):
+        self.session.autosave_thread_function()
+        self.exec_()
 
 
 def file_not_found_msg():
