@@ -18,13 +18,15 @@ class SessionManager(object):
     """
 
     def __init__(self, converter: ConverterWidget):
+        self._file_dialog = QFileDialog()
         self.session_log = logging.getLogger("SessionManager")
+        self.converter = converter
         self.session_filename = None
         self.autosave = AutosaveThread(self)
         # self.autosave.start()
         self.autosave_timer = QTimer()
-        self._file_dialog = QFileDialog()
-        self.converter = converter
+
+
 
     def open_file(self):
         """Open a .hermes json file and parse into table."""
@@ -57,6 +59,7 @@ class SessionManager(object):
                                                                     image=word.get('image')[0] if word.get('image') else '',
                                                                     media=word.get('audio')[0] if word.get('audio') else '')
                                                       )
+
             if word.get('audio')[0]:
                 # An audio file exists, add it.
                 self.converter.data.transcriptions[i].set_blank_sample()
@@ -165,6 +168,7 @@ class SessionManager(object):
         return self.converter.data.export_location
 
     def autosave_thread_function(self):
+        """TODO, this is to test that thread initialised"""
         print("Entered Thread")
         self.autosave_timer = QTimer()
         self.autosave_timer.timeout.connect(self.run_autosave)
@@ -173,6 +177,7 @@ class SessionManager(object):
         print(f'Time active {self.autosave_timer.isActive()}')
 
     def run_autosave(self):
+        """TODO"""
         print(f'Autosaved!')
 
 
