@@ -27,10 +27,16 @@ class SessionManager(object):
         self.converter = converter
 
     def open_file(self):
+        """Open a .hermes json file and parse into table."""
         self.converter.components.status_bar.clearMessage()
 
         file_name, _ = self._file_dialog.getOpenFileName(self._file_dialog,
                                                          "Open Hermes Session", "", "hermes (*.hermes)")
+        # Ensure there is a file to open!
+        if not file_name:
+            file_not_found_msg()
+            return
+
         self.session_filename = file_name
         self.session_log.info(f"File opened from: {self.session_filename}")
 
@@ -52,20 +58,27 @@ class SessionManager(object):
                                                                     media=word.get('audio')[0] if word.get('audio') else '')
                                                       )
             if word.get('audio')[0]:
+                # An audio file exists, add it.
                 self.converter.data.transcriptions[i].set_blank_sample()
                 self.converter.data.transcriptions[i].sample.set_sample(word.get('audio')[0])
 
             self.session_log.info(f"Transcription loaded: {self.converter.data.transcriptions[i]}")
 
+        # Populate table, add an extra blank row for convenience at end.
         for n in range(len(loaded_data['words']) + 1):
             self.converter.components.filter_table.add_blank_row()
         self.converter.components.filter_table.populate_table(self.converter.data.transcriptions)
         self.converter.components.status_bar.showMessage(f"Data opened from: {self.session_filename}", 5000)
 
     def save_as_file(self):
+        """User sets new file name + location with QFileDialog, if set then initialise save process."""
         file_name, _ = self._file_dialog.getSaveFileName(self._file_dialog,
                                                          "Save As", "mysession.hermes", "hermes (*.hermes)")
-        self.session_filename = file_name
+        if file_name:
+            self.session_filename = file_name
+        else:
+            no_save_file_msg()
+            return
         self.create_session_lmf()
         self.session_log.info(f'New File created with Save As: {self.session_filename}')
         self.save_file()
@@ -76,9 +89,10 @@ class SessionManager(object):
             self.save_as_file()
             return
 
-        if not self.converter.data.export_location:
-            self.converter.data.export_location = open_folder_dialogue()
-        self.session_log.info(f'Export location set: {self.converter.data.export_location}')
+        # User to set export location if it does not exist, abort if not set.
+        if not self.export_location():
+            no_export_msg()
+            return
 
         # Empty lmf word list first, otherwise it will duplicate entries.
         self.converter.data.lmf['words'] = list()
@@ -89,6 +103,7 @@ class SessionManager(object):
         complete_count = 0
         to_save_count = self.converter.components.table.rowCount()
 
+        # Transfer data to lmf file.
         for row in range(self.converter.components.table.rowCount()):
             if self.converter.components.table.get_cell_value(row, TABLE_COLUMNS["Transcription"]):
                 create_lmf_files(row, self.converter.data)
@@ -122,8 +137,8 @@ class SessionManager(object):
 
         Otherwise, source is a loaded file.
 
-        Keyword arguments:
-            source -- ManifestWindow for input, or loaded .hermes (json) file with information to be extracted.
+        Args:
+            source: ManifestWindow for input, or loaded .hermes (json) file with information to be extracted.
         """
         if isinstance(source, ManifestWindow):
             self.converter.data.lmf = create_lmf(
@@ -138,6 +153,17 @@ class SessionManager(object):
                 author=source['author']
             )
 
+    def export_location(self) -> str:
+        """User sets an export location if one is not already set.
+
+        Returns:
+            Path to export location, else None.
+        """
+        if not self.converter.data.export_location:
+            self.converter.data.export_location = open_folder_dialogue()
+        self.session_log.info(f'Export location set: {self.converter.data.export_location}')
+        return self.converter.data.export_location
+
     def autosave_thread_function(self):
         print("Entered Thread")
         self.autosave_timer = QTimer()
@@ -148,6 +174,7 @@ class SessionManager(object):
 
     def run_autosave(self):
         print(f'Autosaved!')
+
 
 class AutosaveThread(QThread):
     """Threaded autosave to avoid interruption."""
@@ -164,5 +191,17 @@ class AutosaveThread(QThread):
 def file_not_found_msg():
     file_not_found_warn = WarningMessage()
     file_not_found_warn.warning(file_not_found_warn, 'Warning',
-                                f'The file you selected was not found.\n',
+                                f'No file was found.\n',
                                 QMessageBox.Ok)
+
+def no_save_file_msg():
+    no_save_file_warn = WarningMessage()
+    no_save_file_warn.warning(no_save_file_warn, 'Warning',
+                              f"No save file was selected. You must specify a file to save to.\n",
+                              QMessageBox.Ok)
+
+def no_export_msg():
+    no_save_file_warn = WarningMessage()
+    no_save_file_warn.warning(no_save_file_warn, 'Warning',
+                              f"No export location found. You must specify an export location.\n",
+                              QMessageBox.Ok)
