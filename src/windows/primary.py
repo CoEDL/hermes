@@ -1,12 +1,17 @@
 import math
 import pydub
-from PyQt5.QtWidgets import QProgressBar, QApplication, QMainWindow, QLayout, QAction
+import logging
+from PyQt5.QtWidgets import QProgressBar, QApplication, QMainWindow, QAction
 from typing import Union
 from datatypes import AppSettings
-from utilities.settings import load_system_settings, system_settings_exist
+from widgets.session import SessionManager
+from utilities.settings import load_system_settings, system_settings_exist, save_system_settings
 from widgets.converter import ConverterWidget
 from windows.about import AboutWindow
 from windows.settings import SettingsWindow
+
+
+PRIMARY_LOG = logging.getLogger("PrimaryWindow")
 
 
 class ProgressBarWidget(QProgressBar):
@@ -33,12 +38,14 @@ class PrimaryWindow(QMainWindow):
 
     def __init__(self, app: QApplication) -> None:
         super().__init__()
+        self.primary_log = logging.getLogger("PrimaryWindow")
         self.app = app
         self.title = 'Hermes: The Language Resource Creator'
         self.converter = None
         self.progress_bar = None
         self.table_menu = None
         self.settings = None
+        self.session = None
         self.bar = self.menuBar()
         self.init_ui()
         self.init_menu()
@@ -58,9 +65,31 @@ class PrimaryWindow(QMainWindow):
         self.setCentralWidget(self.converter)
         self.statusBar().addPermanentWidget(self.progress_bar)
         self.progress_bar.hide()
+        self.session = SessionManager(self.converter)
 
-    def init_menu(self) -> None:
+    def init_menu(self, save_flag: bool = False) -> None:
+        self.primary_log.info(f'Menu Bar initialised with save: {save_flag}')
+
+        self.bar.clear()
         file = self.bar.addMenu('File')
+
+        open_menu = QAction('Open', self)
+        open_menu.triggered.connect(self.on_click_open)
+        open_menu.setShortcut('Ctrl+O')
+        file.addAction(open_menu)
+        open_menu.setEnabled(save_flag)
+
+        save_menu = QAction('Save', self)
+        save_menu.triggered.connect(self.on_click_save)
+        save_menu.setShortcut('Ctrl+S')
+        file.addAction(save_menu)
+        save_menu.setEnabled(save_flag)
+
+        save_as_menu = QAction('Save As', self)
+        save_as_menu.triggered.connect(self.on_click_save_as)
+        save_as_menu.setShortcut('Ctrl+Shift+S')
+        file.addAction(save_as_menu)
+        save_as_menu.setEnabled(save_flag)
 
         settings_menu = QAction('Settings', self)
         settings_menu.triggered.connect(self.on_click_settings)
@@ -100,11 +129,23 @@ class PrimaryWindow(QMainWindow):
 
     def on_click_reset(self) -> None:
         self.init_ui()
+        self.init_menu()
         self.shrink()
 
     def on_click_add_row(self) -> None:
         if self.converter.components.table:
             self.converter.components.filter_table.add_blank_row()
+
+    def on_click_save_as(self) -> None:
+        self.session.save_as_file()
+        save_system_settings(self.settings)
+
+    def on_click_save(self) -> None:
+        self.session.save_file()
+        save_system_settings(self.settings)
+
+    def on_click_open(self) -> None:
+        self.session.open_file()
 
     def shrink(self) -> None:
         self.resize(0, 0)

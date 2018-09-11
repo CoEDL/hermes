@@ -158,6 +158,9 @@ class FilterTable(QWidget):
                                                       transcription=""))
         self.populate_table_row(self.table.rowCount() - 1)
 
+    def clear_table(self):
+        self.table.setRowCount(0)
+
 
 class SelectorCellWidget(QWidget):
     """

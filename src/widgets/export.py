@@ -55,6 +55,7 @@ class ExportButton(QWidget):
                                     f'Please select at least one item to continue.',
                                     QMessageBox.Yes)
         else:
+            self.parent.parent.session.save_file()
             if not self.export_directory_empty():
                 warning_message = WarningMessage()
                 decision = warning_message.warning(warning_message, 'Warning',
