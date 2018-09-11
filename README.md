@@ -45,7 +45,7 @@ pip install -r requirements.txt
 cd src
 python3 main.py
 ```
-
+(If pip install -r requirements.txt fails, try pip3 install -r requirements.txt)
 
 ### Build From Source
 There is an MacOS build script included which can be run by:
