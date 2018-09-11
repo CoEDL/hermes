@@ -7,7 +7,7 @@ This program can also be used to create language resources from scratch without 
 
 Hermes was developed by [Nicholas Lambourne](https://ndl.im) using Python3, PyQt5, pydub, and pygame as part of the
  [UQ Winter Research Scholarship Program](https://employability.uq.edu.au/winter-research). 
-It is based on a proof-of-concept built by [Dr Gautier Durantin](http://gdurantin.com/).
+It is based on a proof-of-concept built by [Dr Gautier Durantin](http://gdurantin.com/). Additional development by [Jameson Nguyen](https://github.com/JNRuan).
 
 It was originally created to produce language resources for the [Indigenous Language Robots](http://www.itee.uq.edu.au/cis/opal/ngukurr) project 
  at the [University of Queensland](https://uq.edu.au),
@@ -84,7 +84,7 @@ The .exe file should appear in hermes\dist.
 This piece of software is the product of academic research at the University of Queensland by Nicholas Lambourne, Gautier Durantin and the CoEDL group. 
 If you use the software or code in an academic setting, please be sure to cite it appropriately as follows:
 
-> Lambourne, N. and Durantin, G. (2018). Hermes: The Language Resource Creator. The University of Queensland: Centre of Excellence for the Dynamics of Language.
+> Lambourne, N., Durantin, G. and Nguyen, J. (2018). Hermes: The Language Resource Creator. The University of Queensland: Centre of Excellence for the Dynamics of Language.
 
 
 ## Acknowledgements
