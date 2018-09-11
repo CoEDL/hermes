@@ -26,8 +26,6 @@ class SessionManager(object):
         # self.autosave.start()
         self.autosave_timer = QTimer()
 
-
-
     def open_file(self):
         """Open a .hermes json file and parse into table."""
         self.converter.components.status_bar.clearMessage()
@@ -163,6 +161,7 @@ class SessionManager(object):
             Path to export location, else None.
         """
         if not self.converter.data.export_location:
+            export_init_msg()
             self.converter.data.export_location = open_folder_dialogue()
         self.session_log.info(f'Export location set: {self.converter.data.export_location}')
         return self.converter.data.export_location
@@ -199,14 +198,23 @@ def file_not_found_msg():
                                 f'No file was found.\n',
                                 QMessageBox.Ok)
 
+
 def no_save_file_msg():
     no_save_file_warn = WarningMessage()
     no_save_file_warn.warning(no_save_file_warn, 'Warning',
                               f"No save file was selected. You must specify a file to save to.\n",
                               QMessageBox.Ok)
 
+
 def no_export_msg():
     no_save_file_warn = WarningMessage()
     no_save_file_warn.warning(no_save_file_warn, 'Warning',
                               f"No export location found. You must specify an export location.\n",
                               QMessageBox.Ok)
+
+
+def export_init_msg():
+    export_msg = WarningMessage()
+    export_msg.information(export_msg, 'Export Location Needed',
+                           f"Export location not set, a file dialog will now open. Please choose an export location.\n",
+                           QMessageBox.Ok)
