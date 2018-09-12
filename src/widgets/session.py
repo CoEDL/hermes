@@ -31,7 +31,7 @@ class SessionManager(object):
         self.converter.components.status_bar.clearMessage()
 
         file_name, _ = self._file_dialog.getOpenFileName(self._file_dialog,
-                                                         "Open Hermes Session", "", "hermes (*.hermes)")
+                                                         "Open Hermes Session", "", "hermes save (*.hermes)")
         # Ensure there is a file to open!
         if not file_name:
             file_not_found_msg()
@@ -77,7 +77,7 @@ class SessionManager(object):
     def save_as_file(self):
         """User sets new file name + location with QFileDialog, if set then initialise save process."""
         file_name, _ = self._file_dialog.getSaveFileName(self._file_dialog,
-                                                         "Save As", "mysession.hsav", "hermes save (*.hsav)")
+                                                         "Save As", "mysession.hsav", "hermes save (*.hermes)")
         if file_name:
             self.session_filename = file_name
             self.create_session_lmf()
