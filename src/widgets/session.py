@@ -35,12 +35,15 @@ class SessionManager(object):
         # Ensure there is a file to open!
         if not file_name:
             file_not_found_msg()
+            self.session_log.warn("No file selected for open function.")
             return
-
         self.session_filename = file_name
         self.session_log.info(f"File opened from: {self.session_filename}")
+        self.exec_open()
 
-        with open(file_name, 'r') as f:
+    def exec_open(self):
+        """Execs open functionality. Assumes that a file has been successfully found by user."""
+        with open(self.session_filename, 'r') as f:
             loaded_data = json.loads(f.read())
             self.session_log.info(f"Data loaded: {loaded_data}")
 
@@ -74,18 +77,19 @@ class SessionManager(object):
     def save_as_file(self):
         """User sets new file name + location with QFileDialog, if set then initialise save process."""
         file_name, _ = self._file_dialog.getSaveFileName(self._file_dialog,
-                                                         "Save As", "mysession.hermes", "hermes (*.hermes)")
+                                                         "Save As", "mysession.hsav", "hermes save (*.hsav)")
         if file_name:
             self.session_filename = file_name
+            self.create_session_lmf()
+            self.session_log.info(f'New File created with Save As: {self.session_filename}')
+            self.save_file()
         else:
             no_save_file_msg()
+            self.session_log.warning("No save file was selected, aborting save.")
             return
-        self.create_session_lmf()
-        self.session_log.info(f'New File created with Save As: {self.session_filename}')
-        self.save_file()
 
     def save_file(self):
-        # If no file then save as
+        # If no file then restart from save as
         if not self.session_filename:
             self.save_as_file()
             return
@@ -93,8 +97,17 @@ class SessionManager(object):
         # User to set export location if it does not exist, abort if not set.
         if not self.export_location():
             no_export_msg()
+            self.session_log.warning("No export location was selected, aborting save.")
             return
 
+        # All conditions met at this point, save is ready.
+        self.exec_save()
+
+    def exec_save(self):
+        """Executes the save function. Assumes that all conditions are ready.
+
+        All saves require a file name setup or loaded, and an export location set in prior steps.
+        """
         # Empty lmf word list first, otherwise it will duplicate entries.
         self.converter.data.lmf['words'] = list()
 
@@ -116,11 +129,11 @@ class SessionManager(object):
             with open(self.session_filename, 'w+') as f:
                 json.dump(self.converter.data.lmf, f, indent=4)
         else:
+            self.session_log.error("File not found on exec_save().")
             file_not_found_msg()
 
         self.converter.components.progress_bar.hide()
         self.converter.components.status_bar.showMessage(f"Data saved at: {self.session_filename}", 5000)
-
         self.session_log.info(f"File saved at {self.session_filename}")
 
     def create_session_lmf(self):
