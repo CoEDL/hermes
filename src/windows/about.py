@@ -4,8 +4,8 @@ from PyQt5.QtCore import Qt
 from utilities import resource_path
 
 
-REPO_LINK = 'https://github.com/nicklambourne/elan2resource'
-VERSION = '0.05'
+REPO_LINK = 'https://github.com/CoEDL/hermes'
+VERSION = '0.06'
 
 
 class AboutWindow(QDialog):
