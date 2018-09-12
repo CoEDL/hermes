@@ -1,6 +1,7 @@
 from PyQt5.QtWidgets import QFileDialog, QMessageBox
 from PyQt5.QtCore import QThread, QTimer
 from datatypes import create_lmf, Transcription
+from datetime import datetime
 from utilities.output import create_lmf_files
 from utilities.files import open_folder_dialogue
 from widgets.converter import ConverterWidget
@@ -22,7 +23,9 @@ class SessionManager(object):
         self.session_log = logging.getLogger("SessionManager")
         self.converter = converter
         self.session_filename = None
+        self.template_name = None
         self.autosave = AutosaveThread(self)
+        self.autosaveOn = False
         # self.autosave.start()
         self.autosave_timer = QTimer()
 
@@ -184,13 +187,33 @@ class SessionManager(object):
         print("Entered Thread")
         self.autosave_timer = QTimer()
         self.autosave_timer.timeout.connect(self.run_autosave)
-        self.autosave_timer.start(1000)
+        self.autosave_timer.start(1000 * 60)
         print(f'Time remaining {self.autosave_timer.remainingTime()}')
         print(f'Time active {self.autosave_timer.isActive()}')
 
     def run_autosave(self):
         """TODO"""
-        print(f'Autosaved!')
+        print(f'Autosaved! {datetime.now().time()}')
+
+    def prepare_template_file(self, transcription: bool = True, translation: bool = True):
+        """Prepares template files based on user selection.
+
+        Template files can have the following fields prepared:
+        - Transcription
+        - Translation
+
+        Resources such as audio and images are best added in a resource creation
+        session as opposed to fixed with template to allow for transferal of
+        templates to other users and/or computers.
+        """
+        return
+
+    def save_template(self):
+        """Asks user to save a template file, user will need to name the template
+        file, and then select fields they wish to use for this template.
+        """
+        previous_file_name = self.session_filename
+        return
 
 
 class AutosaveThread(QThread):
