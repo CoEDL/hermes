@@ -1,7 +1,9 @@
 from PyQt5.QtWidgets import QFileDialog, QMessageBox
 from PyQt5.QtCore import QThread, QTimer
-from datatypes import create_lmf, Transcription
+from datatypes import create_lmf, ConverterData, Transcription
 from datetime import datetime
+from enum import Enum
+from tempfile import mkdtemp
 from utilities.output import create_lmf_files
 from utilities.files import open_folder_dialogue
 from widgets.converter import ConverterWidget
@@ -11,6 +13,7 @@ from widgets.warning import WarningMessage
 
 import json
 import logging
+import os
 
 
 class SessionManager(object):
@@ -21,34 +24,54 @@ class SessionManager(object):
     def __init__(self, converter: ConverterWidget):
         self._file_dialog = QFileDialog()
         self.session_log = logging.getLogger("SessionManager")
+
+        # Converter widget that runs hermes' main operations
         self.converter = converter
+
+        # Save file parameters
         self.session_filename = None
+
+        # Template parameters
         self.template_name = None
+        self.template_type = None
+
+        # Autosave parameters
         self.autosave = AutosaveThread(self)
         self.autosaveOn = False
-        # self.autosave.start()
         self.autosave_timer = QTimer()
+        # self.autosave.start()
 
     def open_file(self):
         """Open a .hermes json file and parse into table."""
-        self.converter.components.status_bar.clearMessage()
+        if self.template_type:
+            self.template_name, _ = self._file_dialog.getOpenFileName(self._file_dialog,
+                                                                         "Open Hermes Session", "", "hermes template (*.htemp)")
+            self.session_log.info(f"File opened from: {self.template_name}")
+            if not self.template_name:
+                file_not_found_msg()
+                self.session_log.warn("No file selected for open function.")
+                return
+        else:
+            self.session_filename, _ = self._file_dialog.getOpenFileName(self._file_dialog,
+                                                             "Open Hermes Session", "", "hermes (*.hermes)")
+            self.session_log.info(f"File opened from: {self.session_filename}")
+            if not self.session_filename:
+                file_not_found_msg()
+                self.session_log.warn("No file selected for open function.")
+                return
 
-        file_name, _ = self._file_dialog.getOpenFileName(self._file_dialog,
-                                                         "Open Hermes Session", "", "hermes (*.hermes)")
-        # Ensure there is a file to open!
-        if not file_name:
-            file_not_found_msg()
-            self.session_log.warn("No file selected for open function.")
-            return
-        self.session_filename = file_name
-        self.session_log.info(f"File opened from: {self.session_filename}")
         self.exec_open()
 
     def exec_open(self):
         """Execs open functionality. Assumes that a file has been successfully found by user."""
-        with open(self.session_filename, 'r') as f:
-            loaded_data = json.loads(f.read())
-            self.session_log.info(f"Data loaded: {loaded_data}")
+        if self.template_type:
+            with open(self.template_name, 'r') as f:
+                loaded_data = json.loads(f.read())
+                self.session_log.info(f"Data loaded: {loaded_data}")
+        else:
+            with open(self.session_filename, 'r') as f:
+                loaded_data = json.loads(f.read())
+                self.session_log.info(f"Data loaded: {loaded_data}")
 
         # Populate manifest in converter data
         self.populate_initial_lmf_fields(loaded_data)
@@ -64,7 +87,7 @@ class SessionManager(object):
                                                                     media=word.get('audio')[0] if word.get('audio') else '')
                                                       )
 
-            if word.get('audio')[0]:
+            if word.get('audio'):
                 # An audio file exists, add it.
                 self.converter.data.transcriptions[i].set_blank_sample()
                 self.converter.data.transcriptions[i].sample.set_sample(word.get('audio')[0])
@@ -75,25 +98,33 @@ class SessionManager(object):
         for n in range(len(loaded_data['words']) + 1):
             self.converter.components.filter_table.add_blank_row()
         self.converter.components.filter_table.populate_table(self.converter.data.transcriptions)
-        self.converter.components.status_bar.showMessage(f"Data opened from: {self.session_filename}", 5000)
+
+        # Update user on save success in status bar.
+        self.converter.components.status_bar.clearMessage()
+        if self.template_type:
+            self.converter.components.status_bar.showMessage(f"Data opened from: {self.template_name}", 5000)
+        else:
+            self.converter.components.status_bar.showMessage(f"Data opened from: {self.session_filename}", 5000)
 
     def save_as_file(self):
         """User sets new file name + location with QFileDialog, if set then initialise save process."""
-        file_name, _ = self._file_dialog.getSaveFileName(self._file_dialog,
-                                                         "Save As", "mysession.hsav", "hermes save (*.hsav)")
-        if file_name:
-            self.session_filename = file_name
-            self.create_session_lmf()
-            self.session_log.info(f'New File created with Save As: {self.session_filename}')
-            self.save_file()
+        if self.template_type:
+            self.template_name, _ = self._file_dialog.getSaveFileName(self._file_dialog,
+                                                             "Save Template", "template.htemp", "hermes template (*.htemp)")
         else:
-            no_save_file_msg()
-            self.session_log.warning("No save file was selected, aborting save.")
+            self.session_filename, _ = self._file_dialog.getSaveFileName(self._file_dialog,
+                                                             "Save As", "mysession.hermes", "hermes save (*.hermes)")
+
+        if (self.template_type and not self.template_name) or (not self.template_type and not self.session_filename):
+            file_not_found_msg()
+            self.session_log.warning("No export location was selected, aborting save.")
             return
+
+        self.save_file()
 
     def save_file(self):
         # If no file then restart from save as
-        if not self.session_filename:
+        if (self.template_type and not self.template_name) or (not self.template_type and not self.session_filename):
             self.save_as_file()
             return
 
@@ -111,8 +142,15 @@ class SessionManager(object):
 
         All saves require a file name setup or loaded, and an export location set in prior steps.
         """
-        # Empty lmf word list first, otherwise it will duplicate entries.
-        self.converter.data.lmf['words'] = list()
+        # Create LMF for this session
+        if not self.template_type:
+            self.create_session_lmf(self.converter.data)
+            # Empty lmf word list first, otherwise it will duplicate entries.
+            self.converter.data.lmf['words'] = list()
+        else:
+            template_data = self.prepare_template_file()
+            self.create_session_lmf(template_data)
+            template_data.lmf['words'] = list()
 
         # Progress bar
         self.converter.components.status_bar.clearMessage()
@@ -122,26 +160,36 @@ class SessionManager(object):
 
         # Transfer data to lmf file.
         for row in range(self.converter.components.table.rowCount()):
-            if self.converter.components.table.get_cell_value(row, TABLE_COLUMNS["Transcription"]):
+            if self.template_type:
+                create_lmf_files(row, template_data)
+            elif self.converter.components.table.get_cell_value(row, TABLE_COLUMNS["Transcription"])\
+                    or self.converter.components.table.get_cell_value(row, TABLE_COLUMNS["Translation"]):
                 create_lmf_files(row, self.converter.data)
             complete_count += 1
             self.converter.components.progress_bar.update_progress(complete_count / to_save_count)
 
         # Save to json format
-        if self.session_filename:
+        if self.template_type and self.template_name:
+            # save template
+            with open(self.template_name, 'w+') as f:
+                json.dump(template_data.lmf, f, indent=4)
+                self.converter.components.status_bar.showMessage(f"Template saved at: {self.template_name}", 5000)
+                self.session_log.info(f"File saved at {self.template_name}")
+        elif self.session_filename:
             with open(self.session_filename, 'w+') as f:
+                # save normal save file
                 json.dump(self.converter.data.lmf, f, indent=4)
+                self.converter.components.status_bar.showMessage(f"Data saved at: {self.session_filename}", 5000)
+                self.session_log.info(f"File saved at {self.session_filename}")
         else:
             self.session_log.error("File not found on exec_save().")
             file_not_found_msg()
 
         self.converter.components.progress_bar.hide()
-        self.converter.components.status_bar.showMessage(f"Data saved at: {self.session_filename}", 5000)
-        self.session_log.info(f"File saved at {self.session_filename}")
 
-    def create_session_lmf(self):
+    def create_session_lmf(self, data: ConverterData):
         """Creates a new language manifest file prior to new save file."""
-        lmf_manifest_window = ManifestWindow(self.converter.data)
+        lmf_manifest_window = ManifestWindow(data)
         _ = lmf_manifest_window.exec()
         self.populate_initial_lmf_fields(lmf_manifest_window)
         lmf_manifest_window.close()
@@ -176,6 +224,8 @@ class SessionManager(object):
         Returns:
             Path to export location, else None.
         """
+        if self.template_type:
+            self.converter.data.export_location = mkdtemp()
         if not self.converter.data.export_location:
             export_init_msg()
             self.converter.data.export_location = open_folder_dialogue()
@@ -195,25 +245,59 @@ class SessionManager(object):
         """TODO"""
         print(f'Autosaved! {datetime.now().time()}')
 
-    def prepare_template_file(self, transcription: bool = True, translation: bool = True):
+    def prepare_template_file(self) -> ConverterData:
         """Prepares template files based on user selection.
 
         Template files can have the following fields prepared:
         - Transcription
         - Translation
+        - Both
 
         Resources such as audio and images are best added in a resource creation
         session as opposed to fixed with template to allow for transferal of
         templates to other users and/or computers.
+
+        Returns:
+            ConverterData with only relevant information as requested by user.
         """
-        return
+        if not self.template_type:
+            no_template_msg()
+
+        # Prepare custom converter data to save
+        data = ConverterData()
+        data.transcriptions = self.converter.data.transcriptions
+
+        for i in range(len(data.transcriptions)):
+            # Clear transcription or translation if only one type wanted.
+            if self.template_type is TemplateType.TRANSCRIPTION:
+                self.session_log.info(f"We have transcriptions {data.transcriptions}")
+                data.transcriptions[i].translation = ""
+            elif self.template_type is TemplateType.TRANSLATION:
+                data.transcriptions[i].transcription = ""
+
+            # Clear images and sounds
+            data.transcriptions[i].image = None
+            data.transcriptions[i].sample = None
+
+        return data
 
     def save_template(self):
         """Asks user to save a template file, user will need to name the template
         file, and then select fields they wish to use for this template.
         """
-        previous_file_name = self.session_filename
-        return
+        self.template_type = TemplateType.TRANSLATION
+        self.save_as_file()
+        # Go back to normal saving mode.
+        self.template_type = None
+
+    def open_template(self):
+        """Asks user to open a template file, user will need to name the template
+        file, and then select fields they wish to use for this template.
+        """
+        self.template_type = TemplateType.TRANSLATION
+        self.open_file()
+        # Go back to normal saving mode.
+        self.template_type = None
 
 
 class AutosaveThread(QThread):
@@ -226,6 +310,14 @@ class AutosaveThread(QThread):
     def run(self):
         self.session.autosave_thread_function()
         self.exec_()
+
+
+class TemplateType(Enum):
+    """Template types that a user can save."""
+    TRANSCRIPTION = 0
+    TRANSLATION = 1
+    # Represents a template of both transcription and translation types.
+    TRANSCRIPT_TRANSLATE = 2
 
 
 def file_not_found_msg():
@@ -253,4 +345,10 @@ def export_init_msg():
     export_msg = WarningMessage()
     export_msg.information(export_msg, 'Export Location Needed',
                            f"Export location not set, a file dialog will now open. Please choose an export location.\n",
+                           QMessageBox.Ok)
+
+def no_template_msg():
+    export_msg = WarningMessage()
+    export_msg.information(export_msg, 'Warning',
+                           f"No Template Type selected, template creation aborted.\n",
                            QMessageBox.Ok)
