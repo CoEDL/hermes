@@ -65,7 +65,7 @@ class PrimaryWindow(QMainWindow):
         self.setCentralWidget(self.converter)
         self.statusBar().addPermanentWidget(self.progress_bar)
         self.progress_bar.hide()
-        self.session = SessionManager(self.converter)
+        self.session = SessionManager(self, self.converter)
 
     def init_menu(self, save_flag: bool = False) -> None:
         self.primary_log.info(f'Menu Bar initialised with save: {save_flag}')
@@ -84,6 +84,7 @@ class PrimaryWindow(QMainWindow):
         save_menu.setShortcut('Ctrl+S')
         file.addAction(save_menu)
         save_menu.setEnabled(save_flag)
+
 
         save_as_menu = QAction('Save As', self)
         save_as_menu.triggered.connect(self.on_click_save_as)
@@ -105,6 +106,17 @@ class PrimaryWindow(QMainWindow):
         quit_menu_item.setShortcut('Ctrl+Q')
         quit_menu_item.triggered.connect(self.close)
         file.addAction(quit_menu_item)
+
+        template = self.bar.addMenu('Templates')
+        template_save = QAction('Save Template', self)
+        template_save.triggered.connect(self.on_click_template_save)
+        template.addAction(template_save)
+        template_save.setEnabled(save_flag)
+
+        template_open = QAction('Open Template', self)
+        template_open.triggered.connect(self.on_click_template_open)
+        template.addAction(template_open)
+        template_open.setEnabled(save_flag)
 
         self.table_menu = self.bar.addMenu('Table')
         add_row_menu_item = QAction('Add Row', self)
@@ -128,6 +140,7 @@ class PrimaryWindow(QMainWindow):
         settings.show()
 
     def on_click_reset(self) -> None:
+        self.session.session_filename = None
         self.init_ui()
         self.init_menu()
         self.shrink()
@@ -146,6 +159,12 @@ class PrimaryWindow(QMainWindow):
 
     def on_click_open(self) -> None:
         self.session.open_file()
+
+    def on_click_template_save(self) -> None:
+        self.session.save_template()
+
+    def on_click_template_open(self) -> None:
+        self.session.open_template()
 
     def shrink(self) -> None:
         self.resize(0, 0)
