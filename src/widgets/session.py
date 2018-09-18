@@ -1,5 +1,7 @@
-from PyQt5.QtWidgets import QFileDialog, QMessageBox
+from PyQt5.QtWidgets import QCheckBox, QDialog, QFileDialog, QGridLayout, QLabel, QMainWindow, QMessageBox, QPushButton, QWidget
 from PyQt5.QtCore import QThread, QTimer
+from PyQt5.QtGui import QFont
+from box import Box
 from datatypes import create_lmf, ConverterData, Transcription
 from datetime import datetime
 from enum import Enum
@@ -11,9 +13,9 @@ from windows.manifest import ManifestWindow
 from widgets.table import TABLE_COLUMNS
 from widgets.warning import WarningMessage
 
+import copy
 import json
 import logging
-import os
 
 
 class SessionManager(object):
@@ -21,7 +23,7 @@ class SessionManager(object):
     Session Manager handles session operations, providing functionality for Save, Save As, and Open.
     """
 
-    def __init__(self, converter: ConverterWidget):
+    def __init__(self, parent: QMainWindow, converter: ConverterWidget):
         self._file_dialog = QFileDialog()
         self.session_log = logging.getLogger("SessionManager")
 
@@ -34,6 +36,7 @@ class SessionManager(object):
         # Template parameters
         self.template_name = None
         self.template_type = None
+        self.template_options = TemplateDialog(parent, self)
 
         # Autosave parameters
         self.autosave = AutosaveThread(self)
@@ -45,7 +48,8 @@ class SessionManager(object):
         """Open a .hermes json file and parse into table."""
         if self.template_type:
             self.template_name, _ = self._file_dialog.getOpenFileName(self._file_dialog,
-                                                                         "Open Hermes Session", "", "hermes template (*.htemp)")
+                                                                      "Open Template", "",
+                                                                      "Hermes Template (*.htemp)")
             self.session_log.info(f"File opened from: {self.template_name}")
             if not self.template_name:
                 file_not_found_msg()
@@ -53,7 +57,8 @@ class SessionManager(object):
                 return
         else:
             self.session_filename, _ = self._file_dialog.getOpenFileName(self._file_dialog,
-                                                             "Open Hermes Session", "", "hermes (*.hermes)")
+                                                                         "Open Hermes Save", "",
+                                                                         "Hermes Save (*.hermes)")
             self.session_log.info(f"File opened from: {self.session_filename}")
             if not self.session_filename:
                 file_not_found_msg()
@@ -86,18 +91,19 @@ class SessionManager(object):
                                                                     image=word.get('image')[0] if word.get('image') else '',
                                                                     media=word.get('audio')[0] if word.get('audio') else '')
                                                       )
-
             if word.get('audio'):
                 # An audio file exists, add it.
                 self.converter.data.transcriptions[i].set_blank_sample()
                 self.converter.data.transcriptions[i].sample.set_sample(word.get('audio')[0])
-
             self.session_log.info(f"Transcription loaded: {self.converter.data.transcriptions[i]}")
 
         # Populate table, add an extra blank row for convenience at end.
         for n in range(len(loaded_data['words']) + 1):
             self.converter.components.filter_table.add_blank_row()
         self.converter.components.filter_table.populate_table(self.converter.data.transcriptions)
+
+        # Clear Export Location for a fresh session
+        self.converter.data.export_location = None
 
         # Update user on save success in status bar.
         self.converter.components.status_bar.clearMessage()
@@ -110,10 +116,12 @@ class SessionManager(object):
         """User sets new file name + location with QFileDialog, if set then initialise save process."""
         if self.template_type:
             self.template_name, _ = self._file_dialog.getSaveFileName(self._file_dialog,
-                                                             "Save Template", "template.htemp", "hermes template (*.htemp)")
+                                                                      "Save Template", "mytemplate.htemp",
+                                                                      "Hermes Template (*.htemp)")
         else:
             self.session_filename, _ = self._file_dialog.getSaveFileName(self._file_dialog,
-                                                             "Save As", "mysession.hermes", "hermes save (*.hermes)")
+                                                                         "Save File", "mysession.hermes",
+                                                                         "Hermes Save (*.hermes)")
 
         if (self.template_type and not self.template_name) or (not self.template_type and not self.session_filename):
             file_not_found_msg()
@@ -160,7 +168,8 @@ class SessionManager(object):
 
         # Transfer data to lmf file.
         for row in range(self.converter.components.table.rowCount()):
-            if self.template_type:
+            if self.template_type and \
+                    (template_data.transcriptions[row].transcription or template_data.transcriptions[row].translation):
                 create_lmf_files(row, template_data)
             elif self.converter.components.table.get_cell_value(row, TABLE_COLUMNS["Transcription"])\
                     or self.converter.components.table.get_cell_value(row, TABLE_COLUMNS["Translation"]):
@@ -175,9 +184,11 @@ class SessionManager(object):
                 json.dump(template_data.lmf, f, indent=4)
                 self.converter.components.status_bar.showMessage(f"Template saved at: {self.template_name}", 5000)
                 self.session_log.info(f"File saved at {self.template_name}")
+            # Reset Export Location after template saved
+            self.converter.data.export_location = None
         elif self.session_filename:
+            # save normal save file
             with open(self.session_filename, 'w+') as f:
-                # save normal save file
                 json.dump(self.converter.data.lmf, f, indent=4)
                 self.converter.components.status_bar.showMessage(f"Data saved at: {self.session_filename}", 5000)
                 self.session_log.info(f"File saved at {self.session_filename}")
@@ -265,12 +276,11 @@ class SessionManager(object):
 
         # Prepare custom converter data to save
         data = ConverterData()
-        data.transcriptions = self.converter.data.transcriptions
+        data.transcriptions = copy.deepcopy(self.converter.data.transcriptions)
 
         for i in range(len(data.transcriptions)):
             # Clear transcription or translation if only one type wanted.
             if self.template_type is TemplateType.TRANSCRIPTION:
-                self.session_log.info(f"We have transcriptions {data.transcriptions}")
                 data.transcriptions[i].translation = ""
             elif self.template_type is TemplateType.TRANSLATION:
                 data.transcriptions[i].transcription = ""
@@ -279,22 +289,47 @@ class SessionManager(object):
             data.transcriptions[i].image = None
             data.transcriptions[i].sample = None
 
+            self.session_log.info(f"Template prepared data {data.transcriptions[i]}")
+
         return data
 
     def save_template(self):
         """Asks user to save a template file, user will need to name the template
         file, and then select fields they wish to use for this template.
         """
-        self.template_type = TemplateType.TRANSLATION
-        self.save_as_file()
+        self.template_options.exec()
+
+        # Get template options
+        self.template_type = self.get_template_option(self.template_options)
+        self.template_options.close()
+
+        # widgets.transcription_language_field.text()
+        if self.template_type:
+            self.save_as_file()
+
         # Go back to normal saving mode.
         self.template_type = None
+
+    def get_template_option(self, template_dialog):
+        """Retrieve template option"""
+        template_choice = None
+        translation_check = template_dialog.widgets.template_translation_check.isChecked()
+        transcription_check = template_dialog.widgets.template_transcription_check.isChecked()
+
+        if translation_check and transcription_check:
+            template_choice = TemplateType.TRANSCRIPT_TRANSLATE
+        elif transcription_check:
+            template_choice = TemplateType.TRANSCRIPTION
+        elif translation_check:
+            template_choice = TemplateType.TRANSLATION
+
+        return template_choice
 
     def open_template(self):
         """Asks user to open a template file, user will need to name the template
         file, and then select fields they wish to use for this template.
         """
-        self.template_type = TemplateType.TRANSLATION
+        self.template_type = TemplateType.OPEN_TEMPLATE
         self.open_file()
         # Go back to normal saving mode.
         self.template_type = None
@@ -312,12 +347,68 @@ class AutosaveThread(QThread):
         self.exec_()
 
 
+class TemplateDialog(QDialog):
+    """Dialog box for deciding on template type."""
+
+    def __init__(self, parent: QMainWindow, session: SessionManager):
+        super().__init__(parent)
+        self.session = session
+        self.layout = QGridLayout()
+        self.widgets = Box()
+        self.init_ui()
+
+    def init_ui(self):
+        self.setWindowTitle('Template Options')
+        self.setMinimumWidth(300)
+
+        header_font = QFont()
+        header_font.setFamily('SansSerif')
+        header_font.setPointSize(12)
+        header_font.setBold(True)
+
+        template_type_label = QLabel('Choose Template Type:')
+        template_type_label.setFont(header_font)
+        self.layout.addWidget(template_type_label, 0, 0, 1, 4)
+
+        template_translation_label = QLabel('Translation')
+        self.layout.addWidget(template_translation_label, 1, 0, 1, 1)
+        self.widgets.template_translation_check = QCheckBox()
+        self.layout.addWidget(self.widgets.template_translation_check, 1, 1, 1, 1)
+
+        template_transcription_label = QLabel('Transcription')
+        self.layout.addWidget(template_transcription_label, 2, 0, 1, 1)
+        self.widgets.template_transcription_check = QCheckBox()
+        self.layout.addWidget(self.widgets.template_transcription_check, 2, 1, 1, 1)
+
+        ok_button = QPushButton('Ok')
+        ok_button.clicked.connect(self.on_click_ok)
+        ok_button.setDefault(True)
+        self.layout.addWidget(ok_button, 4, 3, 1, 1)
+
+        cancel_button = QPushButton('Cancel')
+        cancel_button.clicked.connect(self.on_click_cancel)
+        self.layout.addWidget(cancel_button, 4, 4, 1, 1)
+
+        self.setLayout(self.layout)
+
+    def on_click_ok(self):
+        self.close()
+
+    def on_click_cancel(self):
+        self.widgets.template_translation_check.setChecked(False)
+        self.widgets.template_transcription_check.setChecked(False)
+        self.close()
+
+
+
 class TemplateType(Enum):
     """Template types that a user can save."""
     TRANSCRIPTION = 0
     TRANSLATION = 1
     # Represents a template of both transcription and translation types.
     TRANSCRIPT_TRANSLATE = 2
+    # Tag to indicate template is to be opened
+    OPEN_TEMPLATE = 3
 
 
 def file_not_found_msg():

@@ -65,7 +65,7 @@ class PrimaryWindow(QMainWindow):
         self.setCentralWidget(self.converter)
         self.statusBar().addPermanentWidget(self.progress_bar)
         self.progress_bar.hide()
-        self.session = SessionManager(self.converter)
+        self.session = SessionManager(self, self.converter)
 
     def init_menu(self, save_flag: bool = False) -> None:
         self.primary_log.info(f'Menu Bar initialised with save: {save_flag}')
