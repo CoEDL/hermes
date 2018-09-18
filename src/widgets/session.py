@@ -27,6 +27,7 @@ class SessionManager(object):
         self._file_dialog = QFileDialog()
         self.session_log = logging.getLogger("SessionManager")
 
+        self.parent = parent
         # Converter widget that runs hermes' main operations
         self.converter = converter
 
@@ -36,7 +37,7 @@ class SessionManager(object):
         # Template parameters
         self.template_name = None
         self.template_type = None
-        self.template_options = TemplateDialog(parent, self)
+        self.template_options = TemplateDialog(self.parent, self)
 
         # Autosave parameters
         self.autosave = AutosaveThread(self)
@@ -152,12 +153,12 @@ class SessionManager(object):
         """
         # Create LMF for this session
         if not self.template_type:
-            self.create_session_lmf(self.converter.data)
+            self.create_session_lmf(self.parent, self.converter.data)
             # Empty lmf word list first, otherwise it will duplicate entries.
             self.converter.data.lmf['words'] = list()
         else:
             template_data = self.prepare_template_file()
-            self.create_session_lmf(template_data)
+            self.create_session_lmf(self.parent, template_data)
             template_data.lmf['words'] = list()
 
         # Progress bar
@@ -198,9 +199,9 @@ class SessionManager(object):
 
         self.converter.components.progress_bar.hide()
 
-    def create_session_lmf(self, data: ConverterData):
+    def create_session_lmf(self, parent: QMainWindow, data: ConverterData):
         """Creates a new language manifest file prior to new save file."""
-        lmf_manifest_window = ManifestWindow(data)
+        lmf_manifest_window = ManifestWindow(parent, data)
         _ = lmf_manifest_window.exec()
         self.populate_initial_lmf_fields(lmf_manifest_window)
         lmf_manifest_window.close()
@@ -366,7 +367,7 @@ class TemplateDialog(QDialog):
         header_font.setPointSize(12)
         header_font.setBold(True)
 
-        template_type_label = QLabel('Choose Template Type:')
+        template_type_label = QLabel('Choose Template Field(s):')
         template_type_label.setFont(header_font)
         self.layout.addWidget(template_type_label, 0, 0, 1, 4)
 

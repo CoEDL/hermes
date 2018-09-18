@@ -1,19 +1,21 @@
 from box import Box
-from PyQt5.QtWidgets import QMessageBox, QGridLayout, QLabel, QLineEdit, QPushButton
+from PyQt5.QtWidgets import QMessageBox, QGridLayout, QLabel, QLineEdit, QPushButton, QMainWindow, QWidget, QDialog
 from datatypes import ConverterData, create_lmf
 
 
-class ManifestWindow(QMessageBox):
+class ManifestWindow(QDialog):
     def __init__(self,
+                 parent: QMainWindow,
                  data: ConverterData):
-        super().__init__()
+        super().__init__(parent)
         self.data = data
-        self.layout = self.layout()
+        self.layout = QGridLayout()
         self.widgets = Box()
         self.init_ui()
 
     def init_ui(self):
-        self.setMinimumWidth(500)
+        self.setWindowTitle('Enter Manifest Details')
+        self.setMinimumWidth(300)
         transcription_language_label = QLabel('Transcription Language:')
         self.layout.addWidget(transcription_language_label, 0, 0, 1, 1)
         self.widgets.transcription_language_field = QLineEdit()
@@ -33,6 +35,8 @@ class ManifestWindow(QMessageBox):
         save_button = QPushButton('Save')
         save_button.clicked.connect(self.on_click_save)
         self.layout.addWidget(save_button, 3, 7, 1, 1)
+
+        self.setLayout(self.layout)
 
     def on_click_save(self):
         self.data.lmf = create_lmf(

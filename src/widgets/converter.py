@@ -103,7 +103,7 @@ class ConverterWidget(QWidget):
                 writer = csv.writer(file)
                 writer.writerow(['Transcription', 'Translation', 'Audio', 'Image'])
         elif self.settings.output_format == OutputMode.LMF:
-            lmf_manifest_window = ManifestWindow(self.data)
+            lmf_manifest_window = ManifestWindow(self.parent, self.data)
             _ = lmf_manifest_window.exec()
         for row in range(self.components.table.rowCount()):
             if self.components.table.row_is_checked(row) and \
