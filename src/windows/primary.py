@@ -106,12 +106,12 @@ class PrimaryWindow(QMainWindow):
         quit_menu_item.triggered.connect(self.close)
         file.addAction(quit_menu_item)
 
+        template = self.bar.addMenu('Templates')
         template_open = QAction('Open Template', self)
         template_open.triggered.connect(self.on_click_template_open)
         template.addAction(template_open)
         template_open.setEnabled(save_flag)
 
-        template = self.bar.addMenu('Templates')
         template_save = QAction('Save Template', self)
         template_save.triggered.connect(self.on_click_template_save)
         template.addAction(template_save)
