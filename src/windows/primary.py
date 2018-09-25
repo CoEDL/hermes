@@ -10,7 +10,6 @@ from widgets.converter import ConverterWidget
 from windows.about import AboutWindow
 from windows.settings import SettingsWindow
 
-
 PRIMARY_LOG = logging.getLogger("PrimaryWindow")
 
 
