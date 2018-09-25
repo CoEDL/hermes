@@ -2,7 +2,7 @@ import sys, os
 import pytest
 from pytest_mock import mocker
 
-from PyQt5.QtWidgets import QApplication, QWidget
+from PyQt5.QtWidgets import QApplication, QWidget, QMenu, QAction
 from windows.primary import PrimaryWindow, ProgressBarWidget
 from widgets.icon import ApplicationIcon
 from widgets.converter import ConverterWidget
@@ -10,13 +10,11 @@ from widgets.session import SessionManager
 from datatypes import AppSettings
 
 
-'''
-Run tests with pytest in ./hermes root directory, or python -m pytest.
-
-pytest --cov src/ for coverage outside PyCharm.
-
--v for verbose, -s to output print
-'''
+MENU_BAR_ITEMS = ["File", "Templates", "Table", "Help"]
+FILE_MENU_ITEMS = ["Open", "Save", "Save As", "Settings", "Reset", "Quit"]
+TEMPLATE_MENU_ITEMS = ["Open Template", "Save Template"]
+TABLE_MENU_ITEMS = ["Add Row"]
+HELP_MENU_ITEMS = ["About"]
 
 
 class TestMain:
@@ -41,4 +39,11 @@ class TestMain:
         assert isinstance(main_window.progress_bar, ProgressBarWidget)
         assert isinstance(main_window.session, SessionManager)
         assert isinstance(main_window.settings, AppSettings)
+
+    def test_menu_bar_init(self, main_window: PrimaryWindow):
+        menu_bar_items = main_window.bar.actions()
+
+        print(menu_bar_items)
+
+        assert len(menu_bar_items) == len(MENU_BAR_ITEMS)
 
