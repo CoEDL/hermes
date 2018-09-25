@@ -1,8 +1,7 @@
-import sys, os
+import sys
 import pytest
-from pytest_mock import mocker
 
-from PyQt5.QtWidgets import QApplication, QWidget, QMenu, QAction
+from PyQt5.QtWidgets import QApplication
 from windows.primary import PrimaryWindow, ProgressBarWidget
 from widgets.icon import ApplicationIcon
 from widgets.converter import ConverterWidget
@@ -17,7 +16,7 @@ TABLE_MENU_ITEMS = ["Add Row"]
 HELP_MENU_ITEMS = ["About"]
 
 
-class TestMain:
+class TestWindowPrimary:
 
     @pytest.fixture(scope="class")
     def main_window(self):
@@ -41,9 +40,9 @@ class TestMain:
         assert isinstance(main_window.settings, AppSettings)
 
     def test_menu_bar_init(self, main_window: PrimaryWindow):
+        """Test that top level menu options are initialised correctly."""
         menu_bar_items = main_window.bar.actions()
-
-        print(menu_bar_items)
-
         assert len(menu_bar_items) == len(MENU_BAR_ITEMS)
+        for item in menu_bar_items:
+            assert item.text() in MENU_BAR_ITEMS
 

@@ -4,6 +4,7 @@ from PyQt5.QtCore import Qt
 from utilities import resource_path
 
 
+NAME = '<b>Hermes</b><br/><i>The Language Resource Creator</i></b>'
 REPO_LINK = 'https://github.com/CoEDL/hermes'
 VERSION = '0.6.2a'
 
@@ -21,7 +22,7 @@ class AboutWindow(QDialog):
         logo_label.setPixmap(logo_image)
         self.setWindowTitle('About')
         self.layout.addWidget(logo_label, 0, 1, 1, 1)
-        name_label = QLabel('<b>Hermes</b><br/><i>The Language Resource Creator</i></b>')
+        name_label = QLabel(NAME)
         name_label.setAlignment(Qt.AlignCenter)
         self.layout.addWidget(name_label, 1, 0, 1, 3)
         version_label = QLabel(f'Version {VERSION}')
