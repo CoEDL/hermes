@@ -6,12 +6,12 @@ from datatypes import create_lmf, ConverterData, Transcription
 from datetime import datetime
 from enum import Enum
 from tempfile import mkdtemp
-from utilities.output import create_lmf_files
 from utilities.files import open_folder_dialogue
-from widgets.converter import ConverterWidget
+from utilities.output import *
 from windows.manifest import ManifestWindow
-from widgets.table import TABLE_COLUMNS
 from widgets.warning import WarningMessage
+from widgets.converter import ConverterWidget
+from widgets.table import *
 
 import copy
 import json
