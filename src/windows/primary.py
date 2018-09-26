@@ -142,6 +142,7 @@ class PrimaryWindow(QMainWindow):
         self.session.session_filename = None
         self.init_ui()
         self.init_menu()
+        self.parent.session.autosave.quit()
         self.shrink()
 
     def on_click_add_row(self) -> None:

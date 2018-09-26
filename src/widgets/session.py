@@ -16,6 +16,7 @@ from widgets.warning import WarningMessage
 import copy
 import json
 import logging
+import os
 
 
 class SessionManager(object):
@@ -41,9 +42,8 @@ class SessionManager(object):
 
         # Autosave parameters
         self.autosave = AutosaveThread(self)
-        self.autosaveOn = False
-        self.autosave_timer = QTimer()
-        # self.autosave.start()
+        self.autosaving = False
+        # self.autosave_timer = QTimer()
 
     def open_file(self):
         """Open a .hermes json file and parse into table."""
@@ -152,18 +152,19 @@ class SessionManager(object):
         All saves require a file name setup or loaded, and an export location set in prior steps.
         """
         # Create LMF for this session
-        if not self.template_type:
+        if not self.template_type and not self.autosaving:
             self.create_session_lmf(self.parent, self.converter.data)
             # Empty lmf word list first, otherwise it will duplicate entries.
             self.converter.data.lmf['words'] = list()
-        else:
+        elif self.template_type and not self.autosaving:
             template_data = self.prepare_template_file()
             self.create_session_lmf(self.parent, template_data)
             template_data.lmf['words'] = list()
 
         # Progress bar
         self.converter.components.status_bar.clearMessage()
-        self.converter.components.progress_bar.show()
+        if not self.autosaving:
+            self.converter.components.progress_bar.show()
         complete_count = 0
         to_save_count = self.converter.components.table.rowCount()
 
@@ -176,7 +177,8 @@ class SessionManager(object):
                     or self.converter.components.table.get_cell_value(row, TABLE_COLUMNS["Translation"]):
                 create_lmf_files(row, self.converter.data)
             complete_count += 1
-            self.converter.components.progress_bar.update_progress(complete_count / to_save_count)
+            if not self.autosaving:
+                self.converter.components.progress_bar.update_progress(complete_count / to_save_count)
 
         # Save to json format
         if self.template_type and self.template_name:
@@ -189,7 +191,7 @@ class SessionManager(object):
             self.converter.data.export_location = None
         elif self.session_filename:
             # save normal save file
-            with open(self.session_filename, 'w+') as f:
+            with open(self.session_filename, 'w') as f:
                 json.dump(self.converter.data.lmf, f, indent=4)
                 self.converter.components.status_bar.showMessage(f"Data saved at: {self.session_filename}", 5000)
                 self.session_log.info(f"File saved at {self.session_filename}")
@@ -197,7 +199,8 @@ class SessionManager(object):
             self.session_log.error("File not found on exec_save().")
             file_not_found_msg()
 
-        self.converter.components.progress_bar.hide()
+        if not self.autosaving:
+            self.converter.components.progress_bar.hide()
 
     def create_session_lmf(self, parent: QMainWindow, data: ConverterData):
         """Creates a new language manifest file prior to new save file."""
@@ -244,18 +247,7 @@ class SessionManager(object):
         self.session_log.info(f'Export location set: {self.converter.data.export_location}')
         return self.converter.data.export_location
 
-    def autosave_thread_function(self):
-        """TODO, this is to test that thread initialised"""
-        print("Entered Thread")
-        self.autosave_timer = QTimer()
-        self.autosave_timer.timeout.connect(self.run_autosave)
-        self.autosave_timer.start(1000 * 60)
-        print(f'Time remaining {self.autosave_timer.remainingTime()}')
-        print(f'Time active {self.autosave_timer.isActive()}')
 
-    def run_autosave(self):
-        """TODO"""
-        print(f'Autosaved! {datetime.now().time()}')
 
     def prepare_template_file(self) -> ConverterData:
         """Prepares template files based on user selection.
@@ -342,10 +334,47 @@ class AutosaveThread(QThread):
     def __init__(self, session: SessionManager):
         QThread.__init__(self)
         self.session = session
+        self.autosave_timer = QTimer()
+        self.thread_log = logging.getLogger("AutosaveThread")
 
     def run(self):
-        self.session.autosave_thread_function()
+        self.autosave_thread_function()
         self.exec_()
+
+    def autosave_thread_function(self):
+        """Thread function, continue until thread is terminated.
+        By default, timer is set to every 5 minutes.
+        TODO: Implement setting for timer.
+        """
+        self.thread_log.info("Autosave thread started")
+        self.autosave_timer = QTimer()
+        self.autosave_timer.timeout.connect(self.run_autosave)
+        self.autosave_timer.start(1000 * 15)
+
+    def run_autosave(self):
+        """Run the autosave function in current session upon timer expire."""
+        self.thread_log.info(f'Autosaved! {datetime.now().time()}')
+        current_save = self.session.session_filename
+        current_export = self.session.converter.data.export_location
+        self.session.autosaving = True
+
+        autosave_path = os.path.abspath(os.path.join(os.path.dirname(os.path.dirname(__file__)), "..", "autosave"))
+        if not os.path.exists(autosave_path):
+            os.makedirs(autosave_path)
+        self.session.session_filename = os.path.join(autosave_path, "autosave.hermes")
+        self.session.converter.data.export_location = mkdtemp()
+        self.session.converter.data.lmf = create_lmf(
+            transcription_language="Transcription",
+            translation_language="Translation",
+            author="Autosaver"
+        )
+        self.session.converter.data.lmf['words'] = list()
+        self.session.session_log.info(f"Autosave path {self.session.session_filename}")
+
+        self.session.exec_save()
+        self.session.session_filename = current_save
+        self.session.converter.data.export_location = current_export
+        self.session.autosaving = False
 
 
 class TemplateDialog(QDialog):
@@ -399,7 +428,6 @@ class TemplateDialog(QDialog):
         self.widgets.template_translation_check.setChecked(False)
         self.widgets.template_transcription_check.setChecked(False)
         self.close()
-
 
 
 class TemplateType(Enum):
