@@ -349,7 +349,7 @@ class AutosaveThread(QThread):
         self.thread_log.info("Autosave thread started")
         self.autosave_timer = QTimer()
         self.autosave_timer.timeout.connect(self.run_autosave)
-        self.autosave_timer.start(1000 * 15)
+        self.autosave_timer.start(1000 * 300)
 
     def run_autosave(self):
         """Run the autosave function in current session upon timer expire."""
