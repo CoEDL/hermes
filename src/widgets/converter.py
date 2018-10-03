@@ -86,7 +86,8 @@ class ConverterWidget(QWidget):
         components.status_bar.showMessage('Select words to include and choose an export location')
         # Re-init menu to allow for Open/Save functionality now that table widget exists.
         self.parent.init_menu(True)
-        self.parent.session.autosave.start()
+        # Run autosave thread
+        self.parent.session.start_autosave()
 
     def load_fourth_stage_widgets(self) -> None:
         # Ninth Row (Export Button)

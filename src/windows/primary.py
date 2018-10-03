@@ -63,9 +63,9 @@ class PrimaryWindow(QMainWindow):
         self.converter = ConverterWidget(parent=self,
                                          settings=self.settings)
         self.setCentralWidget(self.converter)
+        self.session = SessionManager(self, self.converter)
         self.statusBar().addPermanentWidget(self.progress_bar)
         self.progress_bar.hide()
-        self.session = SessionManager(self, self.converter)
 
     def init_menu(self, save_flag: bool = False) -> None:
         self.primary_log.info(f'Menu Bar initialised with save: {save_flag}')
@@ -140,9 +140,9 @@ class PrimaryWindow(QMainWindow):
 
     def on_click_reset(self) -> None:
         self.session.session_filename = None
+        self.session.end_autosave()
         self.init_ui()
         self.init_menu()
-        self.parent.session.autosave.quit()
         self.shrink()
 
     def on_click_add_row(self) -> None:

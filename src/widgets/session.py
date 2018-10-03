@@ -1,5 +1,5 @@
 from PyQt5.QtWidgets import QCheckBox, QDialog, QFileDialog, QGridLayout, QLabel, QMainWindow, QMessageBox, QPushButton, QWidget
-from PyQt5.QtCore import QThread, QTimer
+from PyQt5.QtCore import QThread, QTimer, QEventLoop
 from PyQt5.QtGui import QFont
 from box import Box
 from datatypes import create_lmf, ConverterData, Transcription
@@ -41,9 +41,8 @@ class SessionManager(object):
         self.template_options = TemplateDialog(self.parent, self)
 
         # Autosave parameters
-        self.autosave = AutosaveThread(self)
+        self.autosave = None
         self.autosaving = False
-        # self.autosave_timer = QTimer()
 
     def open_file(self):
         """Open a .hermes json file and parse into table."""
@@ -247,8 +246,6 @@ class SessionManager(object):
         self.session_log.info(f'Export location set: {self.converter.data.export_location}')
         return self.converter.data.export_location
 
-
-
     def prepare_template_file(self) -> ConverterData:
         """Prepares template files based on user selection.
 
@@ -327,19 +324,28 @@ class SessionManager(object):
         # Go back to normal saving mode.
         self.template_type = None
 
+    def start_autosave(self):
+        self.autosave = AutosaveThread(self)
+        self.autosave.start()
+
+    def end_autosave(self):
+        self.autosave.quit()
+        self.autosave.wait()
+        self.autosave = None
+
 
 class AutosaveThread(QThread):
     """Threaded autosave to avoid interruption."""
 
     def __init__(self, session: SessionManager):
         QThread.__init__(self)
-        self.session = session
-        self.autosave_timer = QTimer()
         self.thread_log = logging.getLogger("AutosaveThread")
+        self.session = session
 
     def run(self):
         self.autosave_thread_function()
-        self.exec_()
+        loop = QEventLoop()
+        loop.exec_()
 
     def autosave_thread_function(self):
         """Thread function, continue until thread is terminated.
@@ -348,8 +354,9 @@ class AutosaveThread(QThread):
         """
         self.thread_log.info("Autosave thread started")
         self.autosave_timer = QTimer()
+        self.autosave_timer.moveToThread(self)
         self.autosave_timer.timeout.connect(self.run_autosave)
-        self.autosave_timer.start(1000 * 300)
+        self.autosave_timer.start(1000 * 5)
 
     def run_autosave(self):
         """Run the autosave function in current session upon timer expire."""
@@ -375,6 +382,9 @@ class AutosaveThread(QThread):
         self.session.session_filename = current_save
         self.session.converter.data.export_location = current_export
         self.session.autosaving = False
+
+    def __del__(self):
+        self.wait()
 
 
 class TemplateDialog(QDialog):
