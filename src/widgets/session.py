@@ -1,4 +1,8 @@
-from PyQt5.QtWidgets import QCheckBox, QDialog, QFileDialog, QGridLayout, QLabel, QMainWindow, QMessageBox, QPushButton, QWidget
+import copy
+import json
+import logging
+import os
+from PyQt5.QtWidgets import QCheckBox, QDialog, QFileDialog, QGridLayout, QLabel, QMainWindow, QMessageBox, QPushButton
 from PyQt5.QtCore import QThread, QTimer, QEventLoop
 from PyQt5.QtGui import QFont
 from box import Box
@@ -13,10 +17,10 @@ from windows.manifest import ManifestWindow
 from widgets.table import TABLE_COLUMNS
 from widgets.warning import WarningMessage
 
-import copy
-import json
-import logging
-import os
+
+################################################################################
+# Save/Load Functionality
+################################################################################
 
 
 class SessionManager(object):
@@ -43,6 +47,7 @@ class SessionManager(object):
         # Autosave parameters
         self.autosave = None
         self.autosaving = False
+        self.autosave_interval = 180  # Seconds
 
     def open_file(self):
         """Open a .hermes json file and parse into table."""
@@ -334,6 +339,11 @@ class SessionManager(object):
         self.autosave = None
 
 
+################################################################################
+# Autosave Functionality
+################################################################################
+
+
 class AutosaveThread(QThread):
     """Threaded autosave to avoid interruption."""
 
@@ -356,19 +366,34 @@ class AutosaveThread(QThread):
         self.autosave_timer = QTimer()
         self.autosave_timer.moveToThread(self)
         self.autosave_timer.timeout.connect(self.run_autosave)
-        self.autosave_timer.start(1000 * 5)
+        self.autosave_timer.start(1000 * self.session.autosave_interval)
 
     def run_autosave(self):
         """Run the autosave function in current session upon timer expire."""
-        self.thread_log.info(f'Autosaved! {datetime.now().time()}')
+        self.thread_log.info(f'Autosaving! {datetime.now().time()}')
+        # Remember current session details
         current_save = self.session.session_filename
         current_export = self.session.converter.data.export_location
-        self.session.autosaving = True
 
+        # Do autosave
+        self.session.autosaving = True
+        self.make_autosave_file()
+        self.thread_log.info(f"Autosave path {self.session.session_filename}")
+        self.session.exec_save()
+        self.session.autosaving = False
+
+        # Restore session details
+        self.session.session_filename = current_save
+        self.session.converter.data.export_location = current_export
+
+    def make_autosave_file(self):
         autosave_path = os.path.abspath(os.path.join(os.path.dirname(os.path.dirname(__file__)), "..", "autosave"))
         if not os.path.exists(autosave_path):
             os.makedirs(autosave_path)
         self.session.session_filename = os.path.join(autosave_path, "autosave.hermes")
+        self.setup_autosave_file()
+
+    def setup_autosave_file(self):
         self.session.converter.data.export_location = mkdtemp()
         self.session.converter.data.lmf = create_lmf(
             transcription_language="Transcription",
@@ -376,15 +401,14 @@ class AutosaveThread(QThread):
             author="Autosaver"
         )
         self.session.converter.data.lmf['words'] = list()
-        self.session.session_log.info(f"Autosave path {self.session.session_filename}")
-
-        self.session.exec_save()
-        self.session.session_filename = current_save
-        self.session.converter.data.export_location = current_export
-        self.session.autosaving = False
 
     def __del__(self):
         self.wait()
+
+
+################################################################################
+# Template Utilities
+################################################################################
 
 
 class TemplateDialog(QDialog):
@@ -448,6 +472,11 @@ class TemplateType(Enum):
     TRANSCRIPT_TRANSLATE = 2
     # Tag to indicate template is to be opened
     OPEN_TEMPLATE = 3
+
+
+################################################################################
+# Popup Messages
+################################################################################
 
 
 def file_not_found_msg():
