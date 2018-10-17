@@ -3,7 +3,7 @@ requests
 numpy
 PyQt5
 pydub
-https://github.com/pyinstaller/pyinstaller/archive/develop.zip
+https://github.com/pyinstaller/pyinstaller/archive/master.zip
 pygame
 python-box
 wave

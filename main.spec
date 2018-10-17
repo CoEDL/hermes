@@ -2,12 +2,15 @@
 
 from platform import system
 from os import path
+from tkinter import *
 
 
 block_cipher = None
 
 added_files = [
-    ( 'src/img/*', 'img' )
+    ( 'src/img/*', 'img' ),
+    ( '/Library/Frameworks/Python.framework/Versions/3.6/lib/tcl8.6', 'tcl' ),
+    ( '/Library/Frameworks/Python.framework/Versions/3.6/lib/tk8.6', 'tk' )
 ]
 
 root_dir = path.join(path.abspath('.'), 'hermes/')
