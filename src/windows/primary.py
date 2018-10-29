@@ -1,13 +1,14 @@
 import math
 import pydub
 import logging
+import webbrowser
 from PyQt5.QtWidgets import QProgressBar, QApplication, QMainWindow, QAction
 from typing import Union
 from datatypes import AppSettings
-from widgets.session import SessionManager
 from utilities.settings import load_system_settings, system_settings_exist, save_system_settings
+from widgets.session import SessionManager
 from widgets.converter import ConverterWidget
-from windows.about import AboutWindow
+from windows.about import AboutWindow, ONLINE_DOCS
 from windows.settings import SettingsWindow
 
 
@@ -107,15 +108,17 @@ class PrimaryWindow(QMainWindow):
         file.addAction(quit_menu_item)
 
         template = self.bar.addMenu('Templates')
-        template_open = QAction('Open Template', self)
-        template_open.triggered.connect(self.on_click_template_open)
-        template.addAction(template_open)
-        template_open.setEnabled(save_flag)
-
-        template_save = QAction('Save Template', self)
+        template_save = QAction('Create Template', self)
         template_save.triggered.connect(self.on_click_template_save)
+        template_save.setShortcut('Ctrl+Alt+T')
         template.addAction(template_save)
         template_save.setEnabled(save_flag)
+
+        template_open = QAction('Load Template', self)
+        template_open.triggered.connect(self.on_click_template_open)
+        template_open.setShortcut('Ctrl+Alt+O')
+        template.addAction(template_open)
+        template_open.setEnabled(save_flag)
 
         self.table_menu = self.bar.addMenu('Table')
         add_row_menu_item = QAction('Add Row', self)
@@ -125,9 +128,14 @@ class PrimaryWindow(QMainWindow):
 
         help_menu = self.bar.addMenu('Help')
         about_menu_item = QAction('About', self)
-        about_menu_item.setShortcut('Ctrl+H')
+        about_menu_item.setShortcut('Ctrl+A')
         about_menu_item.triggered.connect(self.on_click_about)
         help_menu.addAction(about_menu_item)
+
+        online_help_item = QAction('Online Docs', self)
+        online_help_item.setShortcut('Ctrl+H')
+        online_help_item.triggered.connect(self.on_click_online_help)
+        help_menu.addAction(online_help_item)
 
     def on_click_about(self) -> None:
         about = AboutWindow(self)
@@ -165,6 +173,11 @@ class PrimaryWindow(QMainWindow):
 
     def on_click_template_open(self) -> None:
         self.session.open_template()
+
+    def on_click_online_help(self) -> None:
+        webbrowser.open(ONLINE_DOCS)
+        self.primary_log.info(f'Opened default browser to: {ONLINE_DOCS}')
+
 
     def shrink(self) -> None:
         self.resize(0, 0)
