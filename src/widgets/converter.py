@@ -2,9 +2,9 @@ import os
 import csv
 import pympi
 import json
-from PyQt5.QtWidgets import QWidget, QGridLayout
-from PyQt5.QtGui import QDesktopServices
-from PyQt5.QtCore import QUrl
+from PyQt5.QtWidgets import QWidget, QGridLayout, QLabel, QFrame
+from PyQt5.QtGui import QDesktopServices, QFont
+from PyQt5.QtCore import QUrl, Qt
 from datatypes import OperationMode, Transcription, ConverterData, AppSettings, OutputMode, ConverterComponents
 from utilities.output import create_opie_files, create_dict_files, create_lmf_files
 from utilities.parse import get_audio_file, extract_elan_data
@@ -14,6 +14,8 @@ from widgets.table import TABLE_COLUMNS, FilterTable
 from widgets.export import ExportLocationField, ExportButton
 from windows.manifest import ManifestWindow
 
+
+BASE_MARGIN = 10
 
 class ConverterWidget(QWidget):
     """
@@ -65,6 +67,11 @@ class ConverterWidget(QWidget):
     def load_third_stage_widgets(self,
                                  components: ConverterComponents,
                                  data: ConverterData) -> None:
+        """Third stage widgets constructs main filter table for user input, image upload, audio recording.
+        Export Button will be disabled until export location is set for export.
+
+        At this stage, main menu functionality is fully activated, and the autosave thread starts.
+        """
         if self.data.mode == OperationMode.ELAN:
             data.audio_file = get_audio_file(self.data)
             transcription_tier = components.tier_selector.get_transcription_tier()
@@ -80,20 +87,43 @@ class ConverterWidget(QWidget):
                                                    self.settings)
         self.layout.addWidget(self.components.filter_table, 2, 0, 1, 8)
         self.components.table = self.components.filter_table.table
-        # Eighth Row (Export Location)
-        components.export_location_field = ExportLocationField(self)
-        self.layout.addWidget(components.export_location_field, 3, 0, 1, 8)
-        components.status_bar.showMessage('Select words to include and choose an export location')
+
+        # Eighth Row Frame, will be set behind grid widgets.
+        export_separator = QFrame()
+        export_separator.setFrameShape(QFrame.StyledPanel)
+        export_separator.setFrameShadow(QFrame.Sunken)
+        export_separator.setLineWidth(1)
+        export_separator.setContentsMargins(BASE_MARGIN, 1, BASE_MARGIN, 1)
+        self.layout.addWidget(export_separator, 3, 0, 5, 8)
+        # Eighth Row Components, Margins follow (left, top, right, bottom)
+        # Header
+        export_heading = QLabel("Export")
+        header_font = QFont()
+        header_font.setFamily('SansSerif')
+        header_font.setPointSize(10)
+        header_font.setBold(True)
+        export_heading.setFont(header_font)
+        export_heading.setContentsMargins(BASE_MARGIN + 10, BASE_MARGIN, 0, 0)
+        self.layout.addWidget(export_heading, 4, 0, 1, 8)
+        # Export Field
+        self.components.export_location_field = ExportLocationField(self)
+        self.components.export_location_field.setContentsMargins(BASE_MARGIN, 0, BASE_MARGIN, 0)
+        self.layout.addWidget(self.components.export_location_field, 5, 0, 1, 8)
+        self.components.status_bar.showMessage('Select words to include and choose an export location')
+        # Export Button
+        self.components.export_button = ExportButton(self)
+        self.components.export_button.setContentsMargins(BASE_MARGIN, 0, BASE_MARGIN, 0)
+        self.layout.addWidget(self.components.export_button, 6, 0, 1, 8)
+        self.components.export_button.setEnabled(False)
+
         # Re-init menu to allow for Open/Save functionality now that table widget exists.
         self.parent.init_menu(True)
-        # Run autosave thread
         self.parent.session.start_autosave()
 
     def load_fourth_stage_widgets(self) -> None:
-        # Ninth Row (Export Button)
-        export_button = ExportButton(self)
-        self.layout.addWidget(export_button, 4, 0, 1, 8)
+        """Fourth Stage Widgets primarily to allow final export step, which enables the export button."""
         self.components.status_bar.showMessage('Press the export button to begin the process')
+        self.components.export_button.setEnabled(True)
 
     def export_resources(self) -> None:
         self.components.status_bar.clearMessage()

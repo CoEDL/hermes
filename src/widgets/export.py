@@ -42,7 +42,7 @@ class ExportButton(QWidget):
         self.init_ui()
 
     def init_ui(self) -> None:
-        export_button = QPushButton('Export')
+        export_button = QPushButton('Start Export')
         export_button.clicked.connect(self.on_click_export)
         self.layout.addWidget(export_button, 0, 0, 1, 8)
         self.setLayout(self.layout)
