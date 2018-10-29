@@ -112,7 +112,7 @@ class ConverterWidget(QWidget):
         self.components.status_bar.showMessage('Select words to include and choose an export location')
         # Export Button
         self.components.export_button = ExportButton(self)
-        self.components.export_button.setContentsMargins(BASE_MARGIN, 0, BASE_MARGIN, 0)
+        self.components.export_button.setContentsMargins(BASE_MARGIN, 0, BASE_MARGIN, BASE_MARGIN)
         self.layout.addWidget(self.components.export_button, 6, 0, 1, 8)
         self.components.export_button.setEnabled(False)
 
