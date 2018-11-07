@@ -132,6 +132,9 @@ class FilterTable(QWidget):
     def populate_table(self, transcriptions: List[Transcription]) -> None:
         for row in range(len(transcriptions)):
             self.populate_table_row(row)
+            # Update image preview buttons if needed
+            if transcriptions[row].image:
+                self.table.cellWidget(row, TABLE_COLUMNS['Image']).swap_icon_yes()
         self.table.sort_by_index()
 
     def on_click_select_all(self) -> None:
