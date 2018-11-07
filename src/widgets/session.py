@@ -338,9 +338,10 @@ class SessionManager(object):
         self.autosave.start()
 
     def end_autosave(self):
-        self.autosave.quit()
-        self.autosave.wait()
-        self.autosave = None
+        if self.autosave:
+            self.autosave.quit()
+            self.autosave.wait()
+            self.autosave = None
 
 
 ################################################################################
