@@ -20,10 +20,11 @@ def open_folder_dialogue() -> str:
 
 
 def open_file_dialogue() -> str:
+    """Dialogue for opening ELAN files."""
     file_dialogue = QFileDialog()
     options = QFileDialog.Options()
     file_name, _ = file_dialogue.getOpenFileName(file_dialogue,
-                                                 'QFileDialog.getOpenFileName()',
+                                                 'Choose an ELAN (.eaf) file',
                                                  '',
                                                  'ELAN Files (*.eaf)',
                                                  options=options)
@@ -34,7 +35,7 @@ def open_image_dialogue() -> str:
     file_dialogue = QFileDialog()
     options = QFileDialog.Options()
     file_name, _ = file_dialogue.getOpenFileName(file_dialogue,
-                                                 'QFileDialog.getOpenFileName()',
+                                                 'Choose an image (.png, .jpg),
                                                  '',
                                                  'Image Files (*.png *.jpg)',
                                                  options=options)
@@ -45,7 +46,7 @@ def open_audio_dialogue() -> str:
     file_dialogue = QFileDialog()
     options = QFileDialog.Options()
     file_name, _ = file_dialogue.getOpenFileName(file_dialogue,
-                                                 'QFileDialog.getOpenFileName()',
+                                                 'Choose an audio (.wav, .mp3) file',
                                                  '',
                                                  'Audio Files (*.wav *.mp3)',
                                                  options=options)
