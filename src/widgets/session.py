@@ -252,6 +252,8 @@ class SessionManager(object):
         if not self.converter.data.export_location:
             export_init_msg()
             self.converter.data.export_location = open_folder_dialogue()
+            if self.converter.data.export_location:
+                self.converter.components.export_location_field.set_export_field_text(self.converter.data.export_location)
         self.session_log.info(f'Export location set: {self.converter.data.export_location}')
         return self.converter.data.export_location
 
