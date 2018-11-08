@@ -17,9 +17,12 @@ from windows.manifest import ManifestWindow
 
 BASE_MARGIN = 10
 
+
 class ConverterWidget(QWidget):
     """
     The core widget of the application which contains all of the widgets required to convert ELAN files.
+
+    Manages the process flow of the Hermes app, initialised by primary window.
     """
 
     def __init__(self,
@@ -43,11 +46,13 @@ class ConverterWidget(QWidget):
         self.setLayout(self.layout)
 
     def load_mode_choice(self):
+        """Choose ELAN import mode, or Start from Scratch"""
         self.components.status_bar.showMessage('Choose a mode to begin')
         self.components.mode_select = ModeSelection(self)
         self.layout.addWidget(self.components.mode_select, 0, 0, 1, 8)
 
     def load_initial_widgets(self) -> None:
+        """Elan Import process starts in the initial stage. Starting a table from scratch skips this stage."""
         # First Row (ELAN File Field)
         self.components.status_bar.showMessage('Load an ELAN file to get started')
         self.components.elan_file_field = ELANFileField(self)
@@ -58,6 +63,7 @@ class ConverterWidget(QWidget):
     def load_second_stage_widgets(self,
                                   components: ConverterComponents,
                                   data: ConverterData) -> None:
+        """Second step in ELAN import process, for transcription/translation tier selection from ELAN *.eaf file."""
         components.status_bar.showMessage('Select transcription and translation tiers, then click import')
         data.eaf_object = pympi.Elan.Eaf(data.elan_file)
         components.tier_selector = TierSelector(self)
@@ -71,6 +77,8 @@ class ConverterWidget(QWidget):
         Export Button will be disabled until export location is set for export.
 
         At this stage, main menu functionality is fully activated, and the autosave thread starts.
+
+        Starting from scratch loads this section as a first step.
         """
         if self.data.mode == OperationMode.ELAN:
             data.audio_file = get_audio_file(self.data)
