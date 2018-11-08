@@ -6,7 +6,7 @@ from utilities import resource_path
 
 REPO_LINK = 'https://github.com/CoEDL/hermes'
 ONLINE_DOCS = 'https://github.com/CoEDL/hermes/tree/master/docs'
-VERSION = '0.6.4'
+VERSION = '0.6.4a'
 
 
 class AboutWindow(QDialog):
