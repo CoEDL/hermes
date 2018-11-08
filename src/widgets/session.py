@@ -503,14 +503,14 @@ def no_save_file_msg():
 def no_export_msg():
     no_save_file_warn = WarningMessage()
     no_save_file_warn.warning(no_save_file_warn, 'Warning',
-                              f"No export location found. You must specify an export location.\n",
+                              f"No export location found. You must specify an export location to save assets.\n",
                               QMessageBox.Ok)
 
 
 def export_init_msg():
     export_msg = WarningMessage()
     export_msg.information(export_msg, 'Export Location Needed',
-                           f"Export location not set, a file dialog will now open. Please choose an export location.\n",
+                           f"Export location not set, a file dialog will now open. Please choose a location to save assets.\n",
                            QMessageBox.Ok)
 
 def no_template_msg():
