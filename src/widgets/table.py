@@ -14,7 +14,7 @@ TABLE_COLUMNS = {
     'Index': 0,
     'Transcription': 1,
     'Translation': 2,
-    'Preview': 3,
+    'Audio': 3,
     'Image': 4,
     'Include': 5,
 }
@@ -36,11 +36,11 @@ class TranslationTableWidget(QTableWidget):
         self.horizontalHeader().setSectionResizeMode(TABLE_COLUMNS['Transcription'], QHeaderView.Stretch)
         self.horizontalHeader().setSectionResizeMode(TABLE_COLUMNS['Translation'], QHeaderView.Stretch)
         self.setColumnWidth(TABLE_COLUMNS['Index'], 30)
-        self.setColumnWidth(TABLE_COLUMNS['Preview'], 75)
+        self.setColumnWidth(TABLE_COLUMNS['Audio'], 75)
         self.setColumnWidth(TABLE_COLUMNS['Image'], 75)
         self.setColumnWidth(TABLE_COLUMNS['Include'], 75)
         self.verticalHeader().hide()
-        self.setSortingEnabled(False)
+        self.setSortingEnabled(True)
         self.cellChanged.connect(self.cell_update)
 
     def sort_by_index(self) -> None:
@@ -51,11 +51,11 @@ class TranslationTableWidget(QTableWidget):
             self.showRow(row)
 
     def filter_rows(self, string: str) -> None:
-        self.setSortingEnabled(False)
+        # self.setSortingEnabled(False)
         self.show_all_rows()
         for row in range(self.rowCount()):
-            if string not in self.get_cell_value(row, TABLE_COLUMNS['Transcription']) and \
-                    string not in self.get_cell_value(row, TABLE_COLUMNS['Translation']):
+            if string.lower() not in self.get_cell_value(row, TABLE_COLUMNS['Transcription']).lower() and \
+                    string.lower() not in self.get_cell_value(row, TABLE_COLUMNS['Translation']).lower():
                 self.hideRow(row)
 
     def get_cell_value(self, row: int, column: int) -> str:
@@ -132,6 +132,9 @@ class FilterTable(QWidget):
     def populate_table(self, transcriptions: List[Transcription]) -> None:
         for row in range(len(transcriptions)):
             self.populate_table_row(row)
+            # Update image preview buttons if needed
+            if transcriptions[row].image:
+                self.table.cellWidget(row, TABLE_COLUMNS['Image']).swap_icon_yes()
         self.table.sort_by_index()
 
     def on_click_select_all(self) -> None:
@@ -213,7 +216,7 @@ class PreviewButtonWidget(QPushButton):
         self.clicked.connect(partial(self.play_sample, self.transcription))
         self.setToolTip('Left click to hear a preview of the audio for this word\n'
                         'Right click to record new audio')
-        table.setCellWidget(row, TABLE_COLUMNS['Preview'], self)
+        table.setCellWidget(row, TABLE_COLUMNS['Audio'], self)
         self.right_click.connect(self.open_record_window)
 
     def play_sample(self, transcription: Transcription) -> None:

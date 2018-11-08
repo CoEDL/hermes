@@ -29,8 +29,11 @@ class ExportLocationField(QWidget):
     def on_click_choose_export(self) -> None:
         self.data.export_location = open_folder_dialogue()
         if self.data.export_location:
-            self.export_location_field.setText(self.data.export_location)
+            self.set_export_field_text(self.data.export_location)
             self.parent.load_fourth_stage_widgets()
+
+    def set_export_field_text(self, path: str) -> None:
+        self.export_location_field.setText(path)
 
 
 class ExportButton(QWidget):
@@ -42,7 +45,7 @@ class ExportButton(QWidget):
         self.init_ui()
 
     def init_ui(self) -> None:
-        export_button = QPushButton('Export')
+        export_button = QPushButton('Start Export')
         export_button.clicked.connect(self.on_click_export)
         self.layout.addWidget(export_button, 0, 0, 1, 8)
         self.setLayout(self.layout)
@@ -55,7 +58,6 @@ class ExportButton(QWidget):
                                     f'Please select at least one item to continue.',
                                     QMessageBox.Yes)
         else:
-            self.parent.parent.session.save_file()
             if not self.export_directory_empty():
                 warning_message = WarningMessage()
                 decision = warning_message.warning(warning_message, 'Warning',

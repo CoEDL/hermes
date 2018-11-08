@@ -100,6 +100,7 @@ class SessionManager(object):
                 # An audio file exists, add it.
                 self.converter.data.transcriptions[i].set_blank_sample()
                 self.converter.data.transcriptions[i].sample.set_sample(word.get('audio')[0])
+
             self.session_log.info(f"Transcription loaded: {self.converter.data.transcriptions[i]}")
 
         # Populate table, add an extra blank row for convenience at end.
@@ -248,6 +249,8 @@ class SessionManager(object):
         if not self.converter.data.export_location:
             export_init_msg()
             self.converter.data.export_location = open_folder_dialogue()
+            if self.converter.data.export_location:
+                self.converter.components.export_location_field.set_export_field_text(self.converter.data.export_location)
         self.session_log.info(f'Export location set: {self.converter.data.export_location}')
         return self.converter.data.export_location
 
@@ -334,9 +337,10 @@ class SessionManager(object):
         self.autosave.start()
 
     def end_autosave(self):
-        self.autosave.quit()
-        self.autosave.wait()
-        self.autosave = None
+        if self.autosave:
+            self.autosave.quit()
+            self.autosave.wait()
+            self.autosave = None
 
 
 ################################################################################
@@ -496,14 +500,14 @@ def no_save_file_msg():
 def no_export_msg():
     no_save_file_warn = WarningMessage()
     no_save_file_warn.warning(no_save_file_warn, 'Warning',
-                              f"No export location found. You must specify an export location.\n",
+                              f"No export location found. You must specify an export location to save assets.\n",
                               QMessageBox.Ok)
 
 
 def export_init_msg():
     export_msg = WarningMessage()
     export_msg.information(export_msg, 'Export Location Needed',
-                           f"Export location not set, a file dialog will now open. Please choose an export location.\n",
+                           f"Export location not set, a file dialog will now open. Please choose a location to save assets.\n",
                            QMessageBox.Ok)
 
 def no_template_msg():

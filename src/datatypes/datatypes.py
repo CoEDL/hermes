@@ -188,7 +188,7 @@ class Transcription(object):
 
     def refresh_preview_image(self):
         preview_path = os.path.join(self.get_temp_file(), f'{self.id}.png')
-        print(preview_path)
+        # print(preview_path)
         with open(self.image, 'r+b') as file:
             with Image.open(file) as image:
                 preview = resizeimage.resize_contain(image, [250, 250])
