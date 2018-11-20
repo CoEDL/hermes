@@ -35,9 +35,9 @@ def open_image_dialogue() -> str:
     file_dialogue = QFileDialog()
     options = QFileDialog.Options()
     file_name, _ = file_dialogue.getOpenFileName(file_dialogue,
-                                                 'Choose an image (.png, .jpg)',
+                                                 'Choose an image (.png, .jpg .gif)',
                                                  '',
-                                                 'Image Files (*.png *.jpg)',
+                                                 'Image Files (*.png *.jpg *.gif)',
                                                  options=options)
     return file_name
 
