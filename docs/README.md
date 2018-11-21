@@ -82,3 +82,20 @@ copy of Hermes.
 structure.
 4. Locate where you saved a previous file (.hermes extension), and click the Open button in the window.
 5. The table will now be populated with the files data.
+
+## Creating Templates
+1. Fill in the hermes table either through importing an ELAN file or starting from scratch.
+2. Click on Templates in the menu toolbar.
+3. Click on Create Template.
+4. Tick the checkbox to indicate which columns (Either Transcription, or Translation) you want to use
+for the template. You may choose both if relevant.
+5. Save the template file. The template file can be loaded by hermes to automatically populate word
+columns to allow for custom audio recording and image attachments per word list.
+    - Note you may be asked to input language and authorship information during the save process.
+
+## Loading Templates
+1. Ensure that the Hermes transcription table is visible.
+2. Click on 'Templates' in the menu toolbar.
+3. Click on Load Template, and select the appropriate template (.htemp) file to load.
+4. Hermes will automatically populate the table based on this file, ready for you to attach images and
+record audio for the word list.
