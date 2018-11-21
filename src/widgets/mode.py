@@ -59,3 +59,36 @@ class ModeSelection(QWidget):
     def on_click_scratch(self) -> None:
         self.parent.data.mode = OperationMode.SCRATCH
         self.parent.load_third_stage_widgets(self.parent.components, self.parent.data)
+
+
+class MainProjectSelection(QWidget):
+    """This is the main menu of Hermes that greets the user on app start.
+
+    The user, from here, will select either a New Project or continue with
+    an existing project.
+    """
+    def __init__(self, parent: ConverterWidget) -> None:
+        super().__init__()
+        self.parent = parent
+        self.layout = QGridLayout()
+        self.init_ui()
+
+    def init_ui(self) -> None:
+        new_project_btn = ModeButton("./img/icon_new_project.png",
+                                     "Start New Project",
+                                     on_click = self.on_click_new_project)
+        self.layout.addWidget(new_project_btn, 0, 0, 1, 1)
+        open_project_btn = ModeButton("./img/icon_open_project.png",
+                                     "Open Project",
+                                     on_click = self.on_click_open_project)
+        self.layout.addWidget(open_project_btn, 0, 1, 1, 1)
+        self.setLayout(self.layout)
+
+    def on_click_new_project(self) -> None:
+        self.parent.load_mode_choice()
+
+    def on_click_open_project(self) -> None:
+        self.parent.data.mode = OperationMode.SCRATCH
+        self.parent.load_third_stage_widgets(self.parent.components, self.parent.data)
+        self.parent.parent.session.open_file()
+

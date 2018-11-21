@@ -178,6 +178,5 @@ class PrimaryWindow(QMainWindow):
         webbrowser.open(ONLINE_DOCS)
         self.primary_log.info(f'Opened default browser to: {ONLINE_DOCS}')
 
-
     def shrink(self) -> None:
         self.resize(0, 0)

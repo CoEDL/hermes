@@ -8,7 +8,7 @@ from PyQt5.QtCore import QUrl, Qt
 from datatypes import OperationMode, Transcription, ConverterData, AppSettings, OutputMode, ConverterComponents
 from utilities.output import create_opie_files, create_dict_files, create_lmf_files
 from utilities.parse import get_audio_file, extract_elan_data
-from widgets.mode import ModeSelection
+from widgets.mode import MainProjectSelection, ModeSelection
 from widgets.elan_import import ELANFileField, TierSelector
 from widgets.table import TABLE_COLUMNS, FilterTable
 from widgets.export import ExportLocationField, ExportButton
@@ -42,13 +42,20 @@ class ConverterWidget(QWidget):
     def init_ui(self) -> None:
         self.setMinimumWidth(650)
         self.layout.setVerticalSpacing(0)
-        self.load_mode_choice()
+        self.load_main_project_choice()
         self.setLayout(self.layout)
+
+    def load_main_project_choice(self):
+        """Options for starting a new project, or opening an existing project."""
+        self.components.status_bar.showMessage("Start a new project, or load your existing project.")
+        self.components.main_project_select = MainProjectSelection(self)
+        self.layout.addWidget(self.components.main_project_select, 0, 0, 1, 8)
 
     def load_mode_choice(self):
         """Choose ELAN import mode, or Start from Scratch"""
         self.components.status_bar.showMessage('Choose a mode to begin')
         self.components.mode_select = ModeSelection(self)
+        self.components.main_project_select.hide()
         self.layout.addWidget(self.components.mode_select, 0, 0, 1, 8)
 
     def load_initial_widgets(self) -> None:
@@ -86,7 +93,10 @@ class ConverterWidget(QWidget):
             translation_tier = components.tier_selector.get_translation_tier()
             extract_elan_data(transcription_tier, translation_tier, self.data, components)
         else:
-            self.components.mode_select.hide()
+            if self.components.mode_select:
+                self.components.mode_select.hide()
+            elif self.components.main_project_select:
+                self.components.main_project_select.hide()
             self.data.transcriptions.append(Transcription(index=0,
                                                           transcription=""))
         # Sixth Row (Filter & Selector)
