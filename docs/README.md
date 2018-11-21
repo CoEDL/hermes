@@ -80,5 +80,5 @@ copy of Hermes.
 2. Click on 'File' in the menu toolbar.
 3. Click on 'Open', and a open file dialogue window will now open for you to navigate your systems file
 structure.
-4. Locate where you saved a previous file (.hermes extension), and click Open.
+4. Locate where you saved a previous file (.hermes extension), and click the Open button in the window.
 5. The table will now be populated with the files data.
