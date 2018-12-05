@@ -1,4 +1,5 @@
 import os
+import platform
 import tempfile
 from datetime import datetime
 from resizeimage import resizeimage
@@ -258,12 +259,19 @@ class AppSettings(object):
     def __init__(self,
                  output_format: str = OUTPUT_MODE_NAMES[0],
                  microphone: str = 'Default',
-                 audio_quality: str = 'Normal',
-                 ffmpeg_location: str = None):
+                 audio_quality: str = 'Very High',
+                 ffmpeg_location: str = None,
+                 project_root_dir: str = None):
         self.output_format = list(OutputMode)[OUTPUT_MODES_REV[output_format]]
         self.microphone = microphone
         self.audio_quality = AUDIO_QUALITY[audio_quality]
         self.ffmpeg_location = ffmpeg_location
+        self.project_root_dir = project_root_dir
+        if not project_root_dir:
+            if platform.system() == "Windows":
+                self.project_root_dir = os.path.join(os.path.expandvars("%USERPROFILE%"), "Documents", "Hermes", "Projects")
+            else:
+                self.project_root_dir = os.path.join(os.path.expanduser("~"), "Hermes", "Projects")
 
     def __str__(self):
         return '\n'.join([f'{key}: {value}' for key, value in self.__dict__.items()])

@@ -30,6 +30,7 @@ def load_system_settings() -> AppSettings:
     app_settings.audio_quality = AUDIO_QUALITY[system_settings.value('Audio Quality')]
     app_settings.output_format = list(OutputMode)[int(system_settings.value('Output Format'))]
     app_settings.microphone = system_settings.value('Microphone')
+    app_settings.project_root_dir = system_settings.value('Project Root Dir')
     if system_settings.contains('FFMPEG Location'):
         location = system_settings.value('FFMPEG Location')
         if location == 'None':
@@ -46,6 +47,7 @@ def save_system_settings(app_settings: AppSettings) -> None:
     system_settings.setValue('Output Format', app_settings.output_format.value)
     system_settings.setValue('Microphone', app_settings.microphone)
     system_settings.setValue('FFMPEG Location', str(app_settings.ffmpeg_location))
+    system_settings.setValue('Project Root Dir', str(app_settings.project_root_dir))
     system_settings.sync()
     print_system_settings()
 
