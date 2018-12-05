@@ -40,7 +40,7 @@ class TranslationTableWidget(QTableWidget):
         self.setColumnWidth(TABLE_COLUMNS['Image'], 75)
         self.setColumnWidth(TABLE_COLUMNS['Include'], 75)
         self.verticalHeader().hide()
-        self.setSortingEnabled(True)
+        self.setSortingEnabled(False)
         self.cellChanged.connect(self.cell_update)
 
     def sort_by_index(self) -> None:
