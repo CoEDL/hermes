@@ -20,12 +20,13 @@ def print_system_settings() -> None:
     system_settings = get_settings()
     print(f'Audio Quality: {system_settings.value("Audio Quality")}\n'
           f'Output Format: {OUTPUT_MODE_NAMES[system_settings.value("Output Format")]}\n'
-          f'Microphone: {system_settings.value("Microphone")}')
+          f'Microphone: {system_settings.value("Microphone")}\n'
+          f'Projects Directory: {system_settings.value("Project Root Dir")}'
+          )
 
 
 def load_system_settings() -> AppSettings:
     app_settings = AppSettings()
-    # print_system_settings()
     system_settings = get_settings()
     app_settings.audio_quality = AUDIO_QUALITY[system_settings.value('Audio Quality')]
     app_settings.output_format = list(OutputMode)[int(system_settings.value('Output Format'))]
