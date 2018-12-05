@@ -1,3 +1,6 @@
+import logging
+import PIL
+import os
 from PyQt5.QtWidgets import QTableWidget, QWidget, QGridLayout, QTableWidgetItem, QPushButton, \
     QHeaderView, QLabel, QStatusBar, QHBoxLayout, QCheckBox, QLineEdit, QSizePolicy
 from PyQt5.QtCore import Qt, pyqtSignal
@@ -19,6 +22,7 @@ TABLE_COLUMNS = {
     'Include': 5,
 }
 
+TABLE_LOGGER = logging.getLogger("TranscriptionTranslationTable")
 
 class TranslationTableWidget(QTableWidget):
     """
@@ -303,12 +307,30 @@ class ImageButtonWidget(QPushButton):
     def on_click_image(self, row: int) -> None:
         image_path = open_image_dialogue()
         if image_path:
+            TABLE_LOGGER.info(f"Image Path Loaded: {image_path}")
+            # Resize Image to 400x300 for OPIE.
+            # TODO: Automatically put in assets folder when structure is changed.
+            with PIL.Image.open(image_path) as image:
+                width, height = image.size
+                if width != 400 or height != 300:
+                    image = image.resize((400, 300),
+                                         resample=PIL.Image.ANTIALIAS)
+                    image_path = self.save_resized_image(image_path, image)
             self.transcription.image = image_path
+            TABLE_LOGGER.info(f"Image Path Saved for Transcription: {self.transcription.image}")
             self.transcription.refresh_preview_image()
             self.table.cellWidget(row, TABLE_COLUMNS['Image']).swap_icon_yes()
             self.set_tooltip()
         else:
             self.table.cellWidget(row, TABLE_COLUMNS['Image']).swap_icon_no()
+
+    def save_resized_image(self, path: str, image: PIL.Image) -> str:
+        image_dir = os.path.dirname(path)
+        image_name = os.path.splitext(os.path.basename(path))
+        new_image_name = image_name[0] + "_resized" + image_name[1]
+        image_path = os.path.join(image_dir, new_image_name)
+        image.save(image_path)
+        return image_path
 
 
 class FilterFieldWidget(QLineEdit):

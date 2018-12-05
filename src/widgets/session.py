@@ -101,8 +101,6 @@ class SessionManager(object):
                 self.converter.data.transcriptions[i].set_blank_sample()
                 self.converter.data.transcriptions[i].sample.set_sample(word.get('audio')[0])
 
-            self.session_log.info(f"Transcription loaded: {self.converter.data.transcriptions[i]}")
-
         # Populate table, add an extra blank row for convenience at end.
         for n in range(len(loaded_data['words']) + 1):
             self.converter.components.filter_table.add_blank_row()
