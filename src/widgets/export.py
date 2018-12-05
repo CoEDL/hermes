@@ -30,7 +30,7 @@ class ExportLocationField(QWidget):
         self.data.export_location = open_folder_dialogue()
         if self.data.export_location:
             self.set_export_field_text(self.data.export_location)
-            self.parent.load_fourth_stage_widgets()
+            self.parent.enable_export_button()
 
     def set_export_field_text(self, path: str) -> None:
         self.export_location_field.setText(path)

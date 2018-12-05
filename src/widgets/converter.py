@@ -42,50 +42,56 @@ class ConverterWidget(QWidget):
     def init_ui(self) -> None:
         self.setMinimumWidth(650)
         self.layout.setVerticalSpacing(0)
-        self.load_main_project_choice()
+        self.load_main_menu_projects()
         self.setLayout(self.layout)
 
-    def load_main_project_choice(self):
-        """Options for starting a new project, or opening an existing project."""
+    def load_main_menu_projects(self):
+        """Main Menu: Greet user with the option to:
+        1) Start a New Project
+        2) Open an Existing Project
+        """
         self.components.status_bar.showMessage("Start a new project, or load your existing project.")
         self.components.main_project_select = MainProjectSelection(self)
         self.layout.addWidget(self.components.main_project_select, 0, 0, 1, 8)
 
-    def load_mode_choice(self):
-        """Choose ELAN import mode, or Start from Scratch"""
+    def load_new_project_mode(self):
+        """When starting a new project:
+        1) Choose ELAN import mode, or
+        2) Start from Scratch
+        """
         self.components.status_bar.showMessage('Choose a mode to begin')
-        self.components.mode_select = ModeSelection(self)
+        self.components.project_mode_select = ModeSelection(self)
         self.components.main_project_select.hide()
-        self.layout.addWidget(self.components.mode_select, 0, 0, 1, 8)
+        self.layout.addWidget(self.components.project_mode_select, 0, 0, 1, 8)
 
-    def load_initial_widgets(self) -> None:
-        """Elan Import process starts in the initial stage. Starting a table from scratch skips this stage."""
+    def load_elan_loader(self) -> None:
+        """Elan Import Mode Selected: user to select an ELAN file to load."""
         # First Row (ELAN File Field)
         self.components.status_bar.showMessage('Load an ELAN file to get started')
         self.components.elan_file_field = ELANFileField(self)
-        self.components.mode_select.hide()
-        self.layout.removeWidget(self.components.mode_select)
+        self.components.project_mode_select.hide()
+        self.layout.removeWidget(self.components.project_mode_select)
         self.layout.addWidget(self.components.elan_file_field, 0, 0, 1, 8)
 
-    def load_second_stage_widgets(self,
+    def load_elan_tier_select(self,
                                   components: ConverterComponents,
                                   data: ConverterData) -> None:
-        """Second step in ELAN import process, for transcription/translation tier selection from ELAN *.eaf file."""
+        """Elan Import Mode: user to select tiers to import into Hermes"""
         components.status_bar.showMessage('Select transcription and translation tiers, then click import')
         data.eaf_object = pympi.Elan.Eaf(data.elan_file)
         components.tier_selector = TierSelector(self)
         components.tier_selector.populate_tiers(list(data.eaf_object.get_tier_names()))
         self.layout.addWidget(components.tier_selector, 1, 0, 1, 8)
 
-    def load_third_stage_widgets(self,
+    def load_main_hermes_app(self,
                                  components: ConverterComponents,
                                  data: ConverterData) -> None:
-        """Third stage widgets constructs main filter table for user input, image upload, audio recording.
-        Export Button will be disabled until export location is set for export.
+        """Main hermes app once a file is loaded or a new project has begun is initialised.
+
+        Main app contains the table widget allowing for user input, image uploading, audio recording, and the final
+        export process.
 
         At this stage, main menu functionality is fully activated, and the autosave thread starts.
-
-        Starting from scratch loads this section as a first step.
         """
         if self.data.mode == OperationMode.ELAN:
             data.audio_file = get_audio_file(self.data)
@@ -138,7 +144,7 @@ class ConverterWidget(QWidget):
         self.parent.init_menu(True)
         self.parent.session.start_autosave()
 
-    def load_fourth_stage_widgets(self) -> None:
+    def enable_export_button(self) -> None:
         """Fourth Stage Widgets primarily to allow final export step, which enables the export button."""
         self.components.status_bar.showMessage('Press the export button to begin the process')
         self.components.export_button.setEnabled(True)

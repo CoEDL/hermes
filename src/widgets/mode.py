@@ -54,11 +54,11 @@ class ModeSelection(QWidget):
 
     def on_click_elan(self) -> None:
         self.parent.data.mode = OperationMode.ELAN
-        self.parent.load_initial_widgets()
+        self.parent.load_elan_loader()
 
     def on_click_scratch(self) -> None:
         self.parent.data.mode = OperationMode.SCRATCH
-        self.parent.load_third_stage_widgets(self.parent.components, self.parent.data)
+        self.parent.load_main_hermes_app(self.parent.components, self.parent.data)
 
 
 class MainProjectSelection(QWidget):
@@ -85,10 +85,10 @@ class MainProjectSelection(QWidget):
         self.setLayout(self.layout)
 
     def on_click_new_project(self) -> None:
-        self.parent.load_mode_choice()
+        self.parent.load_new_project_mode()
 
     def on_click_open_project(self) -> None:
         self.parent.data.mode = OperationMode.SCRATCH
-        self.parent.load_third_stage_widgets(self.parent.components, self.parent.data)
+        self.parent.load_main_hermes_app(self.parent.components, self.parent.data)
         self.parent.parent.session.open_file()
 

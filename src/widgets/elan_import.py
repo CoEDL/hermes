@@ -31,7 +31,7 @@ class ELANFileField(QWidget):
         if file_name:
             self.parent.data.elan_file = file_name
             self.field.setText(file_name)
-            self.parent.load_second_stage_widgets(self.parent.components, self.parent.data)
+            self.parent.load_elan_tier_select(self.parent.components, self.parent.data)
 
 
 class TierSelector(QWidget):
@@ -76,6 +76,6 @@ class TierSelector(QWidget):
                                              QMessageBox.Yes | QMessageBox.No)
             if choice == QMessageBox.No:
                 return
-        self.parent.load_third_stage_widgets(self.parent.components, self.parent.data)
+        self.parent.load_main_hermes_app(self.parent.components, self.parent.data)
 
 
