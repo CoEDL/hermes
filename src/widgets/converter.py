@@ -1,10 +1,11 @@
 import os
 import csv
+import logging
 import pympi
 import json
 from PyQt5.QtWidgets import QWidget, QGridLayout, QLabel, QFrame
 from PyQt5.QtGui import QDesktopServices, QFont
-from PyQt5.QtCore import QUrl, Qt
+from PyQt5.QtCore import QUrl
 from datatypes import OperationMode, Transcription, ConverterData, AppSettings, OutputMode, ConverterComponents
 from utilities.output import create_opie_files, create_dict_files, create_lmf_files
 from utilities.parse import get_audio_file, extract_elan_data
@@ -29,7 +30,9 @@ class ConverterWidget(QWidget):
                  parent: QWidget,
                  settings: AppSettings) -> None:
         super().__init__()
+        self.converter_log = logging.getLogger("ConverterWidget")
         self.parent = parent
+        self.session = parent.session
         self.settings = settings
         self.components = ConverterComponents(
             progress_bar=self.parent.progress_bar,
@@ -93,14 +96,15 @@ class ConverterWidget(QWidget):
 
         At this stage, main menu functionality is fully activated, and the autosave thread starts.
         """
+        self.setup_project()
         if self.data.mode == OperationMode.ELAN:
             data.audio_file = get_audio_file(self.data)
             transcription_tier = components.tier_selector.get_transcription_tier()
             translation_tier = components.tier_selector.get_translation_tier()
             extract_elan_data(transcription_tier, translation_tier, self.data, components)
         else:
-            if self.components.mode_select:
-                self.components.mode_select.hide()
+            if self.components.project_mode_select:
+                self.components.project_mode_select.hide()
             elif self.components.main_project_select:
                 self.components.main_project_select.hide()
             self.data.transcriptions.append(Transcription(index=0,
@@ -142,12 +146,42 @@ class ConverterWidget(QWidget):
 
         # Re-init menu to allow for Open/Save functionality now that table widget exists.
         self.parent.init_menu(True)
-        self.parent.session.start_autosave()
+        self.session.start_autosave()
 
     def enable_export_button(self) -> None:
         """Allow final export step, which enables the export button."""
         self.components.status_bar.showMessage('Press the export button to begin the process')
         self.components.export_button.setEnabled(True)
+
+    def setup_project(self) -> None:
+        """Sets up the project according to user specifications.
+
+        If the project directory does not yet exist, will create the appropriate
+        structure.
+
+        project_root/
+            project_name/
+                assets/
+                    audio/
+                    images/
+                export/
+                templates/
+
+        """
+        project_root = self.settings.project_root_dir
+        project_name = self.session.project_name
+        project_path = self.session.project_path
+        self.converter_log.info(f"Project Root Dir: {project_root}")
+        self.converter_log.info(f"Project Initialised as: {project_name}")
+        self.converter_log.info(f"Project Path: {project_path}")
+
+        if not os.path.exists(project_path):
+            os.makedirs(project_path)
+            os.makedirs(os.path.join(project_path, "assets", "audio"))
+            os.makedirs(os.path.join(project_path, "assets", "images"))
+            os.makedirs(os.path.join(project_path, "export"))
+            os.makedirs(os.path.join(project_path, "templates"))
+            os.makedirs(os.path.join(project_path, "saves"))
 
     def export_resources(self) -> None:
         self.components.status_bar.clearMessage()

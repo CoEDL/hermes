@@ -248,7 +248,8 @@ class ConverterComponents(object):
         self.progress_bar = progress_bar
         self.status_bar = status_bar
         self.tier_selector = None
-        self.mode_select = None
+        self.main_project_select = None
+        self.project_mode_select = None
 
 
 class AppSettings(object):

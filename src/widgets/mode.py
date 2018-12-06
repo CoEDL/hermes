@@ -1,3 +1,4 @@
+from box import Box
 from PyQt5.QtWidgets import QPushButton, QWidget, QGridLayout, QLabel, QLineEdit
 from PyQt5.QtGui import QPixmap, QIcon
 from PyQt5.QtCore import QSize, Qt
@@ -39,6 +40,7 @@ class ModeSelection(QWidget):
         super().__init__()
         self.parent = parent
         self.layout = QGridLayout()
+        self.fields = Box()
         self.init_ui()
 
     def init_ui(self) -> None:
@@ -46,6 +48,7 @@ class ModeSelection(QWidget):
         self.layout.addWidget(project_name_label, 0, 0, 1, 1)
         project_name_field = QLineEdit()
         project_name_field.setText('Enter Project Name')
+        self.fields.project_name = project_name_field
         self.layout.addWidget(project_name_field, 0, 1, 1, 1)
 
         elan_button = ModeButton('./img/elan.png',
@@ -61,10 +64,15 @@ class ModeSelection(QWidget):
 
     def on_click_elan(self) -> None:
         self.parent.data.mode = OperationMode.ELAN
+        self.parent.session.project_name = self.fields.project_name.text()
+        self.parent.session.set_project_path()
         self.parent.load_elan_loader()
 
     def on_click_scratch(self) -> None:
         self.parent.data.mode = OperationMode.SCRATCH
+        print(self.fields.project_name.text())
+        self.parent.session.project_name = self.fields.project_name.text()
+        self.parent.session.set_project_path()
         self.parent.load_main_hermes_app(self.parent.components, self.parent.data)
 
 
@@ -97,5 +105,5 @@ class MainProjectSelection(QWidget):
     def on_click_open_project(self) -> None:
         self.parent.data.mode = OperationMode.SCRATCH
         self.parent.load_main_hermes_app(self.parent.components, self.parent.data)
-        self.parent.parent.session.open_file()
+        self.parent.session.open_file()
 

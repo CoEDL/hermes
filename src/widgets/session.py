@@ -36,6 +36,10 @@ class SessionManager(object):
         # Converter widget that runs hermes' main operations
         self.converter = converter
 
+        # Project Parameters
+        self.project_name = ""
+        self.project_path = ""
+
         # Save file parameters
         self.session_filename = None
 
@@ -339,6 +343,10 @@ class SessionManager(object):
             self.autosave.quit()
             self.autosave.wait()
             self.autosave = None
+
+    def set_project_path(self):
+        self.project_path = os.path.join(self.parent.settings.project_root_dir,
+                                         self.project_name)
 
 
 ################################################################################
