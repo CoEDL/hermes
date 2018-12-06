@@ -88,4 +88,3 @@ def create_lmf_files(row: int,
             pass
         json_entry['image'] = [image_file_path, ]
     lmf['words'].append(json_entry)
-    print(lmf)

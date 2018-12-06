@@ -2,6 +2,7 @@ import copy
 import json
 import logging
 import os
+import shutil
 from PyQt5.QtWidgets import QCheckBox, QDialog, QFileDialog, QGridLayout, QLabel, QMainWindow, QMessageBox, QPushButton
 from PyQt5.QtCore import QThread, QTimer, QEventLoop
 from PyQt5.QtGui import QFont
@@ -28,13 +29,13 @@ class SessionManager(object):
     Session Manager handles session operations, providing functionality for Save, Save As, and Open.
     """
 
-    def __init__(self, parent: QMainWindow, converter: ConverterWidget):
+    def __init__(self, parent: QMainWindow):
         self._file_dialog = QFileDialog()
         self.session_log = logging.getLogger("SessionManager")
 
         self.parent = parent
-        # Converter widget that runs hermes' main operations
-        self.converter = converter
+        # Converter widget that runs hermes' main operations, set in Primary after initialisation of all elements.
+        self.converter = None
 
         # Project Parameters
         self.project_name = ""
@@ -157,6 +158,7 @@ class SessionManager(object):
         """Executes the save function. Assumes that all conditions are ready.
 
         All saves require a file name setup or loaded, and an export location set in prior steps.
+        TODO: Move template functionality to its own functions.
         """
         # Create LMF for this session
         if not self.template_type and not self.autosaving:
@@ -179,10 +181,10 @@ class SessionManager(object):
         for row in range(self.converter.components.table.rowCount()):
             if self.template_type and \
                     (template_data.transcriptions[row].transcription or template_data.transcriptions[row].translation):
-                create_lmf_files(row, template_data)
+                self.save_assets(row, template_data)
             elif self.converter.components.table.get_cell_value(row, TABLE_COLUMNS["Transcription"])\
                     or self.converter.components.table.get_cell_value(row, TABLE_COLUMNS["Translation"]):
-                create_lmf_files(row, self.converter.data)
+                self.save_assets(row, self.converter.data)
             complete_count += 1
             if not self.autosaving:
                 self.converter.components.progress_bar.update_progress(complete_count / to_save_count)
@@ -208,6 +210,36 @@ class SessionManager(object):
 
         if not self.autosaving:
             self.converter.components.progress_bar.hide()
+
+    def save_assets(self, row: int,
+                         data: ConverterData) -> None:
+        """Upon a standard session save, ensure assets are moved to project
+        assets folder.
+        """
+        lmf = data.lmf
+        transcription = data.transcriptions[row]
+        json_entry = {
+            "id": str(transcription.id),
+            "transcription": transcription.transcription,
+            "translation": [transcription.translation, ],
+        }
+        if transcription.sample:
+            sound_export_path = os.path.join(self.project_path, "assets", "audio")
+            sound_file = data.transcriptions[row].sample.get_sample_file_object()
+            sound_file_path = f'{sound_export_path}/{transcription.transcription}-{row}.wav'
+            sound_file.export(sound_file_path, format='wav')
+            json_entry['audio'] = [sound_file_path, ]
+        if transcription.image:
+            image_export_path = os.path.join(self.project_path, "assets", "images")
+            _, image_extension = os.path.splitext(transcription.image)
+            image_file_path = os.path.join(image_export_path,
+                                           f'{transcription.transcription}-{row}{image_extension}')
+            try:
+                shutil.copy(transcription.image, image_file_path)
+            except shutil.SameFileError:
+                pass
+            json_entry['image'] = [image_file_path, ]
+        lmf['words'].append(json_entry)
 
     def create_session_lmf(self, parent: QMainWindow, data: ConverterData):
         """Creates a new language manifest file prior to new save file."""

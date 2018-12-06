@@ -96,7 +96,6 @@ class ConverterWidget(QWidget):
 
         At this stage, main menu functionality is fully activated, and the autosave thread starts.
         """
-        self.setup_project()
         if self.data.mode == OperationMode.ELAN:
             data.audio_file = get_audio_file(self.data)
             transcription_tier = components.tier_selector.get_transcription_tier()
@@ -138,6 +137,9 @@ class ConverterWidget(QWidget):
         self.components.export_location_field.setContentsMargins(BASE_MARGIN, 0, BASE_MARGIN, 0)
         self.layout.addWidget(self.components.export_location_field, 5, 0, 1, 8)
         self.components.status_bar.showMessage('Select words to include and choose an export location')
+        # Set export location
+        self.data.export_location = os.path.join(self.session.project_path, "export")
+        self.components.export_location_field.set_export_field_text(self.data.export_location)
         # Export Button
         self.components.export_button = ExportButton(self)
         self.components.export_button.setContentsMargins(BASE_MARGIN, 0, BASE_MARGIN, BASE_MARGIN)

@@ -66,6 +66,7 @@ class ModeSelection(QWidget):
         self.parent.data.mode = OperationMode.ELAN
         self.parent.session.project_name = self.fields.project_name.text()
         self.parent.session.set_project_path()
+        self.parent.setup_project()
         self.parent.load_elan_loader()
 
     def on_click_scratch(self) -> None:
@@ -73,6 +74,7 @@ class ModeSelection(QWidget):
         print(self.fields.project_name.text())
         self.parent.session.project_name = self.fields.project_name.text()
         self.parent.session.set_project_path()
+        self.parent.setup_project()
         self.parent.load_main_hermes_app(self.parent.components, self.parent.data)
 
 
@@ -106,4 +108,4 @@ class MainProjectSelection(QWidget):
         self.parent.data.mode = OperationMode.SCRATCH
         self.parent.load_main_hermes_app(self.parent.components, self.parent.data)
         self.parent.session.open_file()
-
+        # TODO: Set export location on open project as opposed to current open loose save file.

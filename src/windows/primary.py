@@ -61,9 +61,10 @@ class PrimaryWindow(QMainWindow):
                 pydub.AudioSegment.converter = self.settings.ffmpeg_location
         else:
             self.settings = AppSettings()
-        self.session = SessionManager(self, self.converter)
+        self.session = SessionManager(self)
         self.converter = ConverterWidget(parent=self,
                                          settings=self.settings)
+        self.session.converter = self.converter
         self.setCentralWidget(self.converter)
         self.statusBar().addPermanentWidget(self.progress_bar)
         self.progress_bar.hide()
