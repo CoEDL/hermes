@@ -1,4 +1,4 @@
-from PyQt5.QtWidgets import QPushButton, QWidget, QGridLayout
+from PyQt5.QtWidgets import QPushButton, QWidget, QGridLayout, QLabel, QLineEdit
 from PyQt5.QtGui import QPixmap, QIcon
 from PyQt5.QtCore import QSize, Qt
 from datatypes import OperationMode
@@ -42,14 +42,21 @@ class ModeSelection(QWidget):
         self.init_ui()
 
     def init_ui(self) -> None:
+        project_name_label = QLabel('Project Name:')
+        self.layout.addWidget(project_name_label, 0, 0, 1, 1)
+        project_name_field = QLineEdit()
+        project_name_field.setText('Enter Project Name')
+        self.layout.addWidget(project_name_field, 0, 1, 1, 1)
+
         elan_button = ModeButton('./img/elan.png',
                                  'Import ELAN File',
                                  on_click=self.on_click_elan)
-        self.layout.addWidget(elan_button, 0, 0, 1, 1)
+        self.layout.addWidget(elan_button, 1, 0, 1, 2)
         scratch_button = ModeButton('./img/scratch.png',
                                     'Start From Scratch',
                                     on_click=self.on_click_scratch)
-        self.layout.addWidget(scratch_button, 0, 1, 1, 1)
+        self.layout.addWidget(scratch_button, 2, 0, 1, 2)
+
         self.setLayout(self.layout)
 
     def on_click_elan(self) -> None:

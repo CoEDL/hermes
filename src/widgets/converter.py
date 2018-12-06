@@ -59,7 +59,7 @@ class ConverterWidget(QWidget):
         1) Choose ELAN import mode, or
         2) Start from Scratch
         """
-        self.components.status_bar.showMessage('Choose a mode to begin')
+        self.components.status_bar.showMessage('Name your project, and choose a mode to begin')
         self.components.project_mode_select = ModeSelection(self)
         self.components.main_project_select.hide()
         self.layout.addWidget(self.components.project_mode_select, 0, 0, 1, 8)
@@ -105,21 +105,21 @@ class ConverterWidget(QWidget):
                 self.components.main_project_select.hide()
             self.data.transcriptions.append(Transcription(index=0,
                                                           transcription=""))
-        # Sixth Row (Filter & Selector)
+        # Filter Table Rows
         self.components.filter_table = FilterTable(self.data,
                                                    self.components.status_bar,
                                                    self.settings)
         self.layout.addWidget(self.components.filter_table, 2, 0, 1, 8)
         self.components.table = self.components.filter_table.table
 
-        # Eighth Row Frame, will be set behind grid widgets.
+        # Export Frame
         export_separator = QFrame()
         export_separator.setFrameShape(QFrame.StyledPanel)
         export_separator.setFrameShadow(QFrame.Sunken)
         export_separator.setLineWidth(1)
         export_separator.setContentsMargins(BASE_MARGIN, 1, BASE_MARGIN, 1)
         self.layout.addWidget(export_separator, 3, 0, 5, 8)
-        # Eighth Row Components, Margins follow (left, top, right, bottom)
+        # Export Components, Margins follow (left, top, right, bottom)
         # Header
         export_heading = QLabel("Export")
         header_font = QFont()
@@ -145,7 +145,7 @@ class ConverterWidget(QWidget):
         self.parent.session.start_autosave()
 
     def enable_export_button(self) -> None:
-        """Fourth Stage Widgets primarily to allow final export step, which enables the export button."""
+        """Allow final export step, which enables the export button."""
         self.components.status_bar.showMessage('Press the export button to begin the process')
         self.components.export_button.setEnabled(True)
 

@@ -4,7 +4,7 @@ import logging
 import webbrowser
 from PyQt5.QtWidgets import QProgressBar, QApplication, QMainWindow, QAction
 from typing import Union
-from datatypes import AppSettings
+from datatypes import AppSettings, OperationMode
 from utilities.settings import load_system_settings, system_settings_exist, save_system_settings
 from widgets.session import SessionManager
 from widgets.converter import ConverterWidget
@@ -78,7 +78,6 @@ class PrimaryWindow(QMainWindow):
         open_menu.triggered.connect(self.on_click_open)
         open_menu.setShortcut('Ctrl+O')
         file.addAction(open_menu)
-        open_menu.setEnabled(save_flag)
 
         save_menu = QAction('Save', self)
         save_menu.triggered.connect(self.on_click_save)
@@ -166,6 +165,8 @@ class PrimaryWindow(QMainWindow):
         save_system_settings(self.settings)
 
     def on_click_open(self) -> None:
+        self.converter.data.mode = OperationMode.SCRATCH
+        self.converter.load_main_hermes_app(self.converter.components, self.converter.data)
         self.session.open_file()
 
     def on_click_template_save(self) -> None:
