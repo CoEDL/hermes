@@ -9,6 +9,7 @@ from PyQt5.QtCore import QUrl
 from datatypes import OperationMode, Transcription, ConverterData, AppSettings, OutputMode, ConverterComponents
 from utilities.output import create_opie_files, create_dict_files, create_lmf_files
 from utilities.parse import get_audio_file, extract_elan_data
+from utilities.settings import setup_custom_logger
 from widgets.mode import MainProjectSelection, ModeSelection
 from widgets.elan_import import ELANFileField, TierSelector
 from widgets.table import TABLE_COLUMNS, FilterTable
@@ -30,7 +31,7 @@ class ConverterWidget(QWidget):
                  parent: QWidget,
                  settings: AppSettings) -> None:
         super().__init__()
-        self.converter_log = logging.getLogger("ConverterWidget")
+        self.converter_log = setup_custom_logger("ConverterWidget")
         self.parent = parent
         self.session = parent.session
         self.settings = settings
@@ -179,11 +180,11 @@ class ConverterWidget(QWidget):
 
         if not os.path.exists(project_path):
             os.makedirs(project_path)
-            os.makedirs(os.path.join(project_path, "assets", "audio"))
-            os.makedirs(os.path.join(project_path, "assets", "images"))
-            os.makedirs(os.path.join(project_path, "export"))
-            os.makedirs(os.path.join(project_path, "templates"))
-            os.makedirs(os.path.join(project_path, "saves"))
+            os.makedirs(self.session.assets_audio)
+            os.makedirs(self.session.assets_images)
+            os.makedirs(self.session.exports)
+            os.makedirs(self.session.templates)
+            os.makedirs(self.session.saves)
 
     def export_resources(self) -> None:
         self.components.status_bar.clearMessage()

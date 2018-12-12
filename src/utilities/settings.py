@@ -1,5 +1,7 @@
+import logging
 import os
 import pydub
+import sys
 from PyQt5.QtCore import QSettings
 from datatypes import AppSettings, AUDIO_QUALITY, AUDIO_QUALITY_REV, OutputMode, OUTPUT_MODE_NAMES
 
@@ -57,3 +59,18 @@ def set_ffmpeg_location(app_settings: AppSettings, path: str) -> None:
     app_settings.ffmpeg_location = path
     save_system_settings(app_settings)
     pydub.AudioSegment.converter = path
+
+
+def setup_custom_logger(name):
+    formatter = logging.Formatter(fmt='%(asctime)s %(levelname)-s [%(name)-s] '
+                                      '%(message)s',
+                                  datefmt='%Y-%m-%d %H:%M:%S')
+    handler = logging.FileHandler('log.txt', mode='w')
+    handler.setFormatter(formatter)
+    screen_handler = logging.StreamHandler(stream=sys.stdout)
+    screen_handler.setFormatter(formatter)
+    logger = logging.getLogger(name)
+    logger.setLevel(logging.DEBUG)
+    logger.addHandler(handler)
+    logger.addHandler(screen_handler)
+    return logger

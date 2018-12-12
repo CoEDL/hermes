@@ -5,7 +5,8 @@ import webbrowser
 from PyQt5.QtWidgets import QProgressBar, QApplication, QMainWindow, QAction
 from typing import Union
 from datatypes import AppSettings, OperationMode
-from utilities.settings import load_system_settings, system_settings_exist, save_system_settings
+from utilities.settings import load_system_settings, system_settings_exist, \
+    save_system_settings, setup_custom_logger
 from widgets.session import SessionManager
 from widgets.converter import ConverterWidget
 from windows.about import AboutWindow, ONLINE_DOCS
@@ -39,7 +40,7 @@ class PrimaryWindow(QMainWindow):
 
     def __init__(self, app: QApplication) -> None:
         super().__init__()
-        self.primary_log = logging.getLogger("PrimaryWindow")
+        self.primary_log = setup_custom_logger("PrimaryWindow")
         self.app = app
         self.title = 'Hermes: The Language Resource Creator'
         self.converter = None

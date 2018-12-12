@@ -71,7 +71,6 @@ class ModeSelection(QWidget):
 
     def on_click_scratch(self) -> None:
         self.parent.data.mode = OperationMode.SCRATCH
-        print(self.fields.project_name.text())
         self.parent.session.project_name = self.fields.project_name.text()
         self.parent.session.set_project_path()
         self.parent.setup_project()
@@ -96,8 +95,8 @@ class MainProjectSelection(QWidget):
                                      on_click = self.on_click_new_project)
         self.layout.addWidget(new_project_btn, 0, 0, 1, 1)
         open_project_btn = ModeButton("./img/icon_open_project.png",
-                                     "Open Project",
-                                     on_click = self.on_click_open_project)
+                                      "Open Project",
+                                      on_click = self.on_click_open_project)
         self.layout.addWidget(open_project_btn, 0, 1, 1, 1)
         self.setLayout(self.layout)
 

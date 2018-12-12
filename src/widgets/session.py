@@ -11,12 +11,13 @@ from datatypes import create_lmf, ConverterData, Transcription
 from datetime import datetime
 from enum import Enum
 from tempfile import mkdtemp
-from utilities.output import create_lmf_files
 from utilities.files import open_folder_dialogue
+from utilities.output import create_lmf_files
+from utilities.settings import setup_custom_logger
 from widgets.converter import ConverterWidget
-from windows.manifest import ManifestWindow
 from widgets.table import TABLE_COLUMNS
 from widgets.warning import WarningMessage
+from windows.manifest import ManifestWindow
 
 
 ################################################################################
@@ -31,7 +32,7 @@ class SessionManager(object):
 
     def __init__(self, parent: QMainWindow):
         self._file_dialog = QFileDialog()
-        self.session_log = logging.getLogger("SessionManager")
+        self.session_log = setup_custom_logger("SessionManager")
 
         self.parent = parent
         # Converter widget that runs hermes' main operations, set in Primary after initialisation of all elements.
@@ -40,6 +41,11 @@ class SessionManager(object):
         # Project Parameters
         self.project_name = ""
         self.project_path = ""
+        self.assets_audio = ""
+        self.assets_images = ""
+        self.exports = ""
+        self.templates = ""
+        self.saves = ""
 
         # Save file parameters
         self.session_filename = None
@@ -379,6 +385,11 @@ class SessionManager(object):
     def set_project_path(self):
         self.project_path = os.path.join(self.parent.settings.project_root_dir,
                                          self.project_name)
+        self.assets_audio = os.path.join(self.project_path, "assets", "audio")
+        self.assets_images = os.path.join(self.project_path, "assets", "images")
+        self.exports = os.path.join(self.project_path, "export")
+        self.templates = os.path.join(self.project_path, "templates")
+        self.saves = os.path.join(self.project_path, "saves")
 
 
 ################################################################################
@@ -391,7 +402,7 @@ class AutosaveThread(QThread):
 
     def __init__(self, session: SessionManager):
         QThread.__init__(self)
-        self.thread_log = logging.getLogger("AutosaveThread")
+        self.thread_log = setup_custom_logger("AutosaveThread")
         self.session = session
 
     def run(self):
@@ -404,7 +415,7 @@ class AutosaveThread(QThread):
         By default, timer is set to every 5 minutes.
         TODO: Implement setting for timer.
         """
-        self.thread_log.info("Autosave thread started")
+        self.thread_log.debug("Autosave thread started")
         self.autosave_timer = QTimer()
         self.autosave_timer.moveToThread(self)
         self.autosave_timer.timeout.connect(self.run_autosave)
