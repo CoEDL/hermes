@@ -66,8 +66,7 @@ class SessionManager(object):
 
     def setup_project_paths(self):
         """Setup project paths for this session, on new project or on load."""
-        self.project_path = os.path.join(self.parent.settings.project_root_dir,
-                                         self.project_name)
+        self.project_path = os.path.join(self.parent.settings.project_root_dir, self.project_name)
         self.assets_audio = os.path.join(self.project_path, "assets", "audio")
         self.assets_images = os.path.join(self.project_path, "assets", "images")
         self.exports = os.path.join(self.project_path, "export")
@@ -85,9 +84,9 @@ class SessionManager(object):
             True if a project was successfully opened, else False.
         """
         self.project_path = self._file_dialog.getExistingDirectory(self._file_dialog,
-                                                                      "Choose Project to Open",
-                                                                      self.parent.settings.project_root_dir,
-                                                                      QFileDialog.ShowDirsOnly)
+                                                                   "Choose Project to Open",
+                                                                   self.parent.settings.project_root_dir,
+                                                                   QFileDialog.ShowDirsOnly)
         if self.project_path:
             self.project_name = os.path.basename(self.project_path)
             self.setup_project_paths()
@@ -123,7 +122,7 @@ class SessionManager(object):
         # Populate Language and Author details
         self.populate_initial_lmf_fields(self.loaded_data)
         # Add Transcriptions
-        self.populate_filter_table(self.loaded_data)
+        self.populate_filter_table()
 
     def populate_filter_table(self):
         """Populates the table with save files transcriptions."""

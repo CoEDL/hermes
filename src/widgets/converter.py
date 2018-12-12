@@ -219,3 +219,4 @@ class ConverterWidget(QWidget):
         self.components.status_bar.showMessage(f'Exported {str(completed_count)} valid words to '
                                                f'{self.data.export_location}')
         QDesktopServices().openUrl(QUrl().fromLocalFile(self.data.export_location))
+        LOG_CONVERTER.info(f"Exported {completed_count} transcriptions.")

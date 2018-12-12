@@ -1,10 +1,11 @@
-from PyQt5.QtWidgets import QWidget, QGridLayout, QPushButton, QMessageBox, QLineEdit
+from PyQt5.QtWidgets import QWidget, QGridLayout, QPushButton, QMessageBox, QLineEdit, QFileDialog
 from typing import NewType
 from os import listdir
-from utilities import open_folder_dialogue
+from utilities.settings import setup_custom_logger
 from widgets.warning import WarningMessage
 
 
+LOG_EXPORT = setup_custom_logger("Export")
 ConverterWidget = NewType('ConverterWidget', QWidget)
 
 
@@ -15,6 +16,7 @@ class ExportLocationField(QWidget):
         self.parent = parent
         self.data = parent.data
         self.export_location_field = None
+        self.export_dialog = QFileDialog()
         self.init_ui()
 
     def init_ui(self) -> None:
@@ -27,8 +29,12 @@ class ExportLocationField(QWidget):
         self.setLayout(self.layout)
 
     def on_click_choose_export(self) -> None:
-        self.data.export_location = open_folder_dialogue()
-        if self.data.export_location:
+        export_location = self.export_dialog.getExistingDirectory(self.export_dialog,
+                                                                  "Create an export location.",
+                                                                  self.parent.session.exports,
+                                                                  QFileDialog.ShowDirsOnly)
+        if export_location:
+            self.data.export_location = export_location
             self.set_export_field_text(self.data.export_location)
             self.parent.enable_export_button()
 
