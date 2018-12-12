@@ -13,7 +13,7 @@ from windows.about import AboutWindow, ONLINE_DOCS
 from windows.settings import SettingsWindow
 
 
-PRIMARY_LOG = logging.getLogger("PrimaryWindow")
+LOG_PRIMARY = setup_custom_logger("Primary")
 
 
 class ProgressBarWidget(QProgressBar):
@@ -40,7 +40,6 @@ class PrimaryWindow(QMainWindow):
 
     def __init__(self, app: QApplication) -> None:
         super().__init__()
-        self.primary_log = setup_custom_logger("PrimaryWindow")
         self.app = app
         self.title = 'Hermes: The Language Resource Creator'
         self.converter = None
@@ -71,7 +70,7 @@ class PrimaryWindow(QMainWindow):
         self.progress_bar.hide()
 
     def init_menu(self, save_flag: bool = False) -> None:
-        self.primary_log.info(f'Menu Bar initialised with save: {save_flag}')
+        LOG_PRIMARY.debug(f'Menu Bar initialised with save: {save_flag}')
 
         self.bar.clear()
         file = self.bar.addMenu('File')
@@ -148,7 +147,6 @@ class PrimaryWindow(QMainWindow):
         settings.show()
 
     def on_click_reset(self) -> None:
-        self.session.session_filename = None
         self.session.end_autosave()
         self.init_ui()
         self.init_menu()
@@ -168,8 +166,11 @@ class PrimaryWindow(QMainWindow):
 
     def on_click_open(self) -> None:
         self.converter.data.mode = OperationMode.SCRATCH
-        self.converter.load_main_hermes_app(self.converter.components, self.converter.data)
-        self.session.open_file()
+        if self.session.open_project():
+            self.converter.load_main_hermes_app(self.converter.components,
+                                                self.converter.data)
+            if self.session.load_project_save():
+                self.session.load_project_data()
 
     def on_click_template_save(self) -> None:
         self.session.save_template()
@@ -179,7 +180,7 @@ class PrimaryWindow(QMainWindow):
 
     def on_click_online_help(self) -> None:
         webbrowser.open(ONLINE_DOCS)
-        self.primary_log.info(f'Opened default browser to: {ONLINE_DOCS}')
+        LOG_PRIMARY.info(f'Opened default browser to: {ONLINE_DOCS}')
 
     def shrink(self) -> None:
         self.resize(0, 0)

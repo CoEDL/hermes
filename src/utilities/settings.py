@@ -1,7 +1,8 @@
-import logging
+import logging, logging.handlers
 import os
 import pydub
 import sys
+from pathlib import Path
 from PyQt5.QtCore import QSettings
 from datatypes import AppSettings, AUDIO_QUALITY, AUDIO_QUALITY_REV, OutputMode, OUTPUT_MODE_NAMES
 
@@ -12,7 +13,7 @@ def get_settings() -> QSettings:
 
 def system_settings_exist() -> bool:
     if os.path.exists(get_settings().fileName()):
-        SETTINGS_LOG.debug(f"System settings @ {get_settings().fileName()}")
+        LOG_SETTINGS.debug(f"System settings @ {get_settings().fileName()}")
         return True
     else:
         return False
@@ -62,10 +63,15 @@ def set_ffmpeg_location(app_settings: AppSettings, path: str) -> None:
 
 
 def setup_custom_logger(name):
+    app_settings = AppSettings()
+    log_path = Path(app_settings.default_project_dir).parent
+    if not os.path.exists(log_path):
+        os.makedirs(log_path)
+    log_name = os.path.join(log_path, "log_hermes.log")
     formatter = logging.Formatter(fmt='%(asctime)s %(levelname)-s [%(name)-s] '
                                       '%(message)s',
                                   datefmt='%Y-%m-%d %H:%M:%S')
-    handler = logging.FileHandler('log.txt', mode='w')
+    handler = logging.handlers.TimedRotatingFileHandler(log_name, when="d", interval=1, backupCount=90)
     handler.setFormatter(formatter)
     screen_handler = logging.StreamHandler(stream=sys.stdout)
     screen_handler.setFormatter(formatter)
@@ -76,4 +82,4 @@ def setup_custom_logger(name):
     return logger
 
 
-SETTINGS_LOG = setup_custom_logger("SettingsUtil")
+LOG_SETTINGS = setup_custom_logger("SettingsUtil")

@@ -17,6 +17,8 @@ from widgets.export import ExportLocationField, ExportButton
 from windows.manifest import ManifestWindow
 
 
+LOG_CONVERTER = setup_custom_logger("Converter Widget")
+
 BASE_MARGIN = 10
 
 
@@ -31,10 +33,9 @@ class ConverterWidget(QWidget):
                  parent: QWidget,
                  settings: AppSettings) -> None:
         super().__init__()
-        self.converter_log = setup_custom_logger("ConverterWidget")
         self.parent = parent
-        self.session = parent.session
         self.settings = settings
+        self.session = parent.session
         self.components = ConverterComponents(
             progress_bar=self.parent.progress_bar,
             status_bar=self.parent.statusBar()
@@ -88,8 +89,8 @@ class ConverterWidget(QWidget):
         self.layout.addWidget(components.tier_selector, 1, 0, 1, 8)
 
     def load_main_hermes_app(self,
-                                 components: ConverterComponents,
-                                 data: ConverterData) -> None:
+                             components: ConverterComponents,
+                             data: ConverterData) -> None:
         """Main hermes app once a file is loaded or a new project has begun is initialised.
 
         Main app contains the table widget allowing for user input, image uploading, audio recording, and the final
@@ -139,7 +140,7 @@ class ConverterWidget(QWidget):
         self.layout.addWidget(self.components.export_location_field, 5, 0, 1, 8)
         self.components.status_bar.showMessage('Select words to include and choose an export location')
         # Set export location
-        self.data.export_location = os.path.join(self.session.project_path, "export")
+        self.data.export_location = self.parent.session.exports
         self.components.export_location_field.set_export_field_text(self.data.export_location)
         # Export Button
         self.components.export_button = ExportButton(self)
@@ -149,7 +150,7 @@ class ConverterWidget(QWidget):
 
         # Re-init menu to allow for Open/Save functionality now that table widget exists.
         self.parent.init_menu(True)
-        self.session.start_autosave()
+        self.parent.session.start_autosave()
 
     def enable_export_button(self) -> None:
         """Allow final export step, which enables the export button."""
@@ -174,9 +175,9 @@ class ConverterWidget(QWidget):
         project_root = self.settings.project_root_dir
         project_name = self.session.project_name
         project_path = self.session.project_path
-        self.converter_log.debug(f"Project Root Dir: {project_root}")
-        self.converter_log.debug(f"Project Initialised as: {project_name}")
-        self.converter_log.debug(f"Project Path: {project_path}")
+        LOG_CONVERTER.debug(f"Setup Project Root Dir: {project_root}")
+        LOG_CONVERTER.debug(f"Setup Project Initialised as: {project_name}")
+        LOG_CONVERTER.debug(f"Setup Project Path: {project_path}")
 
         if not os.path.exists(project_path):
             os.makedirs(project_path)

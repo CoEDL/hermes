@@ -268,11 +268,13 @@ class AppSettings(object):
         self.audio_quality = AUDIO_QUALITY[audio_quality]
         self.ffmpeg_location = ffmpeg_location
         self.project_root_dir = project_root_dir
+        self.default_project_dir = None
         if not project_root_dir:
             if platform.system() == "Windows":
                 self.project_root_dir = os.path.join(os.path.expandvars("%USERPROFILE%"), "Documents", "Hermes", "Projects")
             else:
                 self.project_root_dir = os.path.join(os.path.expanduser("~"), "Hermes", "Projects")
+            self.default_project_dir = self.project_root_dir
 
     def __str__(self):
         return '\n'.join([f'{key}: {value}' for key, value in self.__dict__.items()])

@@ -25,6 +25,9 @@ from windows.manifest import ManifestWindow
 ################################################################################
 
 
+LOG_SESSION = setup_custom_logger("Session Manager")
+LOG_AUTOSAVE = setup_custom_logger("Autosave Thread")
+
 class SessionManager(object):
     """
     Session Manager handles session operations, providing functionality for Save, Save As, and Open.
@@ -32,7 +35,6 @@ class SessionManager(object):
 
     def __init__(self, parent: QMainWindow):
         self._file_dialog = QFileDialog()
-        self.session_log = setup_custom_logger("SessionManager")
 
         self.parent = parent
         # Converter widget that runs hermes' main operations, set in Primary after initialisation of all elements.
@@ -49,6 +51,7 @@ class SessionManager(object):
 
         # Save file parameters
         self.session_filename = None
+        self.save_fp = None
 
         # Template parameters
         self.template_name = None
@@ -60,25 +63,99 @@ class SessionManager(object):
         self.autosaving = False
         self.autosave_interval = 180  # Seconds
 
+    def setup_project_paths(self):
+        """Setup project paths for this session, on new project or on load."""
+        self.project_path = os.path.join(self.parent.settings.project_root_dir,
+                                         self.project_name)
+        self.assets_audio = os.path.join(self.project_path, "assets", "audio")
+        self.assets_images = os.path.join(self.project_path, "assets", "images")
+        self.exports = os.path.join(self.project_path, "export")
+        self.templates = os.path.join(self.project_path, "templates")
+        self.saves = os.path.join(self.project_path, "saves")
+        LOG_SESSION.debug(f"Setup paths: {self.assets_images} {self.assets_audio} {self.exports} {self.templates} {self.saves}")
+
+    def open_project(self) -> bool:
+        """Open a project, and setup the paths associated with this project as
+        a pre-processing step before data load.
+
+        If project path is not found, will throw a warning and abort process.
+
+        Returns:
+            True if a project was successfully opened, else False.
+        """
+        self.project_path = self._file_dialog.getExistingDirectory(self._file_dialog,
+                                                                      "Choose Project to Open",
+                                                                      self.parent.settings.project_root_dir,
+                                                                      QFileDialog.ShowDirsOnly)
+        if self.project_path:
+            self.project_name = os.path.basename(self.project_path)
+            self.setup_project_paths()
+            LOG_SESSION.info(f"Opened project: {self.project_path}")
+            return True
+        LOG_SESSION.warn(f"Unable to open project, project not selected by user. Process Aborted.")
+        folder_not_found_msg()
+        return False
+
+    def load_project_save(self):
+        self.save_fp = os.path.join(self.saves, self.project_name + ".hermes")
+        if os.path.exists(self.save_fp):
+            LOG_SESSION.info(f"Save file found @ {self.save_fp}")
+            return True
+        LOG_SESSION.info(f"No save found, no data loaded.")
+        return False
+
+    def load_project_data(self):
+        LOG_SESSION.info(f"Loading Project Data")
+        with open(self.save_fp, 'r') as f:
+            loaded_data = json.loads(f.read())
+            LOG_SESSION.debug(f"Data loaded: {loaded_data}")
+        # Populate Language and Author details
+        self.populate_initial_lmf_fields(loaded_data)
+        # Add Transcriptions
+        self.populate_filter_table(loaded_data)
+
+    def populate_filter_table(self, loaded_data):
+        self.converter.data.transcriptions = list()
+        self.converter.components.filter_table.clear_table()
+        for i, word in enumerate(loaded_data['words']):
+            self.converter.data.transcriptions.append(Transcription(index=i,
+                                                                    transcription=word['transcription'],
+                                                                    translation=word['translation'][0],
+                                                                    image=word.get('image')[0] if word.get('image') else '',
+                                                                    media=word.get('audio')[0] if word.get('audio') else '')
+                                                      )
+            if word.get('audio'):
+                # An audio file exists, add it.
+                self.converter.data.transcriptions[i].set_blank_sample()
+                self.converter.data.transcriptions[i].sample.set_sample(word.get('audio')[0])
+        # Populate table with data
+        for n in range(len(loaded_data['words'])):
+            self.converter.components.filter_table.add_blank_row()
+        self.converter.components.filter_table.populate_table(self.converter.data.transcriptions)
+        # Update user on save success in status bar.
+        self.converter.components.status_bar.clearMessage()
+        self.converter.components.status_bar.showMessage(f"Data opened from: {self.save_fp}", 5000)
+        LOG_SESSION.info(f"Table populated with {len(loaded_data['words'])} transcriptions.")
+
     def open_file(self):
         """Open a .hermes json file and parse into table."""
         if self.template_type:
             self.template_name, _ = self._file_dialog.getOpenFileName(self._file_dialog,
                                                                       "Open Template", "",
                                                                       "Hermes Template (*.htemp)")
-            self.session_log.info(f"File opened from: {self.template_name}")
+            LOG_SESSION.info(f"File opened from: {self.template_name}")
             if not self.template_name:
                 file_not_found_msg()
-                self.session_log.warn("No file selected for open function.")
+                LOG_SESSION.warn("No file selected for open function.")
                 return
         else:
             self.session_filename, _ = self._file_dialog.getOpenFileName(self._file_dialog,
                                                                          "Open Hermes Save", "",
                                                                          "Hermes Save (*.hermes)")
-            self.session_log.info(f"File opened from: {self.session_filename}")
+            LOG_SESSION.info(f"File opened from: {self.session_filename}")
             if not self.session_filename:
                 file_not_found_msg()
-                self.session_log.warn("No file selected for open function.")
+                LOG_SESSION.warn("No file selected for open function.")
                 return
 
         self.exec_open()
@@ -88,11 +165,11 @@ class SessionManager(object):
         if self.template_type:
             with open(self.template_name, 'r') as f:
                 loaded_data = json.loads(f.read())
-                self.session_log.info(f"Data loaded: {loaded_data}")
+                LOG_SESSION.info(f"Data loaded: {loaded_data}")
         else:
             with open(self.session_filename, 'r') as f:
                 loaded_data = json.loads(f.read())
-                self.session_log.info(f"Data loaded: {loaded_data}")
+                LOG_SESSION.info(f"Data loaded: {loaded_data}")
 
         # Populate manifest in converter data
         self.populate_initial_lmf_fields(loaded_data)
@@ -140,7 +217,7 @@ class SessionManager(object):
 
         if (self.template_type and not self.template_name) or (not self.template_type and not self.session_filename):
             file_not_found_msg()
-            self.session_log.warning("No export location was selected, aborting save.")
+            LOG_SESSION.warning("No export location was selected, aborting save.")
             return
 
         self.save_file()
@@ -154,7 +231,7 @@ class SessionManager(object):
         # User to set export location if it does not exist, abort if not set.
         if not self.export_location():
             no_export_msg()
-            self.session_log.warning("No export location was selected, aborting save.")
+            LOG_SESSION.warning("No export location was selected, aborting save.")
             return
 
         # All conditions met at this point, save is ready.
@@ -201,7 +278,7 @@ class SessionManager(object):
             with open(self.template_name, 'w+') as f:
                 json.dump(template_data.lmf, f, indent=4)
                 self.converter.components.status_bar.showMessage(f"Template saved at: {self.template_name}", 5000)
-                self.session_log.info(f"File saved at {self.template_name}")
+                LOG_SESSION.info(f"File saved at {self.template_name}")
             # Reset Export Location after template saved
             self.converter.data.export_location = None
         elif self.session_filename:
@@ -209,9 +286,9 @@ class SessionManager(object):
             with open(self.session_filename, 'w') as f:
                 json.dump(self.converter.data.lmf, f, indent=4)
                 self.converter.components.status_bar.showMessage(f"Data saved at: {self.session_filename}", 5000)
-                self.session_log.info(f"File saved at {self.session_filename}")
+                LOG_SESSION.info(f"File saved at {self.session_filename}")
         else:
-            self.session_log.error("File not found on exec_save().")
+            LOG_SESSION.error("File not found on exec_save().")
             file_not_found_msg()
 
         if not self.autosaving:
@@ -221,6 +298,7 @@ class SessionManager(object):
                          data: ConverterData) -> None:
         """Upon a standard session save, ensure assets are moved to project
         assets folder.
+        TODO: Refactor unnecessary bits.
         """
         lmf = data.lmf
         transcription = data.transcriptions[row]
@@ -291,7 +369,7 @@ class SessionManager(object):
             self.converter.data.export_location = open_folder_dialogue()
             if self.converter.data.export_location:
                 self.converter.components.export_location_field.set_export_field_text(self.converter.data.export_location)
-        self.session_log.info(f'Export location set: {self.converter.data.export_location}')
+        LOG_SESSION.info(f'Export location set: {self.converter.data.export_location}')
         return self.converter.data.export_location
 
     def prepare_template_file(self) -> ConverterData:
@@ -327,7 +405,7 @@ class SessionManager(object):
             data.transcriptions[i].image = None
             data.transcriptions[i].sample = None
 
-            self.session_log.info(f"Template prepared data {data.transcriptions[i]}")
+            LOG_SESSION.info(f"Template prepared data {data.transcriptions[i]}")
 
         return data
 
@@ -382,15 +460,6 @@ class SessionManager(object):
             self.autosave.wait()
             self.autosave = None
 
-    def setup_project_paths(self):
-        self.project_path = os.path.join(self.parent.settings.project_root_dir,
-                                         self.project_name)
-        self.assets_audio = os.path.join(self.project_path, "assets", "audio")
-        self.assets_images = os.path.join(self.project_path, "assets", "images")
-        self.exports = os.path.join(self.project_path, "export")
-        self.templates = os.path.join(self.project_path, "templates")
-        self.saves = os.path.join(self.project_path, "saves")
-
 
 ################################################################################
 # Autosave Functionality
@@ -402,7 +471,6 @@ class AutosaveThread(QThread):
 
     def __init__(self, session: SessionManager):
         QThread.__init__(self)
-        self.thread_log = setup_custom_logger("AutosaveThread")
         self.session = session
 
     def run(self):
@@ -415,7 +483,7 @@ class AutosaveThread(QThread):
         By default, timer is set to every 5 minutes.
         TODO: Implement setting for timer.
         """
-        self.thread_log.debug("Autosave thread started")
+        LOG_AUTOSAVE.debug("Autosave thread started")
         self.autosave_timer = QTimer()
         self.autosave_timer.moveToThread(self)
         self.autosave_timer.timeout.connect(self.run_autosave)
@@ -423,7 +491,7 @@ class AutosaveThread(QThread):
 
     def run_autosave(self):
         """Run the autosave function in current session upon timer expire."""
-        self.thread_log.info(f'Autosaving! {datetime.now().time()}')
+        LOG_AUTOSAVE.info(f'Autosaving! {datetime.now().time()}')
         # Remember current session details
         current_save = self.session.session_filename
         current_export = self.session.converter.data.export_location
@@ -431,7 +499,7 @@ class AutosaveThread(QThread):
         # Do autosave
         self.session.autosaving = True
         self.make_autosave_file()
-        self.thread_log.info(f"Autosave path {self.session.session_filename}")
+        LOG_AUTOSAVE.info(f"Autosave path {self.session.session_filename}")
         self.session.exec_save()
         self.session.autosaving = False
 
@@ -530,6 +598,13 @@ class TemplateType(Enum):
 ################################################################################
 # Popup Messages
 ################################################################################
+
+
+def folder_not_found_msg():
+    folder_not_loaded = WarningMessage()
+    folder_not_loaded.warning(folder_not_loaded, 'Warning',
+                                f'No folder selected, load aborted.\n',
+                                QMessageBox.Ok)
 
 
 def file_not_found_msg():

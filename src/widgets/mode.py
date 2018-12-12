@@ -104,7 +104,4 @@ class MainProjectSelection(QWidget):
         self.parent.load_new_project_mode()
 
     def on_click_open_project(self) -> None:
-        self.parent.data.mode = OperationMode.SCRATCH
-        self.parent.load_main_hermes_app(self.parent.components, self.parent.data)
-        self.parent.session.open_file()
-        # TODO: Set export location on open project as opposed to current open loose save file.
+        self.parent.parent.on_click_open()
