@@ -1,10 +1,8 @@
-import logging, logging.handlers
 import os
 import pydub
-import sys
-from pathlib import Path
 from PyQt5.QtCore import QSettings
 from datatypes import AppSettings, AUDIO_QUALITY, AUDIO_QUALITY_REV, OutputMode, OUTPUT_MODE_NAMES
+from utilities.logger import setup_custom_logger
 
 
 def get_settings() -> QSettings:
@@ -60,26 +58,6 @@ def set_ffmpeg_location(app_settings: AppSettings, path: str) -> None:
     app_settings.ffmpeg_location = path
     save_system_settings(app_settings)
     pydub.AudioSegment.converter = path
-
-
-def setup_custom_logger(name):
-    app_settings = AppSettings()
-    log_path = Path(app_settings.default_project_dir).parent
-    if not os.path.exists(log_path):
-        os.makedirs(log_path)
-    log_name = os.path.join(log_path, "log_hermes.log")
-    formatter = logging.Formatter(fmt='%(asctime)s %(levelname)-s [%(name)-s] '
-                                      '%(message)s',
-                                  datefmt='%Y-%m-%d %H:%M:%S')
-    handler = logging.handlers.TimedRotatingFileHandler(log_name, when="d", interval=1, backupCount=90)
-    handler.setFormatter(formatter)
-    screen_handler = logging.StreamHandler(stream=sys.stdout)
-    screen_handler.setFormatter(formatter)
-    logger = logging.getLogger(name)
-    logger.setLevel(logging.DEBUG)
-    logger.addHandler(handler)
-    logger.addHandler(screen_handler)
-    return logger
 
 
 LOG_SETTINGS = setup_custom_logger("SettingsUtil")

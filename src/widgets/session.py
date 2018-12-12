@@ -13,7 +13,7 @@ from enum import Enum
 from tempfile import mkdtemp
 from utilities.files import open_folder_dialogue
 from utilities.output import create_lmf_files
-from utilities.settings import setup_custom_logger
+from utilities.logger import setup_custom_logger
 from widgets.converter import ConverterWidget
 from widgets.table import TABLE_COLUMNS
 from widgets.warning import WarningMessage

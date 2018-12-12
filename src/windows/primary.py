@@ -1,12 +1,11 @@
 import math
 import pydub
-import logging
 import webbrowser
 from PyQt5.QtWidgets import QProgressBar, QApplication, QMainWindow, QAction
 from typing import Union
 from datatypes import AppSettings, OperationMode
-from utilities.settings import load_system_settings, system_settings_exist, \
-    save_system_settings, setup_custom_logger
+from utilities.logger import setup_custom_logger
+from utilities.settings import load_system_settings, system_settings_exist, save_system_settings
 from widgets.session import SessionManager
 from widgets.converter import ConverterWidget
 from windows.about import AboutWindow, ONLINE_DOCS

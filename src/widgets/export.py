@@ -1,7 +1,7 @@
 from PyQt5.QtWidgets import QWidget, QGridLayout, QPushButton, QMessageBox, QLineEdit, QFileDialog
 from typing import NewType
 from os import listdir
-from utilities.settings import setup_custom_logger
+from utilities.logger import setup_custom_logger
 from widgets.warning import WarningMessage
 
 

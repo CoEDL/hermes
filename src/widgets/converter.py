@@ -1,6 +1,5 @@
 import os
 import csv
-import logging
 import pympi
 import json
 from PyQt5.QtWidgets import QWidget, QGridLayout, QLabel, QFrame
@@ -9,7 +8,7 @@ from PyQt5.QtCore import QUrl
 from datatypes import OperationMode, Transcription, ConverterData, AppSettings, OutputMode, ConverterComponents
 from utilities.output import create_opie_files, create_dict_files, create_lmf_files
 from utilities.parse import get_audio_file, extract_elan_data
-from utilities.settings import setup_custom_logger
+from utilities.logger import setup_custom_logger
 from widgets.mode import MainProjectSelection, ModeSelection
 from widgets.elan_import import ELANFileField, TierSelector
 from widgets.table import TABLE_COLUMNS, FilterTable
