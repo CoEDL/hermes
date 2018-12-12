@@ -12,7 +12,7 @@ def get_settings() -> QSettings:
 
 def system_settings_exist() -> bool:
     if os.path.exists(get_settings().fileName()):
-        print(get_settings().fileName())
+        SETTINGS_LOG.debug(f"System settings @ {get_settings().fileName()}")
         return True
     else:
         return False
@@ -74,3 +74,6 @@ def setup_custom_logger(name):
     logger.addHandler(handler)
     logger.addHandler(screen_handler)
     return logger
+
+
+SETTINGS_LOG = setup_custom_logger("SettingsUtil")

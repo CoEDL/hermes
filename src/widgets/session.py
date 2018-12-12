@@ -382,7 +382,7 @@ class SessionManager(object):
             self.autosave.wait()
             self.autosave = None
 
-    def set_project_path(self):
+    def setup_project_paths(self):
         self.project_path = os.path.join(self.parent.settings.project_root_dir,
                                          self.project_name)
         self.assets_audio = os.path.join(self.project_path, "assets", "audio")

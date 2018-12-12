@@ -65,14 +65,14 @@ class ModeSelection(QWidget):
     def on_click_elan(self) -> None:
         self.parent.data.mode = OperationMode.ELAN
         self.parent.session.project_name = self.fields.project_name.text()
-        self.parent.session.set_project_path()
+        self.parent.session.setup_project_paths()
         self.parent.setup_project()
         self.parent.load_elan_loader()
 
     def on_click_scratch(self) -> None:
         self.parent.data.mode = OperationMode.SCRATCH
         self.parent.session.project_name = self.fields.project_name.text()
-        self.parent.session.set_project_path()
+        self.parent.session.setup_project_paths()
         self.parent.setup_project()
         self.parent.load_main_hermes_app(self.parent.components, self.parent.data)
 

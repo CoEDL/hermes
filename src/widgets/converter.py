@@ -174,9 +174,9 @@ class ConverterWidget(QWidget):
         project_root = self.settings.project_root_dir
         project_name = self.session.project_name
         project_path = self.session.project_path
-        self.converter_log.info(f"Project Root Dir: {project_root}")
-        self.converter_log.info(f"Project Initialised as: {project_name}")
-        self.converter_log.info(f"Project Path: {project_path}")
+        self.converter_log.debug(f"Project Root Dir: {project_root}")
+        self.converter_log.debug(f"Project Initialised as: {project_name}")
+        self.converter_log.debug(f"Project Path: {project_path}")
 
         if not os.path.exists(project_path):
             os.makedirs(project_path)
