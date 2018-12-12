@@ -11,7 +11,7 @@ def setup_custom_logger(name):
     log_path = os.path.join(Path(app_settings.default_project_dir).parent, "logs")
     if not os.path.exists(log_path):
         os.makedirs(log_path)
-    date = datetime.now().strftime("%Y-%b-%d_%H-%M")
+    date = datetime.now().strftime("%Y-%b-%d")
     log_name = os.path.join(log_path, f"log_hermes_{date}.log")
     formatter = logging.Formatter(fmt='%(asctime)s %(levelname)-s [%(name)-s] %(message)s',
                                   datefmt='%Y-%m-%d %H:%M:%S')
