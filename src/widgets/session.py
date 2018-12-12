@@ -52,6 +52,7 @@ class SessionManager(object):
         # Save file parameters
         self.session_filename = None
         self.save_fp = None
+        self.loaded_data = None
 
         # Template parameters
         self.template_name = None
@@ -97,6 +98,12 @@ class SessionManager(object):
         return False
 
     def load_project_save(self):
+        """Loads the project save file path into the Session Manager. Project
+        save files are autonamed and generated on save.
+
+        Returns:
+            True if a save file exists in project, else False.
+        """
         self.save_fp = os.path.join(self.saves, self.project_name + ".hermes")
         if os.path.exists(self.save_fp):
             LOG_SESSION.info(f"Save file found @ {self.save_fp}")
@@ -105,19 +112,24 @@ class SessionManager(object):
         return False
 
     def load_project_data(self):
+        """Opens save file for the current project and populates table. This
+        functionality only runs on open option if load_project_save() has
+        successfully found a save file.
+        """
         LOG_SESSION.info(f"Loading Project Data")
         with open(self.save_fp, 'r') as f:
-            loaded_data = json.loads(f.read())
-            LOG_SESSION.debug(f"Data loaded: {loaded_data}")
+            self.loaded_data = json.loads(f.read())
+            LOG_SESSION.debug(f"Data loaded: {self.loaded_data}")
         # Populate Language and Author details
-        self.populate_initial_lmf_fields(loaded_data)
+        self.populate_initial_lmf_fields(self.loaded_data)
         # Add Transcriptions
-        self.populate_filter_table(loaded_data)
+        self.populate_filter_table(self.loaded_data)
 
-    def populate_filter_table(self, loaded_data):
+    def populate_filter_table(self):
+        """Populates the table with save files transcriptions."""
         self.converter.data.transcriptions = list()
         self.converter.components.filter_table.clear_table()
-        for i, word in enumerate(loaded_data['words']):
+        for i, word in enumerate(self.loaded_data['words']):
             self.converter.data.transcriptions.append(Transcription(index=i,
                                                                     transcription=word['transcription'],
                                                                     translation=word['translation'][0],
@@ -129,14 +141,15 @@ class SessionManager(object):
                 self.converter.data.transcriptions[i].set_blank_sample()
                 self.converter.data.transcriptions[i].sample.set_sample(word.get('audio')[0])
         # Populate table with data
-        for n in range(len(loaded_data['words'])):
+        for n in range(len(self.loaded_data['words'])):
             self.converter.components.filter_table.add_blank_row()
         self.converter.components.filter_table.populate_table(self.converter.data.transcriptions)
         # Update user on save success in status bar.
         self.converter.components.status_bar.clearMessage()
         self.converter.components.status_bar.showMessage(f"Data opened from: {self.save_fp}", 5000)
-        LOG_SESSION.info(f"Table populated with {len(loaded_data['words'])} transcriptions.")
+        LOG_SESSION.info(f"Table populated with {len(self.loaded_data['words'])} transcriptions.")
 
+    @DeprecationWarning
     def open_file(self):
         """Open a .hermes json file and parse into table."""
         if self.template_type:
@@ -160,6 +173,7 @@ class SessionManager(object):
 
         self.exec_open()
 
+    @DeprecationWarning
     def exec_open(self):
         """Execs open functionality. Assumes that a file has been successfully found by user."""
         if self.template_type:
