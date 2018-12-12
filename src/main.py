@@ -1,5 +1,4 @@
 import sys
-import logging
 from PyQt5.QtWidgets import QApplication
 from widgets.icon import ApplicationIcon
 from windows import PrimaryWindow

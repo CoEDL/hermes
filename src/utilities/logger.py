@@ -15,7 +15,7 @@ def setup_custom_logger(name):
     log_name = os.path.join(log_path, f"log_hermes_{date}.log")
     formatter = logging.Formatter(fmt='%(asctime)s %(levelname)-s [%(name)-s] %(message)s',
                                   datefmt='%Y-%m-%d %H:%M:%S')
-    handler = logging.FileHandler(log_name, mode="w")
+    handler = logging.FileHandler(log_name, mode="a")
     # handler = logging.handlers.TimedRotatingFileHandler(log_name, when="d", interval=1, backupCount=90)
     handler.setFormatter(formatter)
     screen_handler = logging.StreamHandler(stream=sys.stdout)

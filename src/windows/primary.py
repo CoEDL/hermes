@@ -51,7 +51,6 @@ class PrimaryWindow(QMainWindow):
         self.init_menu()
 
     def init_ui(self) -> None:
-        # self.layout().setSizeConstraint(QLayout.SetFixedSize)
         self.setWindowTitle(self.title)
         self.progress_bar = ProgressBarWidget(self.app)
         if system_settings_exist():
