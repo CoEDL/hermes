@@ -213,74 +213,6 @@ class SessionManager(object):
                 pass
 
     @DeprecationWarning
-    def open_file(self):
-        """Open a .hermes json file and parse into table."""
-        if self.template_type:
-            self.template_name, _ = self._file_dialog.getOpenFileName(self._file_dialog,
-                                                                      "Open Template", "",
-                                                                      "Hermes Template (*.htemp)")
-            LOG_SESSION.info(f"File opened from: {self.template_name}")
-            if not self.template_name:
-                file_not_found_msg()
-                LOG_SESSION.warn("No file selected for open function.")
-                return
-        else:
-            self.session_filename, _ = self._file_dialog.getOpenFileName(self._file_dialog,
-                                                                         "Open Hermes Save", "",
-                                                                         "Hermes Save (*.hermes)")
-            LOG_SESSION.info(f"File opened from: {self.session_filename}")
-            if not self.session_filename:
-                file_not_found_msg()
-                LOG_SESSION.warn("No file selected for open function.")
-                return
-
-        self.exec_open()
-
-    @DeprecationWarning
-    def exec_open(self):
-        """Execs open functionality. Assumes that a file has been successfully found by user."""
-        if self.template_type:
-            with open(self.template_name, 'r') as f:
-                loaded_data = json.loads(f.read())
-                LOG_SESSION.info(f"Data loaded: {loaded_data}")
-        else:
-            with open(self.session_filename, 'r') as f:
-                loaded_data = json.loads(f.read())
-                LOG_SESSION.info(f"Data loaded: {loaded_data}")
-
-        # Populate manifest in converter data
-        self.populate_initial_lmf_fields(loaded_data)
-
-        # Add transcriptions
-        self.converter.data.transcriptions = list()
-        self.converter.components.filter_table.clear_table()
-        for i, word in enumerate(loaded_data['words']):
-            self.converter.data.transcriptions.append(Transcription(index=i,
-                                                                    transcription=word['transcription'],
-                                                                    translation=word['translation'][0],
-                                                                    image=word.get('image')[0] if word.get('image') else '',
-                                                                    media=word.get('audio')[0] if word.get('audio') else '')
-                                                      )
-            if word.get('audio'):
-                # An audio file exists, add it.
-                self.converter.data.transcriptions[i].set_blank_sample()
-                self.converter.data.transcriptions[i].sample.set_sample(word.get('audio')[0])
-
-        # Populate table, add an extra blank row for convenience at end.
-        for n in range(len(loaded_data['words']) + 1):
-            self.converter.components.filter_table.add_blank_row()
-        self.converter.components.filter_table.populate_table(self.converter.data.transcriptions)
-
-        # Clear Export Location for a fresh session
-        self.converter.data.export_location = None
-
-        # Update user on save success in status bar.
-        self.converter.components.status_bar.clearMessage()
-        if self.template_type:
-            self.converter.components.status_bar.showMessage(f"Data opened from: {self.template_name}", 5000)
-        else:
-            self.converter.components.status_bar.showMessage(f"Data opened from: {self.session_filename}", 5000)
-
     def save_as_file(self):
         """User sets new file name + location with QFileDialog, if set then initialise save process."""
         if self.template_type:
@@ -299,6 +231,7 @@ class SessionManager(object):
 
         self.save_file()
 
+    @DeprecationWarning
     def save_file(self):
         # If no file then restart from save as
         if (self.template_type and not self.template_name) or (not self.template_type and not self.session_filename):
