@@ -1,6 +1,5 @@
 import copy
 import json
-import logging
 import os
 import shutil
 from PyQt5.QtWidgets import QCheckBox, QDialog, QFileDialog, QGridLayout, QLabel, QMainWindow, QMessageBox, QPushButton
@@ -12,9 +11,8 @@ from datetime import datetime
 from enum import Enum
 from tempfile import mkdtemp
 from utilities.files import open_folder_dialogue
-from utilities.output import create_lmf_files
 from utilities.logger import setup_custom_logger
-from widgets.converter import ConverterWidget
+from utilities.output import create_lmf_files
 from widgets.table import TABLE_COLUMNS
 from widgets.warning import WarningMessage
 from windows.manifest import ManifestWindow
@@ -27,6 +25,7 @@ from windows.manifest import ManifestWindow
 
 LOG_SESSION = setup_custom_logger("Session Manager")
 LOG_AUTOSAVE = setup_custom_logger("Autosave Thread")
+
 
 class SessionManager(object):
     """
@@ -60,9 +59,13 @@ class SessionManager(object):
         self.template_options = TemplateDialog(self.parent, self)
 
         # Autosave parameters
-        self.autosave = None
+        self.autosave_thread = None
+        self.autosave_fp = None
         self.autosaving = False
         self.autosave_interval = 180  # Seconds
+
+        # Session Parameters
+        self.save_mode = SaveMode.MANUAL
 
     def setup_project_paths(self):
         """Setup project paths for this session, on new project or on load."""
@@ -72,7 +75,10 @@ class SessionManager(object):
         self.exports = os.path.join(self.project_path, "export")
         self.templates = os.path.join(self.project_path, "templates")
         self.saves = os.path.join(self.project_path, "saves")
+        self.save_fp = os.path.join(self.saves, self.project_name + ".hermes")
+        self.autosave_fp = os.path.join(self.saves, "autosave.hermes")
         LOG_SESSION.debug(f"Setup paths: {self.assets_images} {self.assets_audio} {self.exports} {self.templates} {self.saves}")
+        LOG_SESSION.debug(f"Save path: {self.save_fp} :: Autosave {self.autosave_fp}")
 
     def open_project(self) -> bool:
         """Open a project, and setup the paths associated with this project as
@@ -103,7 +109,6 @@ class SessionManager(object):
         Returns:
             True if a save file exists in project, else False.
         """
-        self.save_fp = os.path.join(self.saves, self.project_name + ".hermes")
         if os.path.exists(self.save_fp):
             LOG_SESSION.info(f"Save file found @ {self.save_fp}")
             return True
@@ -147,6 +152,65 @@ class SessionManager(object):
         self.converter.components.status_bar.clearMessage()
         self.converter.components.status_bar.showMessage(f"Data opened from: {self.save_fp}", 5000)
         LOG_SESSION.info(f"Table populated with {len(self.loaded_data['words'])} transcriptions.")
+
+    def save_project(self):
+        """Saves data from table into the project's json based save file.
+
+        Assets associated with word list will be moved to the appropriate asset folders.
+        """
+        if self.save_mode == SaveMode.AUTOSAVE:
+            save = self.autosave_fp
+        else:
+            save = self.save_fp
+            self.create_session_lmf(self.parent, self.converter.data)
+            # Empty word list for LMF first otherwise risk duplicate data
+            self.converter.data.lmf['words'] = list()
+
+        # Progress Bar
+        if self.save_mode is not SaveMode.AUTOSAVE:
+            self.converter.components.status_bar.clearMessage()
+            complete_count = 0
+            to_save_count = self.converter.components.table.rowCount()
+
+        # Transfer data
+        for row in range(self.converter.components.table.rowCount()):
+            if self.data_exists(row):
+                create_lmf_files(row, self.converter.data)
+                self.save_assets(row)
+            if self.save_mode is not SaveMode.AUTOSAVE:
+                complete_count += 1
+                self.converter.components.progress_bar.update_progress(complete_count / to_save_count)
+
+        # Save File
+        try:
+            with open(save, 'w') as f:
+                json.dump(self.converter.data.lmf, f, indent=4)
+                self.converter.components.status_bar.showMessage(f"Data saved at {save}", 5000)
+                LOG_SESSION.info(f"File saved at {save}")
+        except Exception as e:
+            LOG_SESSION.warn(f"Unable to save file to {save}")
+
+    def data_exists(self, row: int):
+        return self.converter.components.table.get_cell_value(row, TABLE_COLUMNS["Transcription"]) \
+               or self.converter.components.table.get_cell_value(row, TABLE_COLUMNS["Translation"])
+
+    def save_assets(self, row: int) -> None:
+        """Upon a standard session save, ensure assets are moved to project
+        assets folder.
+        """
+        transcription = self.converter.data.transcriptions[row]
+        if transcription.sample:
+            sound_file = transcription.sample.get_sample_file_object()
+            sound_file_path = f'{self.assets_audio}/{transcription.transcription}-{row}.wav'
+            sound_file.export(sound_file_path, format='wav')
+        if transcription.image:
+            _, image_extension = os.path.splitext(transcription.image)
+            image_file_path = os.path.join(self.assets_images,
+                                           f'{transcription.transcription}-{row}{image_extension}')
+            try:
+                shutil.copy(transcription.image, image_file_path)
+            except shutil.SameFileError:
+                pass
 
     @DeprecationWarning
     def open_file(self):
@@ -307,37 +371,6 @@ class SessionManager(object):
         if not self.autosaving:
             self.converter.components.progress_bar.hide()
 
-    def save_assets(self, row: int,
-                         data: ConverterData) -> None:
-        """Upon a standard session save, ensure assets are moved to project
-        assets folder.
-        TODO: Refactor unnecessary bits.
-        """
-        lmf = data.lmf
-        transcription = data.transcriptions[row]
-        json_entry = {
-            "id": str(transcription.id),
-            "transcription": transcription.transcription,
-            "translation": [transcription.translation, ],
-        }
-        if transcription.sample:
-            sound_export_path = os.path.join(self.project_path, "assets", "audio")
-            sound_file = data.transcriptions[row].sample.get_sample_file_object()
-            sound_file_path = f'{sound_export_path}/{transcription.transcription}-{row}.wav'
-            sound_file.export(sound_file_path, format='wav')
-            json_entry['audio'] = [sound_file_path, ]
-        if transcription.image:
-            image_export_path = os.path.join(self.project_path, "assets", "images")
-            _, image_extension = os.path.splitext(transcription.image)
-            image_file_path = os.path.join(image_export_path,
-                                           f'{transcription.transcription}-{row}{image_extension}')
-            try:
-                shutil.copy(transcription.image, image_file_path)
-            except shutil.SameFileError:
-                pass
-            json_entry['image'] = [image_file_path, ]
-        lmf['words'].append(json_entry)
-
     def create_session_lmf(self, parent: QMainWindow, data: ConverterData):
         """Creates a new language manifest file prior to new save file."""
         lmf_manifest_window = ManifestWindow(parent, data)
@@ -464,14 +497,14 @@ class SessionManager(object):
         self.template_type = None
 
     def start_autosave(self):
-        self.autosave = AutosaveThread(self)
-        self.autosave.start()
+        self.autosave_thread = AutosaveThread(self)
+        self.autosave_thread.start()
 
     def end_autosave(self):
-        if self.autosave:
-            self.autosave.quit()
-            self.autosave.wait()
-            self.autosave = None
+        if self.autosave_thread:
+            self.autosave_thread.quit()
+            self.autosave_thread.wait()
+            self.autosave_thread = None
 
 
 ################################################################################
@@ -606,6 +639,11 @@ class TemplateType(Enum):
     TRANSCRIPT_TRANSLATE = 2
     # Tag to indicate template is to be opened
     OPEN_TEMPLATE = 3
+
+
+class SaveMode(Enum):
+    MANUAL = 0
+    AUTOSAVE = 1
 
 
 ################################################################################

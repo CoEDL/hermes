@@ -159,7 +159,7 @@ class PrimaryWindow(QMainWindow):
         save_system_settings(self.settings)
 
     def on_click_save(self) -> None:
-        self.session.save_file()
+        self.session.save_project()
         save_system_settings(self.settings)
 
     def on_click_open(self) -> None:
