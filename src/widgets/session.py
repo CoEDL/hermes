@@ -61,8 +61,7 @@ class SessionManager(object):
         # Autosave parameters
         self.autosave_thread = None
         self.autosave_fp = None
-        self.autosaving = False
-        self.autosave_interval = 180  # Seconds
+        self.autosave_interval = 120  # Seconds
 
         # Session Parameters
         self.save_mode = SaveMode.MANUAL
@@ -485,36 +484,11 @@ class AutosaveThread(QThread):
     def run_autosave(self):
         """Run the autosave function in current session upon timer expire."""
         LOG_AUTOSAVE.info(f'Autosaving! {datetime.now().time()}')
-        # Remember current session details
-        current_save = self.session.session_filename
-        current_export = self.session.converter.data.export_location
 
         # Do autosave
-        self.session.autosaving = True
-        self.make_autosave_file()
-        LOG_AUTOSAVE.info(f"Autosave path {self.session.session_filename}")
-        self.session.exec_save()
-        self.session.autosaving = False
-
-        # Restore session details
-        self.session.session_filename = current_save
-        self.session.converter.data.export_location = current_export
-
-    def make_autosave_file(self):
-        autosave_path = os.path.abspath(os.path.join(os.path.dirname(os.path.dirname(__file__)), "..", "autosave"))
-        if not os.path.exists(autosave_path):
-            os.makedirs(autosave_path)
-        self.session.session_filename = os.path.join(autosave_path, "autosave.hermes")
-        self.setup_autosave_file()
-
-    def setup_autosave_file(self):
-        self.session.converter.data.export_location = mkdtemp()
-        self.session.converter.data.lmf = create_lmf(
-            transcription_language="Transcription",
-            translation_language="Translation",
-            author="Autosaver"
-        )
-        self.session.converter.data.lmf['words'] = list()
+        self.session.save_mode = SaveMode.AUTOSAVE
+        self.session.save_project()
+        self.session.save_mode = SaveMode.MANUAL
 
     def __del__(self):
         self.wait()

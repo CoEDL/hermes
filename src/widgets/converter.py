@@ -145,7 +145,8 @@ class ConverterWidget(QWidget):
         self.components.export_button = ExportButton(self)
         self.components.export_button.setContentsMargins(BASE_MARGIN, 0, BASE_MARGIN, BASE_MARGIN)
         self.layout.addWidget(self.components.export_button, 6, 0, 1, 8)
-        self.components.export_button.setEnabled(False)
+        # self.components.export_button.setEnabled(False)
+        self.enable_export_button()
 
         # Re-init menu to allow for Open/Save functionality now that table widget exists.
         self.parent.init_menu(True)
@@ -169,6 +170,7 @@ class ConverterWidget(QWidget):
                     images/
                 export/
                 templates/
+                saves/
 
         """
         project_root = self.settings.project_root_dir
