@@ -84,12 +84,6 @@ class PrimaryWindow(QMainWindow):
         file.addAction(save_menu)
         save_menu.setEnabled(save_flag)
 
-        # save_as_menu = QAction('Save As', self)
-        # save_as_menu.triggered.connect(self.on_click_save_as)
-        # save_as_menu.setShortcut('Ctrl+Shift+S')
-        # file.addAction(save_as_menu)
-        # save_as_menu.setEnabled(save_flag)
-
         settings_menu = QAction('Settings', self)
         settings_menu.triggered.connect(self.on_click_settings)
         settings_menu.setShortcut('Ctrl+B')

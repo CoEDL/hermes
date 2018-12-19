@@ -49,7 +49,6 @@ class SessionManager(object):
         self.saves = ""
 
         # Save file parameters
-        self.session_filename = None
         self.save_fp = None
         self.save_data = None
 
@@ -186,7 +185,8 @@ class SessionManager(object):
                 self.converter.components.status_bar.showMessage(f"Data saved at {save}", 5000)
                 LOG_SESSION.info(f"File saved at {save}")
         except Exception as e:
-            LOG_SESSION.warn(f"Unable to save file to {save}")
+            LOG_SESSION.warn(f"Error -  {e}: Unable to save file to {save}")
+            save_fail_warn()
 
     def data_exists(self, row: int):
         return self.converter.components.table.get_cell_value(row, TABLE_COLUMNS["Transcription"]) \
@@ -224,146 +224,8 @@ class SessionManager(object):
             word_entry['image'] = [image_file_path, ]
         self.save_data['words'].append(word_entry)
 
+    # TODO: Re-implement templates based on new project logic.
     @DeprecationWarning
-    def save_as_file(self):
-        """User sets new file name + location with QFileDialog, if set then initialise save process."""
-        if self.template_type:
-            self.template_name, _ = self._file_dialog.getSaveFileName(self._file_dialog,
-                                                                      "Save Template", "mytemplate.htemp",
-                                                                      "Hermes Template (*.htemp)")
-        else:
-            self.session_filename, _ = self._file_dialog.getSaveFileName(self._file_dialog,
-                                                                         "Save File", "mysession.hermes",
-                                                                         "Hermes Save (*.hermes)")
-
-        if (self.template_type and not self.template_name) or (not self.template_type and not self.session_filename):
-            file_not_found_msg()
-            LOG_SESSION.warning("No export location was selected, aborting save.")
-            return
-
-        self.save_file()
-
-    @DeprecationWarning
-    def save_file(self):
-        # If no file then restart from save as
-        if (self.template_type and not self.template_name) or (not self.template_type and not self.session_filename):
-            self.save_as_file()
-            return
-
-        # User to set export location if it does not exist, abort if not set.
-        if not self.export_location():
-            no_export_msg()
-            LOG_SESSION.warning("No export location was selected, aborting save.")
-            return
-
-        # All conditions met at this point, save is ready.
-        self.exec_save()
-
-    @DeprecationWarning
-    def exec_save(self):
-        """Executes the save function. Assumes that all conditions are ready.
-
-        All saves require a file name setup or loaded, and an export location set in prior steps.
-        TODO: Move template functionality to its own functions.
-        """
-        # Create LMF for this session
-        if not self.template_type and not self.autosaving:
-            self.create_session_lmf(self.parent, self.converter.data)
-            # Empty lmf word list first, otherwise it will duplicate entries.
-            self.converter.data.lmf['words'] = list()
-        elif self.template_type and not self.autosaving:
-            template_data = self.prepare_template_file()
-            self.create_session_lmf(self.parent, template_data)
-            template_data.lmf['words'] = list()
-
-        # Progress bar
-        self.converter.components.status_bar.clearMessage()
-        if not self.autosaving:
-            self.converter.components.progress_bar.show()
-        complete_count = 0
-        to_save_count = self.converter.components.table.rowCount()
-
-        # Transfer data to lmf file.
-        for row in range(self.converter.components.table.rowCount()):
-            if self.template_type and \
-                    (template_data.transcriptions[row].transcription or template_data.transcriptions[row].translation):
-                self.save_assets(row, template_data)
-            elif self.converter.components.table.get_cell_value(row, TABLE_COLUMNS["Transcription"])\
-                    or self.converter.components.table.get_cell_value(row, TABLE_COLUMNS["Translation"]):
-                self.save_assets(row, self.converter.data)
-            complete_count += 1
-            if not self.autosaving:
-                self.converter.components.progress_bar.update_progress(complete_count / to_save_count)
-
-        # Save to json format
-        if self.template_type and self.template_name:
-            # save template
-            with open(self.template_name, 'w+') as f:
-                json.dump(template_data.lmf, f, indent=4)
-                self.converter.components.status_bar.showMessage(f"Template saved at: {self.template_name}", 5000)
-                LOG_SESSION.info(f"File saved at {self.template_name}")
-            # Reset Export Location after template saved
-            self.converter.data.export_location = None
-        elif self.session_filename:
-            # save normal save file
-            with open(self.session_filename, 'w') as f:
-                json.dump(self.converter.data.lmf, f, indent=4)
-                self.converter.components.status_bar.showMessage(f"Data saved at: {self.session_filename}", 5000)
-                LOG_SESSION.info(f"File saved at {self.session_filename}")
-        else:
-            LOG_SESSION.error("File not found on exec_save().")
-            file_not_found_msg()
-
-        if not self.autosaving:
-            self.converter.components.progress_bar.hide()
-
-    def create_session_lmf(self, parent: QMainWindow, data: ConverterData):
-        """Creates a new language manifest file prior to new save file."""
-        lmf_manifest_window = ManifestWindow(parent, data)
-        _ = lmf_manifest_window.exec()
-        self.populate_initial_lmf_fields(lmf_manifest_window)
-        lmf_manifest_window.close()
-
-    def populate_initial_lmf_fields(self, source) -> None:
-        """
-        Populates a language manifest file's descriptive data.
-
-        If source is a new ManifestWindow, then user will enter information for languages, and authorship.
-
-        Otherwise, source is a loaded file.
-
-        Args:
-            source: ManifestWindow for input, or loaded .hermes (json) file with information to be extracted.
-        """
-        if isinstance(source, ManifestWindow):
-            self.converter.data.lmf = create_lmf(
-                transcription_language=source.widgets.transcription_language_field.text(),
-                translation_language=source.widgets.translation_language_field.text(),
-                author=source.widgets.author_name_field.text()
-            )
-        else:
-            self.converter.data.lmf = create_lmf(
-                transcription_language=source['transcription-language'],
-                translation_language=source['translation-language'],
-                author=source['author']
-            )
-
-    def export_location(self) -> str:
-        """User sets an export location if one is not already set.
-
-        Returns:
-            Path to export location, else None.
-        """
-        if self.template_type:
-            self.converter.data.export_location = mkdtemp()
-        if not self.converter.data.export_location:
-            export_init_msg()
-            self.converter.data.export_location = open_folder_dialogue()
-            if self.converter.data.export_location:
-                self.converter.components.export_location_field.set_export_field_text(self.converter.data.export_location)
-        LOG_SESSION.info(f'Export location set: {self.converter.data.export_location}')
-        return self.converter.data.export_location
-
     def prepare_template_file(self) -> ConverterData:
         """Prepares template files based on user selection.
 
@@ -401,6 +263,7 @@ class SessionManager(object):
 
         return data
 
+    @DeprecationWarning
     def save_template(self):
         """Asks user to save a template file, user will need to name the template
         file, and then select fields they wish to use for this template.
@@ -418,6 +281,7 @@ class SessionManager(object):
         # Go back to normal saving mode.
         self.template_type = None
 
+    @DeprecationWarning
     def get_template_option(self, template_dialog):
         """Retrieve template option"""
         template_choice = None
@@ -433,6 +297,7 @@ class SessionManager(object):
 
         return template_choice
 
+    @DeprecationWarning
     def open_template(self):
         """Asks user to open a template file, user will need to name the template
         file, and then select fields they wish to use for this template.
@@ -606,8 +471,16 @@ def export_init_msg():
                            f"Export location not set, a file dialog will now open. Please choose a location to save assets.\n",
                            QMessageBox.Ok)
 
+
 def no_template_msg():
     export_msg = WarningMessage()
     export_msg.information(export_msg, 'Warning',
                            f"No Template Type selected, template creation aborted.\n",
+                           QMessageBox.Ok)
+
+
+def save_fail_warn():
+    export_msg = WarningMessage()
+    export_msg.information(export_msg, 'Warning',
+                           f"Save failed, please contact team for support\n",
                            QMessageBox.Ok)
