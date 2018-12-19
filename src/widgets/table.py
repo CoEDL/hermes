@@ -309,7 +309,6 @@ class ImageButtonWidget(QPushButton):
         if image_path:
             TABLE_LOGGER.info(f"Image Path Loaded: {image_path}")
             # Resize Image to 400x300 for OPIE.
-            # TODO: Automatically put in assets folder when structure is changed.
             with PIL.Image.open(image_path) as image:
                 width, height = image.size
                 if width != 400 or height != 300:

@@ -167,8 +167,7 @@ class PrimaryWindow(QMainWindow):
         if self.session.open_project():
             self.converter.load_main_hermes_app(self.converter.components,
                                                 self.converter.data)
-            if self.session.load_project_save():
-                self.session.load_project_data()
+            self.session.load_project_save()
 
     def on_click_template_save(self) -> None:
         self.session.save_template()

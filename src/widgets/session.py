@@ -51,7 +51,7 @@ class SessionManager(object):
         # Save file parameters
         self.session_filename = None
         self.save_fp = None
-        self.loaded_data = None
+        self.save_data = None
 
         # Template parameters
         self.template_name = None
@@ -111,6 +111,7 @@ class SessionManager(object):
         """
         if os.path.exists(self.save_fp):
             LOG_SESSION.info(f"Save file found @ {self.save_fp}")
+            self.load_project_data()
             return True
         LOG_SESSION.info(f"No save found, no data loaded.")
         return False
@@ -122,10 +123,11 @@ class SessionManager(object):
         """
         LOG_SESSION.info(f"Loading Project Data")
         with open(self.save_fp, 'r') as f:
-            self.loaded_data = json.loads(f.read())
-            LOG_SESSION.debug(f"Data loaded: {self.loaded_data}")
+            self.save_data = json.loads(f.read())
+            LOG_SESSION.debug(f"Data loaded: {self.save_data}")
         # Populate Language and Author details
-        self.populate_initial_lmf_fields(self.loaded_data)
+        # TODO: Deal with language and author details in session only
+        # self.populate_initial_lmf_fields(self.save_data)
         # Add Transcriptions
         self.populate_filter_table()
 
@@ -133,7 +135,7 @@ class SessionManager(object):
         """Populates the table with save files transcriptions."""
         self.converter.data.transcriptions = list()
         self.converter.components.filter_table.clear_table()
-        for i, word in enumerate(self.loaded_data['words']):
+        for i, word in enumerate(self.save_data['words']):
             self.converter.data.transcriptions.append(Transcription(index=i,
                                                                     transcription=word['transcription'],
                                                                     translation=word['translation'][0],
@@ -145,26 +147,23 @@ class SessionManager(object):
                 self.converter.data.transcriptions[i].set_blank_sample()
                 self.converter.data.transcriptions[i].sample.set_sample(word.get('audio')[0])
         # Populate table with data
-        for n in range(len(self.loaded_data['words'])):
+        for n in range(len(self.save_data['words'])):
             self.converter.components.filter_table.add_blank_row()
         self.converter.components.filter_table.populate_table(self.converter.data.transcriptions)
         # Update user on save success in status bar.
         self.converter.components.status_bar.clearMessage()
         self.converter.components.status_bar.showMessage(f"Data opened from: {self.save_fp}", 5000)
-        LOG_SESSION.info(f"Table populated with {len(self.loaded_data['words'])} transcriptions.")
+        LOG_SESSION.info(f"Table populated with {len(self.save_data['words'])} transcriptions.")
 
     def save_project(self):
         """Saves data from table into the project's json based save file.
 
         Assets associated with word list will be moved to the appropriate asset folders.
         """
-        if self.save_mode == SaveMode.AUTOSAVE:
+        if self.save_mode is SaveMode.AUTOSAVE:
             save = self.autosave_fp
         else:
             save = self.save_fp
-            self.create_session_lmf(self.parent, self.converter.data)
-            # Empty word list for LMF first otherwise risk duplicate data
-            self.converter.data.lmf['words'] = list()
 
         # Progress Bar
         if self.save_mode is not SaveMode.AUTOSAVE:
@@ -172,19 +171,19 @@ class SessionManager(object):
             complete_count = 0
             to_save_count = self.converter.components.table.rowCount()
 
+        self.create_save_data()
         # Transfer data
         for row in range(self.converter.components.table.rowCount()):
             if self.data_exists(row):
-                create_lmf_files(row, self.converter.data)
-                self.save_assets(row)
+                self.prepare_save_data(row)
             if self.save_mode is not SaveMode.AUTOSAVE:
                 complete_count += 1
                 self.converter.components.progress_bar.update_progress(complete_count / to_save_count)
 
-        # Save File
+        # Write Save File
         try:
             with open(save, 'w') as f:
-                json.dump(self.converter.data.lmf, f, indent=4)
+                json.dump(self.save_data, f, indent=4)
                 self.converter.components.status_bar.showMessage(f"Data saved at {save}", 5000)
                 LOG_SESSION.info(f"File saved at {save}")
         except Exception as e:
@@ -194,15 +193,27 @@ class SessionManager(object):
         return self.converter.components.table.get_cell_value(row, TABLE_COLUMNS["Transcription"]) \
                or self.converter.components.table.get_cell_value(row, TABLE_COLUMNS["Translation"])
 
-    def save_assets(self, row: int) -> None:
-        """Upon a standard session save, ensure assets are moved to project
-        assets folder.
-        """
+    def create_save_data(self) -> None:
+        """Create save data file and TODO: draw authorship details from table."""
+        self.save_data = create_lmf(
+            transcription_language="TranscriptionPlacaeholder",
+            translation_language="TranslationPlaceholder",
+            author="Author Placeholder"
+        )
+
+    def prepare_save_data(self, row: int) -> None:
+        """Record data for this session into a dictionary for saving to .hermes"""
         transcription = self.converter.data.transcriptions[row]
+        word_entry = {
+            "id": str(transcription.id),
+            "transcription": transcription.transcription,
+            "translation": [transcription.translation, ],
+        }
         if transcription.sample:
             sound_file = transcription.sample.get_sample_file_object()
             sound_file_path = f'{self.assets_audio}/{transcription.transcription}-{row}.wav'
             sound_file.export(sound_file_path, format='wav')
+            word_entry['audio'] = [sound_file_path, ]
         if transcription.image:
             _, image_extension = os.path.splitext(transcription.image)
             image_file_path = os.path.join(self.assets_images,
@@ -211,6 +222,8 @@ class SessionManager(object):
                 shutil.copy(transcription.image, image_file_path)
             except shutil.SameFileError:
                 pass
+            word_entry['image'] = [image_file_path, ]
+        self.save_data['words'].append(word_entry)
 
     @DeprecationWarning
     def save_as_file(self):
@@ -247,6 +260,7 @@ class SessionManager(object):
         # All conditions met at this point, save is ready.
         self.exec_save()
 
+    @DeprecationWarning
     def exec_save(self):
         """Executes the save function. Assumes that all conditions are ready.
 
