@@ -39,7 +39,7 @@ class SessionManager(object):
         # Converter widget that runs hermes' main operations, set in Primary after initialisation of all elements.
         self.converter = None
 
-        # Project Parameters
+        # Project Parameters/Paths
         self.project_name = ""
         self.project_path = ""
         self.assets_audio = ""
@@ -48,9 +48,12 @@ class SessionManager(object):
         self.templates = ""
         self.saves = ""
 
-        # Save file parameters
+        # Save file parameters TODO: Create Save Object
         self.save_fp = None
         self.save_data = None
+        self.data_author = ""
+        self.data_transcription_language = ""
+        self.data_translation_language = ""
 
         # Template parameters
         self.template_name = None
@@ -124,9 +127,9 @@ class SessionManager(object):
             self.save_data = json.loads(f.read())
             LOG_SESSION.debug(f"Data loaded: {self.save_data}")
         # Populate Language and Author details
-        # TODO: Deal with language and author details in session only
-        # self.populate_initial_lmf_fields(self.save_data)
-        # Add Transcriptions
+        self.data_author = self.save_data['author']
+        self.data_transcription_language = self.save_data['transcription-language']
+        self.data_translation_language = self.save_data['translation-language']
         self.populate_filter_table()
 
     def populate_filter_table(self):
@@ -195,9 +198,9 @@ class SessionManager(object):
     def create_save_data(self) -> None:
         """Create save data file and TODO: draw authorship details from table."""
         self.save_data = create_lmf(
-            transcription_language="TranscriptionPlacaeholder",
-            translation_language="TranslationPlaceholder",
-            author="Author Placeholder"
+            transcription_language=self.data_transcription_language,
+            translation_language=self.data_translation_language,
+            author=self.data_author
         )
 
     def prepare_save_data(self, row: int) -> None:

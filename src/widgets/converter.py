@@ -2,7 +2,7 @@ import os
 import csv
 import pympi
 import json
-from PyQt5.QtWidgets import QWidget, QGridLayout, QLabel, QFrame
+from PyQt5.QtWidgets import QWidget, QGridLayout, QLabel, QFrame, QLineEdit
 from PyQt5.QtGui import QDesktopServices, QFont
 from PyQt5.QtCore import QUrl
 from datatypes import OperationMode, Transcription, ConverterData, AppSettings, OutputMode, ConverterComponents
@@ -115,7 +115,6 @@ class ConverterWidget(QWidget):
                                                    self.settings)
         self.layout.addWidget(self.components.filter_table, 2, 0, 1, 8)
         self.components.table = self.components.filter_table.table
-
         # Export Frame
         export_separator = QFrame()
         export_separator.setFrameShape(QFrame.StyledPanel)

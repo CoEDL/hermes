@@ -90,7 +90,6 @@ class FilterTable(QWidget):
         self.settings = settings
         self.status_bar = status_bar
         self.layout = QGridLayout()
-        self.filter_field = None
         self.data = data
         self.table = TranslationTableWidget(max(len(data.transcriptions),
                                                 len(data.translations)),
@@ -100,9 +99,9 @@ class FilterTable(QWidget):
     def init_ui(self) -> None:
         if self.data.mode == OperationMode.ELAN:
             self.layout.addWidget(HorizontalLineWidget(), 0, 0, 1, 8)
+        # Top Row: Filter and Table Buttons
         filter_label = QLabel('Filter Results:')
         self.layout.addWidget(filter_label, 1, 0, 1, 1)
-        self.setLayout(self.layout)
         self.filter_field = FilterFieldWidget('', self.table)
         self.layout.addWidget(self.filter_field, 1, 1, 1, 2)
         filter_clear_button = FilterClearButtonWidget('Clear', self.filter_field)
@@ -116,6 +115,7 @@ class FilterTable(QWidget):
                                      'Note: has no effect on filtered (hidden) results')
         select_all_button.clicked.connect(self.on_click_select_all)
         self.layout.addWidget(select_all_button, 1, 7, 1, 1)
+        # Transcription Table
         self.populate_table(self.data.transcriptions)
         self.layout.addWidget(self.table, 2, 0, 1, 8)
         self.setLayout(self.layout)

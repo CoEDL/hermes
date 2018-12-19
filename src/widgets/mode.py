@@ -5,6 +5,7 @@ from PyQt5.QtCore import QSize, Qt
 from datatypes import OperationMode
 from utilities import resource_path
 from typing import Callable, NewType
+from widgets.formatting import HorizontalLineWidget
 
 
 ConverterWidget = NewType('ConverterWidget', QWidget)
@@ -51,30 +52,59 @@ class ModeSelection(QWidget):
         self.fields.project_name = project_name_field
         self.layout.addWidget(project_name_field, 0, 1, 1, 1)
 
+        project_transcription_label = QLabel('Transcription Language:')
+        self.layout.addWidget(project_transcription_label, 1, 0, 1, 1)
+        project_transcription_field = QLineEdit()
+        project_transcription_field.setText('Enter Transcription Language')
+        self.fields.transcription_language = project_transcription_field
+        self.layout.addWidget(project_transcription_field, 1, 1, 1, 1)
+
+        project_translation_label = QLabel('Translation Language: ')
+        self.layout.addWidget(project_translation_label, 2, 0, 1, 1)
+        project_translation_field = QLineEdit()
+        project_translation_field.setText('Enter Translation Language')
+        self.fields.translation_language = project_translation_field
+        self.layout.addWidget(project_translation_field, 2, 1, 1, 1)
+
+        project_author_label = QLabel('Author: ')
+        self.layout.addWidget(project_author_label, 3, 0, 1, 1)
+        project_author_field = QLineEdit()
+        project_author_field.setText('Enter Author Name')
+        self.fields.author = project_author_field
+        self.layout.addWidget(project_author_field, 3, 1, 1, 1)
+
+        self.layout.addWidget(HorizontalLineWidget(), 4, 0, 1, 2)
+
         elan_button = ModeButton('./img/elan.png',
                                  'Import ELAN File',
                                  on_click=self.on_click_elan)
-        self.layout.addWidget(elan_button, 1, 0, 1, 2)
+        self.layout.addWidget(elan_button, 5, 0, 1, 2)
         scratch_button = ModeButton('./img/scratch.png',
                                     'Start From Scratch',
                                     on_click=self.on_click_scratch)
-        self.layout.addWidget(scratch_button, 2, 0, 1, 2)
+        self.layout.addWidget(scratch_button, 6, 0, 1, 2)
 
         self.setLayout(self.layout)
 
     def on_click_elan(self) -> None:
         self.parent.data.mode = OperationMode.ELAN
-        self.parent.session.project_name = self.fields.project_name.text()
+        self.__set_project_information()
         self.parent.session.setup_project_paths()
         self.parent.setup_project()
         self.parent.load_elan_loader()
 
     def on_click_scratch(self) -> None:
         self.parent.data.mode = OperationMode.SCRATCH
-        self.parent.session.project_name = self.fields.project_name.text()
+        self.__set_project_information()
         self.parent.session.setup_project_paths()
         self.parent.setup_project()
         self.parent.load_main_hermes_app(self.parent.components, self.parent.data)
+
+    def __set_project_information(self) -> None:
+        self.parent.session.project_name = self.fields.project_name.text()
+        self.parent.session.data_author = self.fields.author.text()
+        self.parent.session.data_transcription_language = self.fields.transcription_language.text()
+        self.parent.session.data_translation_language = self.fields.translation_language.text()
 
 
 class MainProjectSelection(QWidget):

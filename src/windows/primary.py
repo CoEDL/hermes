@@ -9,6 +9,7 @@ from utilities.settings import load_system_settings, system_settings_exist, save
 from widgets.session import SessionManager
 from widgets.converter import ConverterWidget
 from windows.about import AboutWindow, ONLINE_DOCS
+from windows.project import ProjectDetailsWindow
 from windows.settings import SettingsWindow
 
 
@@ -71,8 +72,8 @@ class PrimaryWindow(QMainWindow):
         LOG_PRIMARY.debug(f'Menu Bar initialised with save: {save_flag}')
 
         self.bar.clear()
-        file = self.bar.addMenu('File')
 
+        file = self.bar.addMenu('File')
         open_menu = QAction('Open', self)
         open_menu.triggered.connect(self.on_click_open)
         open_menu.setShortcut('Ctrl+O')
@@ -112,11 +113,18 @@ class PrimaryWindow(QMainWindow):
         # template.addAction(template_open)
         # template_open.setEnabled(save_flag)
 
-        self.table_menu = self.bar.addMenu('Table')
+        data_menu = self.bar.addMenu('Data')
+        project_details_item = QAction('Project Details', self)
+        project_details_item.setShortcut('Ctrl+P')
+        project_details_item.triggered.connect(self.on_click_project_details)
+        data_menu.addAction(project_details_item)
+        project_details_item.setEnabled(save_flag)
+
+        table_menu = self.bar.addMenu('Table')
         add_row_menu_item = QAction('Add Row', self)
         add_row_menu_item.setShortcut('Ctrl+N')
         add_row_menu_item.triggered.connect(self.on_click_add_row)
-        self.table_menu.addAction(add_row_menu_item)
+        table_menu.addAction(add_row_menu_item)
 
         help_menu = self.bar.addMenu('Help')
         about_menu_item = QAction('About', self)
@@ -147,6 +155,9 @@ class PrimaryWindow(QMainWindow):
     def on_click_add_row(self) -> None:
         if self.converter.components.table:
             self.converter.components.filter_table.add_blank_row()
+
+    def on_click_project_details(self) -> None:
+        ProjectDetailsWindow(self, self.session).exec()
 
     def on_click_save_as(self) -> None:
         self.session.save_as_file()

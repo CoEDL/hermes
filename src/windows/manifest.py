@@ -1,5 +1,5 @@
 from box import Box
-from PyQt5.QtWidgets import QMessageBox, QGridLayout, QLabel, QLineEdit, QPushButton, QMainWindow, QWidget, QDialog
+from PyQt5.QtWidgets import QGridLayout, QLabel, QLineEdit, QPushButton, QMainWindow, QDialog
 from datatypes import ConverterData, create_lmf
 
 
