@@ -1,7 +1,7 @@
 import math
 import pydub
 import webbrowser
-from PyQt5.QtWidgets import QProgressBar, QApplication, QMainWindow, QAction
+from PyQt5.QtWidgets import QProgressBar, QApplication, QMainWindow, QAction, QMessageBox
 from typing import Union
 from datatypes import AppSettings, OperationMode
 from utilities.logger import setup_custom_logger
@@ -97,7 +97,7 @@ class PrimaryWindow(QMainWindow):
 
         quit_menu_item = QAction('Quit', self)
         quit_menu_item.setShortcut('Ctrl+Q')
-        quit_menu_item.triggered.connect(self.close)
+        quit_menu_item.triggered.connect(self.on_click_quit)
         file.addAction(quit_menu_item)
 
         data_menu = self.bar.addMenu('Data')
@@ -137,6 +137,12 @@ class PrimaryWindow(QMainWindow):
         online_help_item.triggered.connect(self.on_click_online_help)
         help_menu.addAction(online_help_item)
 
+    def on_click_quit(self) -> None:
+        if self.converter.components.table:
+            if not self.query_save_and_progress():
+                return
+        self.close()
+
     def on_click_about(self) -> None:
         about = AboutWindow(self)
         about.show()
@@ -147,6 +153,9 @@ class PrimaryWindow(QMainWindow):
         settings.show()
 
     def on_click_reset(self) -> None:
+        if self.converter.components.table:
+            if not self.query_save_and_progress():
+                return
         self.session.end_autosave()
         self.init_ui()
         self.init_menu()
@@ -159,15 +168,14 @@ class PrimaryWindow(QMainWindow):
     def on_click_project_details(self) -> None:
         ProjectDetailsWindow(self, self.session).exec()
 
-    def on_click_save_as(self) -> None:
-        self.session.save_as_file()
-        save_system_settings(self.settings)
-
     def on_click_save(self) -> None:
         self.session.save_project()
         save_system_settings(self.settings)
 
     def on_click_open(self) -> None:
+        if self.converter.components.table:
+            if not self.query_save_and_progress():
+                return
         self.converter.data.mode = OperationMode.SCRATCH
         if self.session.open_project():
             self.converter.load_main_hermes_app(self.converter.components,
@@ -183,6 +191,21 @@ class PrimaryWindow(QMainWindow):
     def on_click_online_help(self) -> None:
         webbrowser.open(ONLINE_DOCS)
         LOG_PRIMARY.info(f'Opened default browser to: {ONLINE_DOCS}')
+
+    def query_save_and_progress(self) -> bool:
+        """Precautionary save call on project refresh event.
+
+        E.g., App close, starting or opening a new project, etc.
+
+        Returns:
+            True if progression desired, false when cancel triggered.
+        """
+        save_query = QMessageBox.question(self, " ", "Do you want to save before continuing?", QMessageBox.Yes | QMessageBox.No | QMessageBox.Cancel, QMessageBox.Yes)
+        if save_query == QMessageBox.Yes:
+            self.session.save_project()
+        elif save_query == QMessageBox.Cancel:
+            return False
+        return True
 
     def shrink(self) -> None:
         self.resize(0, 0)

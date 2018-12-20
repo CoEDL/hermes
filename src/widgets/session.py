@@ -113,6 +113,9 @@ class SessionManager(object):
             self.load_project_data()
             return True
         LOG_SESSION.info(f"No save found, no data loaded.")
+        # No data to load, setup blank table.
+        self.converter.components.filter_table.clear_table()
+        self.converter.components.filter_table.add_blank_row()
         return False
 
     def load_project_data(self):
