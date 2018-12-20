@@ -483,8 +483,6 @@ class TemplateType(Enum):
     TRANSLATION = 1
     # Represents a template of both transcription and translation types.
     TRANSCRIPT_TRANSLATE = 2
-    # Tag to indicate template is to be opened
-    OPEN_TEMPLATE = 3
 
 
 class SaveMode(Enum):
