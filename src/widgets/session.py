@@ -236,6 +236,11 @@ class SessionManager(object):
         self.template_name = self.template_options.widgets.template_name.text()
         self.template_options.close()
 
+        # Catch user cancellation of template.
+        if self.template_type is None:
+            LOG_SESSION.info("Template creation cancelled.")
+            return
+
         # Make Template Data
         self.create_template_data()
         temp_data = self.get_data_for_template()
@@ -262,6 +267,9 @@ class SessionManager(object):
         except Exception as e:
             LOG_SESSION.warn(f"Error -  {e}: Unable to save template to {template_fp}")
             save_fail_warn()
+
+        # Reset on end.
+        self.template_type = None
 
     def create_template_data(self) -> None:
         """Create initial template data dictionary"""
@@ -300,8 +308,6 @@ class SessionManager(object):
             # Clear images and sounds
             data.transcriptions[i].image = None
             data.transcriptions[i].sample = None
-
-            LOG_SESSION.info(f"Template prepared data {data.transcriptions[i]}")
 
         return data
 
@@ -435,7 +441,7 @@ class TemplateDialog(QDialog):
         template_name_label = QLabel('Name Template:')
         self.layout.addWidget(template_name_label, 0, 0, 1, 1)
         self.widgets.template_name = QLineEdit()
-        self.layout.addWidget(self.widgets.template_name, 0, 1, 1, 2)
+        self.layout.addWidget(self.widgets.template_name, 0, 1, 1, 3)
 
         template_type_label = QLabel('Choose Template Field(s):')
         template_type_label.setFont(header_font)
