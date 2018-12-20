@@ -100,25 +100,25 @@ class PrimaryWindow(QMainWindow):
         quit_menu_item.triggered.connect(self.close)
         file.addAction(quit_menu_item)
 
-        # template = self.bar.addMenu('Templates')
-        # template_save = QAction('Create Template', self)
-        # template_save.triggered.connect(self.on_click_template_save)
-        # template_save.setShortcut('Ctrl+Alt+T')
-        # template.addAction(template_save)
-        # template_save.setEnabled(save_flag)
-        #
-        # template_open = QAction('Load Template', self)
-        # template_open.triggered.connect(self.on_click_template_open)
-        # template_open.setShortcut('Ctrl+Alt+O')
-        # template.addAction(template_open)
-        # template_open.setEnabled(save_flag)
-
         data_menu = self.bar.addMenu('Data')
         project_details_item = QAction('Project Details', self)
         project_details_item.setShortcut('Ctrl+P')
         project_details_item.triggered.connect(self.on_click_project_details)
         data_menu.addAction(project_details_item)
         project_details_item.setEnabled(save_flag)
+
+        template = self.bar.addMenu('Templates')
+        template_save = QAction('Create Template', self)
+        template_save.triggered.connect(self.on_click_template_create)
+        template_save.setShortcut('Ctrl+Alt+T')
+        template.addAction(template_save)
+        template_save.setEnabled(save_flag)
+
+        template_open = QAction('Load Template', self)
+        template_open.triggered.connect(self.on_click_template_load)
+        template_open.setShortcut('Ctrl+Alt+O')
+        template.addAction(template_open)
+        template_open.setEnabled(save_flag)
 
         table_menu = self.bar.addMenu('Table')
         add_row_menu_item = QAction('Add Row', self)
@@ -174,11 +174,11 @@ class PrimaryWindow(QMainWindow):
                                                 self.converter.data)
             self.session.load_project_save()
 
-    def on_click_template_save(self) -> None:
-        self.session.save_template()
+    def on_click_template_create(self) -> None:
+        self.session.create_template()
 
-    def on_click_template_open(self) -> None:
-        self.session.open_template()
+    def on_click_template_load(self) -> None:
+        self.session.load_template()
 
     def on_click_online_help(self) -> None:
         webbrowser.open(ONLINE_DOCS)

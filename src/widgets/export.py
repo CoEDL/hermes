@@ -31,7 +31,7 @@ class ExportLocationField(QWidget):
     def on_click_choose_export(self) -> None:
         export_location = self.export_dialog.getExistingDirectory(self.export_dialog,
                                                                   "Create an export location.",
-                                                                  self.parent.session.exports,
+                                                                  self.parent.session.export_path,
                                                                   QFileDialog.ShowDirsOnly)
         if export_location:
             self.data.export_location = export_location

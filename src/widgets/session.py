@@ -2,20 +2,17 @@ import copy
 import json
 import os
 import shutil
-from PyQt5.QtWidgets import QCheckBox, QDialog, QFileDialog, QGridLayout, QLabel, QMainWindow, QMessageBox, QPushButton
+from PyQt5.QtWidgets import QCheckBox, QDialog, QFileDialog, QGridLayout, QLabel, QMainWindow, QMessageBox, \
+    QPushButton, QLineEdit
 from PyQt5.QtCore import QThread, QTimer, QEventLoop
 from PyQt5.QtGui import QFont
 from box import Box
 from datatypes import create_lmf, ConverterData, Transcription
 from datetime import datetime
 from enum import Enum
-from tempfile import mkdtemp
-from utilities.files import open_folder_dialogue
 from utilities.logger import setup_custom_logger
-from utilities.output import create_lmf_files
 from widgets.table import TABLE_COLUMNS
 from widgets.warning import WarningMessage
-from windows.manifest import ManifestWindow
 
 
 ################################################################################
@@ -42,11 +39,11 @@ class SessionManager(object):
         # Project Parameters/Paths
         self.project_name = ""
         self.project_path = ""
-        self.assets_audio = ""
-        self.assets_images = ""
-        self.exports = ""
-        self.templates = ""
-        self.saves = ""
+        self.assets_audio_path = ""
+        self.assets_images_path = ""
+        self.export_path = ""
+        self.templates_path = ""
+        self.saves_path = ""
 
         # Save file parameters TODO: Create Save Object
         self.save_fp = None
@@ -58,6 +55,7 @@ class SessionManager(object):
         # Template parameters
         self.template_name = None
         self.template_type = None
+        self.template_data = None
         self.template_options = TemplateDialog(self.parent, self)
 
         # Autosave parameters
@@ -71,14 +69,14 @@ class SessionManager(object):
     def setup_project_paths(self):
         """Setup project paths for this session, on new project or on load."""
         self.project_path = os.path.join(self.parent.settings.project_root_dir, self.project_name)
-        self.assets_audio = os.path.join(self.project_path, "assets", "audio")
-        self.assets_images = os.path.join(self.project_path, "assets", "images")
-        self.exports = os.path.join(self.project_path, "export")
-        self.templates = os.path.join(self.project_path, "templates")
-        self.saves = os.path.join(self.project_path, "saves")
-        self.save_fp = os.path.join(self.saves, self.project_name + ".hermes")
-        self.autosave_fp = os.path.join(self.saves, "autosave.hermes")
-        LOG_SESSION.debug(f"Setup paths: {self.assets_images} {self.assets_audio} {self.exports} {self.templates} {self.saves}")
+        self.assets_audio_path = os.path.join(self.project_path, "assets", "audio")
+        self.assets_images_path = os.path.join(self.project_path, "assets", "images")
+        self.export_path = os.path.join(self.project_path, "export")
+        self.templates_path = os.path.join(self.project_path, "templates")
+        self.saves_path = os.path.join(self.project_path, "saves")
+        self.save_fp = os.path.join(self.saves_path, self.project_name + ".hermes")
+        self.autosave_fp = os.path.join(self.saves_path, "autosave.hermes")
+        LOG_SESSION.debug(f"Setup paths: {self.assets_images_path} {self.assets_audio_path} {self.export_path} {self.templates_path} {self.saves_path}")
         LOG_SESSION.debug(f"Save path: {self.save_fp} :: Autosave {self.autosave_fp}")
 
     def open_project(self) -> bool:
@@ -173,7 +171,7 @@ class SessionManager(object):
             to_save_count = self.converter.components.table.rowCount()
 
         self.create_save_data()
-        # Transfer data
+        # Transfer data for table rows that have a transcription to save.
         for row in range(self.converter.components.table.rowCount()):
             if self.data_exists(row):
                 self.prepare_save_data(row)
@@ -196,7 +194,7 @@ class SessionManager(object):
                or self.converter.components.table.get_cell_value(row, TABLE_COLUMNS["Translation"])
 
     def create_save_data(self) -> None:
-        """Create save data file and TODO: draw authorship details from table."""
+        """Create save data file for save process to add table data into."""
         self.save_data = create_lmf(
             transcription_language=self.data_transcription_language,
             translation_language=self.data_translation_language,
@@ -213,12 +211,12 @@ class SessionManager(object):
         }
         if transcription.sample:
             sound_file = transcription.sample.get_sample_file_object()
-            sound_file_path = f'{self.assets_audio}/{transcription.transcription}-{row}.wav'
+            sound_file_path = f'{self.assets_audio_path}/{transcription.transcription}-{row}.wav'
             sound_file.export(sound_file_path, format='wav')
             word_entry['audio'] = [sound_file_path, ]
         if transcription.image:
             _, image_extension = os.path.splitext(transcription.image)
-            image_file_path = os.path.join(self.assets_images,
+            image_file_path = os.path.join(self.assets_images_path,
                                            f'{transcription.transcription}-{row}{image_extension}')
             try:
                 shutil.copy(transcription.image, image_file_path)
@@ -227,9 +225,53 @@ class SessionManager(object):
             word_entry['image'] = [image_file_path, ]
         self.save_data['words'].append(word_entry)
 
-    # TODO: Re-implement templates based on new project logic.
-    @DeprecationWarning
-    def prepare_template_file(self) -> ConverterData:
+    def create_template(self) -> None:
+        """Asks user to save a template file, user will need to name the template file,
+        and then select fields they wish to use for this template.
+        """
+        # Exec template creation dialog.
+        self.template_options.exec()
+        # Get template options
+        self.template_type = self.get_template_option(self.template_options)
+        self.template_name = self.template_options.widgets.template_name.text()
+        self.template_options.close()
+
+        # Make Template Data
+        self.create_template_data()
+        temp_data = self.get_data_for_template()
+
+        # Progress Bar
+        self.converter.components.status_bar.clearMessage()
+        complete_count = 0
+        to_save_count = self.converter.components.table.rowCount()
+
+        # Add data to template for saving
+        for row in range(self.converter.components.table.rowCount()):
+            if self.data_exists(row):
+                self.prepare_template_data(row, temp_data)
+                complete_count += 1
+                self.converter.components.progress_bar.update_progress(complete_count / to_save_count)
+
+        # Write Template File
+        template_fp = os.path.join(self.templates_path, self.template_name + '.htemp')
+        try:
+            with open(template_fp, 'w') as f:
+                json.dump(self.template_data, f, indent=4)
+                self.converter.components.status_bar.showMessage(f"Template saved at {template_fp}", 5000)
+                LOG_SESSION.info(f"Template saved at {template_fp}")
+        except Exception as e:
+            LOG_SESSION.warn(f"Error -  {e}: Unable to save template to {template_fp}")
+            save_fail_warn()
+
+    def create_template_data(self) -> None:
+        """Create initial template data dictionary"""
+        self.template_data = create_lmf(
+            transcription_language=self.data_transcription_language,
+            translation_language=self.data_translation_language,
+            author=self.data_author
+        )
+
+    def get_data_for_template(self) -> ConverterData:
         """Prepares template files based on user selection.
 
         Template files can have the following fields prepared:
@@ -244,9 +286,6 @@ class SessionManager(object):
         Returns:
             ConverterData with only relevant information as requested by user.
         """
-        if not self.template_type:
-            no_template_msg()
-
         # Prepare custom converter data to save
         data = ConverterData()
         data.transcriptions = copy.deepcopy(self.converter.data.transcriptions)
@@ -266,27 +305,28 @@ class SessionManager(object):
 
         return data
 
-    @DeprecationWarning
-    def save_template(self):
-        """Asks user to save a template file, user will need to name the template
-        file, and then select fields they wish to use for this template.
+    def prepare_template_data(self, row: int, data: ConverterData) -> None:
+        """Creates word entry for template for valid table rows.
+
+        Args:
+            row: The table row corresponding to a word to be saved.
+            data: Prepared Converter Data for word entry. Note that this is a deep copy of the session's main
+                  Converter Data to avoid mutating data unintentionally.
         """
-        self.template_options.exec()
+        transcription = data.transcriptions[row]
+        word_entry = {
+            "id": str(transcription.id),
+            "transcription": transcription.transcription,
+            "translation": [transcription.translation, ],
+        }
+        self.template_data['words'].append(word_entry)
 
-        # Get template options
-        self.template_type = self.get_template_option(self.template_options)
-        self.template_options.close()
-
-        # widgets.transcription_language_field.text()
-        if self.template_type:
-            self.save_as_file()
-
-        # Go back to normal saving mode.
-        self.template_type = None
-
-    @DeprecationWarning
     def get_template_option(self, template_dialog):
-        """Retrieve template option"""
+        """Retrieve template option from user choice.
+
+        Returns:
+            User selected template choice via Template Dialog.
+        """
         template_choice = None
         translation_check = template_dialog.widgets.template_translation_check.isChecked()
         transcription_check = template_dialog.widgets.template_transcription_check.isChecked()
@@ -300,15 +340,21 @@ class SessionManager(object):
 
         return template_choice
 
-    @DeprecationWarning
-    def open_template(self):
-        """Asks user to open a template file, user will need to name the template
-        file, and then select fields they wish to use for this template.
-        """
-        self.template_type = TemplateType.OPEN_TEMPLATE
-        self.open_file()
-        # Go back to normal saving mode.
-        self.template_type = None
+    def load_template(self):
+        """Asks user to select a template file to load. By default opens in the templates folder."""
+        LOG_SESSION.info(f"Loading Template Data")
+        template_fp, _ = self._file_dialog.getOpenFileName(self._file_dialog,
+                                                           "Open Template",
+                                                           self.templates_path,
+                                                           "Hermes Template (*.htemp)")
+        with open(template_fp, 'r') as f:
+            self.save_data = json.loads(f.read())
+            LOG_SESSION.debug(f"Data loaded: {self.save_data}")
+        # Populate Language and Author details
+        self.data_author = self.save_data['author']
+        self.data_transcription_language = self.save_data['transcription-language']
+        self.data_translation_language = self.save_data['translation-language']
+        self.populate_filter_table()
 
     def start_autosave(self):
         self.autosave_thread = AutosaveThread(self)
@@ -386,19 +432,24 @@ class TemplateDialog(QDialog):
         header_font.setPointSize(12)
         header_font.setBold(True)
 
+        template_name_label = QLabel('Name Template:')
+        self.layout.addWidget(template_name_label, 0, 0, 1, 1)
+        self.widgets.template_name = QLineEdit()
+        self.layout.addWidget(self.widgets.template_name, 0, 1, 1, 2)
+
         template_type_label = QLabel('Choose Template Field(s):')
         template_type_label.setFont(header_font)
-        self.layout.addWidget(template_type_label, 0, 0, 1, 4)
-
-        template_translation_label = QLabel('Translation')
-        self.layout.addWidget(template_translation_label, 1, 0, 1, 1)
-        self.widgets.template_translation_check = QCheckBox()
-        self.layout.addWidget(self.widgets.template_translation_check, 1, 1, 1, 1)
+        self.layout.addWidget(template_type_label, 1, 0, 1, 4)
 
         template_transcription_label = QLabel('Transcription')
         self.layout.addWidget(template_transcription_label, 2, 0, 1, 1)
         self.widgets.template_transcription_check = QCheckBox()
         self.layout.addWidget(self.widgets.template_transcription_check, 2, 1, 1, 1)
+
+        template_translation_label = QLabel('Translation')
+        self.layout.addWidget(template_translation_label, 3, 0, 1, 1)
+        self.widgets.template_translation_check = QCheckBox()
+        self.layout.addWidget(self.widgets.template_translation_check, 3, 1, 1, 1)
 
         ok_button = QPushButton('Ok')
         ok_button.clicked.connect(self.on_click_ok)

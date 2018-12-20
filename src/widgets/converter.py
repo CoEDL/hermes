@@ -138,7 +138,7 @@ class ConverterWidget(QWidget):
         self.layout.addWidget(self.components.export_location_field, 5, 0, 1, 8)
         self.components.status_bar.showMessage('Select words to include and choose an export location')
         # Set export location
-        self.data.export_location = self.parent.session.exports
+        self.data.export_location = self.parent.session.export_path
         self.components.export_location_field.set_export_field_text(self.data.export_location)
         # Export Button
         self.components.export_button = ExportButton(self)
@@ -181,11 +181,11 @@ class ConverterWidget(QWidget):
 
         if not os.path.exists(project_path):
             os.makedirs(project_path)
-            os.makedirs(self.session.assets_audio)
-            os.makedirs(self.session.assets_images)
-            os.makedirs(self.session.exports)
-            os.makedirs(self.session.templates)
-            os.makedirs(self.session.saves)
+            os.makedirs(self.session.assets_audio_path)
+            os.makedirs(self.session.assets_images_path)
+            os.makedirs(self.session.export_path)
+            os.makedirs(self.session.templates_path)
+            os.makedirs(self.session.saves_path)
 
     def export_resources(self) -> None:
         self.components.status_bar.clearMessage()
