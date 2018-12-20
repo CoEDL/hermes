@@ -74,12 +74,12 @@ class PrimaryWindow(QMainWindow):
         self.bar.clear()
 
         file = self.bar.addMenu('File')
-        open_menu = QAction('Open', self)
+        open_menu = QAction('Open Project', self)
         open_menu.triggered.connect(self.on_click_open)
         open_menu.setShortcut('Ctrl+O')
         file.addAction(open_menu)
 
-        save_menu = QAction('Save', self)
+        save_menu = QAction('Save Project', self)
         save_menu.triggered.connect(self.on_click_save)
         save_menu.setShortcut('Ctrl+S')
         file.addAction(save_menu)
@@ -100,7 +100,7 @@ class PrimaryWindow(QMainWindow):
         quit_menu_item.triggered.connect(self.on_click_quit)
         file.addAction(quit_menu_item)
 
-        data_menu = self.bar.addMenu('Data')
+        data_menu = self.bar.addMenu('Project')
         project_details_item = QAction('Project Details', self)
         project_details_item.setShortcut('Ctrl+P')
         project_details_item.triggered.connect(self.on_click_project_details)

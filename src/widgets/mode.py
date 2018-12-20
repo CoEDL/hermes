@@ -48,28 +48,28 @@ class ModeSelection(QWidget):
         project_name_label = QLabel('Project Name:')
         self.layout.addWidget(project_name_label, 0, 0, 1, 1)
         project_name_field = QLineEdit()
-        project_name_field.setText('Enter Project Name')
+        project_name_field.setText('Enter a Unique Project Name.')
         self.fields.project_name = project_name_field
         self.layout.addWidget(project_name_field, 0, 1, 1, 1)
 
         project_transcription_label = QLabel('Transcription Language:')
         self.layout.addWidget(project_transcription_label, 1, 0, 1, 1)
         project_transcription_field = QLineEdit()
-        project_transcription_field.setText('Enter Transcription Language')
+        project_transcription_field.setText('Enter Transcription Language.')
         self.fields.transcription_language = project_transcription_field
         self.layout.addWidget(project_transcription_field, 1, 1, 1, 1)
 
         project_translation_label = QLabel('Translation Language: ')
         self.layout.addWidget(project_translation_label, 2, 0, 1, 1)
         project_translation_field = QLineEdit()
-        project_translation_field.setText('Enter Translation Language')
+        project_translation_field.setText('Enter Translation Language.')
         self.fields.translation_language = project_translation_field
         self.layout.addWidget(project_translation_field, 2, 1, 1, 1)
 
         project_author_label = QLabel('Author: ')
         self.layout.addWidget(project_author_label, 3, 0, 1, 1)
         project_author_field = QLineEdit()
-        project_author_field.setText('Enter Author Name')
+        project_author_field.setText('Enter Author Name.')
         self.fields.author = project_author_field
         self.layout.addWidget(project_author_field, 3, 1, 1, 1)
 
