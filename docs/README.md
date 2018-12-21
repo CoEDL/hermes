@@ -2,9 +2,9 @@
 
 ## Default Project Directories
 By default Hermes will create a project folder in the follow locations:
-    - Windows: Documents\Hermes\Projects (or My Documents\Hermes)
-    - MacOs: {User_Name}\Hermes\Projects (ie. your default Home drive, opening Finder will open the root home directory)
-    - Linux: ~\Hermes\Projects
+* Windows: Documents\Hermes\Projects (or My Documents\Hermes)
+* MacOs: {User_Name}\Hermes\Projects (ie. your default Home drive, opening Finder will open the root home directory)
+* Linux: ~\Hermes\Projects
 
 ## Starting a new Project
 
