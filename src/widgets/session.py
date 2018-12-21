@@ -98,7 +98,7 @@ class SessionManager(object):
             LOG_SESSION.info(f"Opened project: {self.project_path}")
             return True
         LOG_SESSION.warn(f"Unable to open project, project not selected by user. Process Aborted.")
-        folder_not_found_msg()
+        project_open_failed()
         return False
 
     def load_project_save(self):
@@ -109,7 +109,7 @@ class SessionManager(object):
             True if a save file exists in project, else False.
         """
         if os.path.exists(self.save_fp):
-            LOG_SESSION.info(f"Save file found @ {self.save_fp}")
+            LOG_SESSION.info(f"Save file to load: {self.save_fp}")
             self.load_project_data()
             return True
         LOG_SESSION.info(f"No save found, no data loaded.")
@@ -123,7 +123,6 @@ class SessionManager(object):
         functionality only runs on open option if load_project_save() has
         successfully found a save file.
         """
-        LOG_SESSION.info(f"Loading Project Data")
         with open(self.save_fp, 'r') as f:
             self.save_data = json.loads(f.read())
             LOG_SESSION.debug(f"Data loaded: {self.save_data}")
@@ -137,6 +136,7 @@ class SessionManager(object):
         """Populates the table with save files transcriptions."""
         self.converter.data.transcriptions = list()
         self.converter.components.filter_table.clear_table()
+        LOG_SESSION.info(f"Populating table from Project: {self.project_name}")
         for i, word in enumerate(self.save_data['words']):
             self.converter.data.transcriptions.append(Transcription(index=i,
                                                                     transcription=word['transcription'],
@@ -154,7 +154,7 @@ class SessionManager(object):
         self.converter.components.filter_table.populate_table(self.converter.data.transcriptions)
         # Update user on save success in status bar.
         self.converter.components.status_bar.clearMessage()
-        self.converter.components.status_bar.showMessage(f"Data opened from: {self.save_fp}", 5000)
+        self.converter.components.status_bar.showMessage(f"Project loaded: {self.project_name}", 10000)
         LOG_SESSION.info(f"Table populated with {len(self.save_data['words'])} transcriptions.")
 
     def save_project(self):
@@ -173,6 +173,7 @@ class SessionManager(object):
             complete_count = 0
             to_save_count = self.converter.components.table.rowCount()
 
+        LOG_SESSION.info(f"Saving {to_save_count} words.")
         self.create_save_data()
         # Transfer data for table rows that have a transcription to save.
         for row in range(self.converter.components.table.rowCount()):
@@ -186,7 +187,7 @@ class SessionManager(object):
         try:
             with open(save, 'w') as f:
                 json.dump(self.save_data, f, indent=4)
-                self.converter.components.status_bar.showMessage(f"Data saved at {save}", 5000)
+                self.converter.components.status_bar.showMessage(f"Project saved at {save}", 10000)
                 LOG_SESSION.info(f"File saved at {save}")
         except Exception as e:
             LOG_SESSION.warn(f"Error -  {e}: Unable to save file to {save}")
@@ -198,6 +199,9 @@ class SessionManager(object):
 
     def create_save_data(self) -> None:
         """Create save data file for save process to add table data into."""
+        LOG_SESSION.debug(f"Project details - Transcription: {self.data_transcription_language}, "
+                          f"Translation: {self.data_translation_language}, "
+                          f"Author: {self.data_author}")
         self.save_data = create_lmf(
             transcription_language=self.data_transcription_language,
             translation_language=self.data_translation_language,
@@ -232,12 +236,14 @@ class SessionManager(object):
         """Asks user to save a template file, user will need to name the template file,
         and then select fields they wish to use for this template.
         """
+        LOG_SESSION.info(f"Creating Template...")
         # Exec template creation dialog.
         self.template_options.exec()
         # Get template options
         self.template_type = self.get_template_option(self.template_options)
         self.template_name = self.template_options.widgets.template_name.text()
         self.template_options.close()
+        LOG_SESSION.debug(f"Type: {self.template_type}, Name: {self.template_name}")
 
         # Catch user cancellation of template.
         if self.template_type is None:
@@ -265,11 +271,11 @@ class SessionManager(object):
         try:
             with open(template_fp, 'w') as f:
                 json.dump(self.template_data, f, indent=4)
-                self.converter.components.status_bar.showMessage(f"Template saved at {template_fp}", 5000)
+                self.converter.components.status_bar.showMessage(f"Template {self.template_name} saved at {template_fp}", 10000)
                 LOG_SESSION.info(f"Template saved at {template_fp}")
         except Exception as e:
             LOG_SESSION.warn(f"Error -  {e}: Unable to save template to {template_fp}")
-            save_fail_warn()
+            template_fail_warn()
 
         # Reset on end.
         self.template_type = None
@@ -374,6 +380,7 @@ class SessionManager(object):
             self.autosave_thread.quit()
             self.autosave_thread.wait()
             self.autosave_thread = None
+            LOG_SESSION.debug(f"Autosave thread closed.")
 
 
 ################################################################################
@@ -498,50 +505,23 @@ class SaveMode(Enum):
 ################################################################################
 
 
-def folder_not_found_msg():
-    folder_not_loaded = WarningMessage()
-    folder_not_loaded.warning(folder_not_loaded, 'Warning',
-                                f'No folder selected, load aborted.\n',
+def project_open_failed():
+    project_load_fail = WarningMessage()
+    project_load_fail.warning(project_load_fail, 'Warning',
+                                f'Project failed to open. Please ensure a Hermes project folder was selected.\n',
                                 QMessageBox.Ok)
-
-
-def file_not_found_msg():
-    file_not_found_warn = WarningMessage()
-    file_not_found_warn.warning(file_not_found_warn, 'Warning',
-                                f'No file was found.\n',
-                                QMessageBox.Ok)
-
-
-def no_save_file_msg():
-    no_save_file_warn = WarningMessage()
-    no_save_file_warn.warning(no_save_file_warn, 'Warning',
-                              f"No save file was selected. You must specify a file to save to.\n",
-                              QMessageBox.Ok)
-
-
-def no_export_msg():
-    no_save_file_warn = WarningMessage()
-    no_save_file_warn.warning(no_save_file_warn, 'Warning',
-                              f"No export location found. You must specify an export location to save assets.\n",
-                              QMessageBox.Ok)
-
-
-def export_init_msg():
-    export_msg = WarningMessage()
-    export_msg.information(export_msg, 'Export Location Needed',
-                           f"Export location not set, a file dialog will now open. Please choose a location to save assets.\n",
-                           QMessageBox.Ok)
-
-
-def no_template_msg():
-    export_msg = WarningMessage()
-    export_msg.information(export_msg, 'Warning',
-                           f"No Template Type selected, template creation aborted.\n",
-                           QMessageBox.Ok)
 
 
 def save_fail_warn():
-    export_msg = WarningMessage()
-    export_msg.information(export_msg, 'Warning',
+    save_fail = WarningMessage()
+    save_fail.warning(save_fail, 'Warning',
                            f"Save failed, please contact team for support\n",
                            QMessageBox.Ok)
+
+
+def template_fail_warn():
+    template_fail = WarningMessage()
+    template_fail.warning(template_fail, 'Warning',
+                          f"Template creation failed, please contact team for support\n",
+                          QMessageBox.Ok)
+
