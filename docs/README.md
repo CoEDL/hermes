@@ -103,3 +103,9 @@ for the template. You may choose both if relevant.
 3. Select the appropriate template (.htemp) file to load.
 4. Hermes will automatically populate the table based on this file, ready for you to attach images and
 record audio for the word list.
+
+## Viewing and Changing Project Details
+1. Click on the 'Project' menu option in the menu toolbar.
+2. Click on 'Project Details' and a window will open displaying project details (i.e., Languages, and Author Name).
+3. Click 'Save' to commit any changes to details, otherwise click 'Close' to close the window without saving.
+
