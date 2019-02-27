@@ -171,8 +171,7 @@ class SessionManager(object):
         if self.save_mode is not SaveMode.AUTOSAVE:
             self.converter.components.status_bar.clearMessage()
             complete_count = 0
-            to_save_count = self.converter.components.table.rowCount()
-
+        to_save_count = self.converter.components.table.rowCount()
         LOG_SESSION.info(f"Saving {to_save_count} words.")
         self.create_save_data()
         # Transfer data for table rows that have a transcription to save.
