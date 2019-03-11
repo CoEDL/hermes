@@ -18,18 +18,19 @@ def get_opie_paths(base_export_location: str) -> Box:
 
 def create_opie_files(row: int,
                       data: ConverterData,
-                      components: ConverterComponents) -> None:
+                      components: ConverterComponents,
+                      index: int) -> None:
     export_paths = get_opie_paths(data.export_location)
     if data.transcriptions[row].sample:
         sound_file = data.transcriptions[row].sample.get_sample_file_object()
-        sound_file.export(f'{export_paths.sound}/word{row}.wav', format='wav')
+        sound_file.export(f'{export_paths.sound}/word{index}.wav', format='wav')
     image_path = data.transcriptions[row].image
     if image_path:
         image_name, image_extension = os.path.splitext(image_path)
-        shutil.copy(image_path, f'{export_paths.image}/pic{row}{image_extension}')
-    with open(f'{export_paths.transcription}/word{row}.txt', 'w') as file:
+        shutil.copy(image_path, f'{export_paths.image}/pic{index}{image_extension}')
+    with open(f'{export_paths.transcription}/word{index}.txt', 'w') as file:
         file.write(f'{components.table.get_cell_value(row, TABLE_COLUMNS["Transcription"])}')
-    with open(f'{export_paths.translation}/word{row}.txt', 'w') as file:
+    with open(f'{export_paths.translation}/word{index}.txt', 'w') as file:
         file.write(f'{components.table.get_cell_value(row, TABLE_COLUMNS["Translation"])}')
 
 

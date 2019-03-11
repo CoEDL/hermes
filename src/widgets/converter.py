@@ -199,12 +199,14 @@ class ConverterWidget(QWidget):
         elif self.settings.output_format == OutputMode.LMF:
             lmf_manifest_window = ManifestWindow(self.parent, self.data)
             _ = lmf_manifest_window.exec()
+        opie_index = 0
         for row in range(self.components.table.rowCount()):
             if self.components.table.row_is_checked(row) and \
                     self.components.table.get_cell_value(row, TABLE_COLUMNS["Transcription"]):
                 self.components.status_bar.showMessage(f'Exporting file {completed_count + 1} of {export_count}')
                 if self.settings.output_format == OutputMode.OPIE:
-                    create_opie_files(row, self.data, self.components)
+                    create_opie_files(row, self.data, self.components, opie_index)
+                    opie_index += 1
                 elif self.settings.output_format == OutputMode.DICT:
                     create_dict_files(row, self.data)
                 elif self.settings.output_format == OutputMode.LMF:
