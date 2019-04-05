@@ -3,6 +3,10 @@ from typing import Union
 from PyQt5.QtCore import QUrl
 from PyQt5.QtMultimedia import QMultimedia, QAudioEncoderSettings, QVideoEncoderSettings, QAudioRecorder
 from datatypes import AppSettings, Transcription, ConverterData
+from utilities.logger import setup_custom_logger
+
+
+LOG_RECORDER = setup_custom_logger("Audio Recorder")
 
 
 class SimpleAudioRecorder(QAudioRecorder):
@@ -18,6 +22,7 @@ class SimpleAudioRecorder(QAudioRecorder):
         self.settings = QAudioEncoderSettings()
 
     def start_recording(self) -> None:
+        LOG_RECORDER.info("Audio recording started.")
         self.settings.setCodec('audio/pcm')
         self.settings.setChannelCount(1)
         self.settings.setBitRate(96000)
@@ -30,5 +35,7 @@ class SimpleAudioRecorder(QAudioRecorder):
         self.record()
 
     def stop_recording(self) -> Union[str, None]:
+        LOG_RECORDER.info("Audio recording finished.")
+        LOG_RECORDER.info(f"Audio file: {self.file_path}")
         self.stop()
         return self.file_path

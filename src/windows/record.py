@@ -1,9 +1,14 @@
 from PyQt5.QtWidgets import QDialog, QGridLayout, QLabel, QPushButton, QWidget, QLayout, QAbstractButton
 from PyQt5.QtCore import Qt, QSize
 from PyQt5.QtGui import QIcon
+from pygame import mixer
 from utilities.record import SimpleAudioRecorder
+from utilities.logger import setup_custom_logger
 from datatypes import Transcription, ConverterData, AppSettings
 from typing import Callable
+
+
+LOG_RECORD_WINDOW = setup_custom_logger("Record Window")
 
 
 class RecordWindow(QDialog):
@@ -28,10 +33,10 @@ class RecordWindow(QDialog):
         self.output = None
 
     def init_ui(self) -> None:
-        self.setWindowTitle('Record')
+        self.setWindowTitle('Record Audio')
         self.setMinimumWidth(200)
-        instruction_text = f'<html>Click and hold the button below to record.<br/>' \
-                           f'Releasing the button will stop the recording.<br/>'
+        instruction_text = f'<html>Click button below to start recording.<br/>' \
+                           f'Click the button again to stop recording.<br/>'
         if self.transcription.transcription:
             instruction_text += f'<br/><strong>Word: {self.transcription.transcription}</strong><br/></html>'
         instruction_label = QLabel(instruction_text)
@@ -52,12 +57,17 @@ class RecordWindow(QDialog):
         self.layout.setAlignment(self.record_button, Qt.AlignCenter)
         cancel_button = QPushButton('Cancel')
         cancel_button.clicked.connect(self.on_click_cancel)
-        self.layout.addWidget(cancel_button, 3, 7, 1, 1)
+        self.layout.addWidget(cancel_button, 3, 6, 1, 1)
+        self.preview_button = QPushButton('Preview')
+        self.preview_button.clicked.connect(self.on_click_preview)
+        self.preview_button.setEnabled(False)
+        self.layout.addWidget(self.preview_button, 3, 7, 1, 1)
         save_button = QPushButton('Save')
         save_button.clicked.connect(self.on_click_save)
         self.layout.addWidget(save_button, 3, 8, 1, 1)
         self.layout.setSizeConstraint(QLayout.SetFixedSize)
         self.setLayout(self.layout)
+        LOG_RECORD_WINDOW.debug("Record Window initialised.")
 
     def on_click_record(self) -> None:
         """Record after clicking record button once, again to stop."""
@@ -73,8 +83,10 @@ class RecordWindow(QDialog):
             self.record_button.setIconSize(QSize(96, 96))
             try:
                 self.output = self.recorder.file_path
+                self.preview_button.setEnabled(True)
             except FileNotFoundError:
                 self.output = None
+                LOG_RECORD_WINDOW.error(f"Error on recording: {FileNotFoundError}")
 
     def on_press_record(self) -> None:
         """Functionality not hooked up, for 'hold down button' to record"""
@@ -100,3 +112,9 @@ class RecordWindow(QDialog):
 
     def on_click_cancel(self) -> None:
         self.close()
+
+    def on_click_preview(self) -> None:
+        if self.output:
+            mixer.init()
+            sound = mixer.Sound(self.output)
+            sound.play()
