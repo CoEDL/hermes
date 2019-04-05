@@ -37,9 +37,11 @@ class RecordWindow(QDialog):
         instruction_label = QLabel(instruction_text)
         instruction_label.setAlignment(Qt.AlignCenter)
         self.layout.addWidget(instruction_label, 0, 0, 1, 9)
-        self.record_button.setStyleSheet(
-                                    'QPushButton {border-radius: 50px}'
-                                    'QPushButton:pressed {background-color: darkred}')
+        self.record_button.setStyleSheet('QPushButton{border-radius: 50%;'
+                                         '            height: 100px;'
+                                         '            width: 100px;'
+                                         '            max-width: 100px;}\n'
+                                         'QPushButton:pressed {background-color: silver}')
         self.record_button.setFlat(True)
         self.record_button.setIcon(QIcon('./img/icon-record-96.png'))
         self.record_button.setIconSize(QSize(96, 96))
@@ -98,4 +100,3 @@ class RecordWindow(QDialog):
 
     def on_click_cancel(self) -> None:
         self.close()
-
