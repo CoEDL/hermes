@@ -1,5 +1,6 @@
-from PyQt5.QtWidgets import QDialog, QGridLayout, QLabel, QPushButton, QWidget, QLayout
-from PyQt5.QtCore import Qt
+from PyQt5.QtWidgets import QDialog, QGridLayout, QLabel, QPushButton, QWidget, QLayout, QAbstractButton
+from PyQt5.QtCore import Qt, QSize
+from PyQt5.QtGui import QIcon
 from utilities.record import SimpleAudioRecorder
 from datatypes import Transcription, ConverterData, AppSettings
 from typing import Callable
@@ -18,6 +19,8 @@ class RecordWindow(QDialog):
         self.data = data
         self.settings = settings
         self.layout = QGridLayout()
+        self.record_button = QPushButton()
+        self.recording = False
         self.init_ui()
         self.recorder = SimpleAudioRecorder(self.data,
                                             self.transcription,
@@ -34,31 +37,49 @@ class RecordWindow(QDialog):
         instruction_label = QLabel(instruction_text)
         instruction_label.setAlignment(Qt.AlignCenter)
         self.layout.addWidget(instruction_label, 0, 0, 1, 9)
-        record_button = QPushButton()
-        record_button.setStyleSheet('QPushButton{background-color: red;'
-                                    '            border-radius: 50%;'
-                                    '            height: 100px;'
-                                    '            width: 100px;'
-                                    '            max-width: 100px;}\n'
-                                    'QPushButton:hover {border: 5px solid darkred}'
+        self.record_button.setStyleSheet(
+                                    'QPushButton {border-radius: 50px}'
                                     'QPushButton:pressed {background-color: darkred}')
-        record_button.pressed.connect(self.on_press_record)
-        record_button.released.connect(self.on_release_record)
-        self.layout.addWidget(record_button, 1, 0, 1, 9)
-        self.layout.setAlignment(record_button, Qt.AlignCenter)
+        self.record_button.setFlat(True)
+        self.record_button.setIcon(QIcon('./img/icon-record-96.png'))
+        self.record_button.setIconSize(QSize(96, 96))
+        # self.record_button.pressed.connect(self.on_press_record)
+        # self.record_button.released.connect(self.on_release_record)
+        self.record_button.clicked.connect(self.on_click_record)
+        self.layout.addWidget(self.record_button, 1, 0, 1, 9)
+        self.layout.setAlignment(self.record_button, Qt.AlignCenter)
         cancel_button = QPushButton('Cancel')
         cancel_button.clicked.connect(self.on_click_cancel)
-        self.layout.addWidget(cancel_button, 2, 7, 1, 1)
+        self.layout.addWidget(cancel_button, 3, 7, 1, 1)
         save_button = QPushButton('Save')
         save_button.clicked.connect(self.on_click_save)
-        self.layout.addWidget(save_button, 2, 8, 1, 1)
+        self.layout.addWidget(save_button, 3, 8, 1, 1)
         self.layout.setSizeConstraint(QLayout.SetFixedSize)
         self.setLayout(self.layout)
 
+    def on_click_record(self) -> None:
+        """Record after clicking record button once, again to stop."""
+        if not self.recording:
+            self.recording = True
+            self.recorder.start_recording()
+            self.record_button.setIcon(QIcon('./img/icon-stop-96_3.png'))
+            self.record_button.setIconSize(QSize(96, 96))
+        else:
+            self.recording = False
+            self.recorder.stop_recording()
+            self.record_button.setIcon(QIcon('./img/icon-record-96.png'))
+            self.record_button.setIconSize(QSize(96, 96))
+            try:
+                self.output = self.recorder.file_path
+            except FileNotFoundError:
+                self.output = None
+
     def on_press_record(self) -> None:
+        """Functionality not hooked up, for 'hold down button' to record"""
         self.recorder.start_recording()
 
     def on_release_record(self) -> None:
+        """Functionality not hooked up, for 'release button' to stop recording"""
         self.recorder.stop_recording()
         try:
             self.output = self.recorder.file_path
@@ -77,3 +98,4 @@ class RecordWindow(QDialog):
 
     def on_click_cancel(self) -> None:
         self.close()
+
