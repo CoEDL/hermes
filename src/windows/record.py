@@ -26,7 +26,7 @@ class RecordWindow(QDialog):
         self.settings = settings
         self.layout = QGridLayout()
         self.record_button = QPushButton()
-        self.preview_button = QPushButton('Preview')
+        self.preview_button = QPushButton('Play Audio')
         self.recording = False
         self.output = None
         self.init_ui()
@@ -39,10 +39,10 @@ class RecordWindow(QDialog):
         self.setMinimumWidth(200)
 
         # Header
-        instruction_text = f'<html>Click button below to start recording.<br/>' \
-                           f'Click the button again to stop recording.<br/>'
+        instruction_text = f'<html>Click record button below to start recording.<br/>' \
+                           f'Click the record button again to stop recording.<br/>'
         if self.transcription.transcription:
-            instruction_text += f'<br/><strong>Word: {self.transcription.transcription}</strong><br/></html>'
+            instruction_text += f'<hr/><strong><h3>Transcription: {self.transcription.transcription}</h3></strong></html>'
         instruction_label = QLabel(instruction_text)
         instruction_label.setAlignment(Qt.AlignCenter)
         self.layout.addWidget(instruction_label, 0, 0, 1, 9)
@@ -56,6 +56,7 @@ class RecordWindow(QDialog):
         self.record_button.setFlat(True)
         self.record_button.setIcon(QIcon('./img/icon-record-96.png'))
         self.record_button.setIconSize(QSize(96, 96))
+        self.record_button.setToolTip("Record button: Click to start/stop recording.")
         # self.record_button.pressed.connect(self.on_press_record)
         # self.record_button.released.connect(self.on_release_record)
         self.record_button.clicked.connect(self.on_click_record)
@@ -65,17 +66,20 @@ class RecordWindow(QDialog):
         load_button = QPushButton('Load')
         load_button.setIcon(QIcon('./img/icon-audio-file-32.png'))
         load_button.setIconSize(QSize(32, 32))
+        load_button.setToolTip("Load a .wav audio file for this transcription.")
         load_button.clicked.connect(self.on_click_load_audio)
         self.layout.addWidget(load_button, 3, 3, 1, 1)
 
         save_button = QPushButton('Save')
         save_button.setIcon(QIcon('./img/icon-save-close-32.png'))
         save_button.setIconSize(QSize(32, 32))
+        save_button.setToolTip("Finish and save current audio sample for this transcription.")
         save_button.clicked.connect(self.on_click_save)
         self.layout.addWidget(save_button, 3, 4, 1, 1)
 
-        self.preview_button.setIcon(QIcon('./img/icon-speaker-32.png'))
+        self.preview_button.setIcon(QIcon('./img/icon-play-32.png'))
         self.preview_button.setIconSize(QSize(32, 32))
+        self.preview_button.setToolTip("Playback the recorded or loaded audio file.")
         self.preview_button.clicked.connect(self.on_click_preview)
         if self.transcription.sample and self.transcription.sample.get_sample_file_path():
             self.output = self.transcription.sample.get_sample_file_path()
@@ -86,6 +90,7 @@ class RecordWindow(QDialog):
         cancel_button = QPushButton('Cancel')
         cancel_button.setIcon(QIcon('./img/icon-cancel-32.png'))
         cancel_button.setIconSize(QSize(32, 32))
+        cancel_button.setToolTip("Cancel without saving audio.")
         cancel_button.clicked.connect(self.on_click_cancel)
         self.layout.addWidget(cancel_button, 3, 6, 1, 1)
 
