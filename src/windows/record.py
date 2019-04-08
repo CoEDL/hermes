@@ -1,7 +1,8 @@
-from PyQt5.QtWidgets import QDialog, QGridLayout, QLabel, QPushButton, QWidget, QLayout, QAbstractButton
+from PyQt5.QtWidgets import QDialog, QFileDialog, QGridLayout, QLabel, QLayout, QPushButton, QWidget
 from PyQt5.QtCore import Qt, QSize
 from PyQt5.QtGui import QIcon
 from pygame import mixer
+from pygame import error as pygerror
 from utilities.record import SimpleAudioRecorder
 from utilities.logger import setup_custom_logger
 from datatypes import Transcription, ConverterData, AppSettings
@@ -25,6 +26,7 @@ class RecordWindow(QDialog):
         self.settings = settings
         self.layout = QGridLayout()
         self.record_button = QPushButton()
+        self.preview_button = QPushButton('Preview')
         self.recording = False
         self.output = None
         self.init_ui()
@@ -60,21 +62,32 @@ class RecordWindow(QDialog):
         self.layout.addWidget(self.record_button, 1, 0, 1, 9)
         self.layout.setAlignment(self.record_button, Qt.AlignCenter)
 
-        save_button = QPushButton('Save')
-        save_button.clicked.connect(self.on_click_save)
-        self.layout.addWidget(save_button, 3, 6, 1, 1)
+        load_button = QPushButton('Load')
+        load_button.setIcon(QIcon('./img/icon-audio-file-32.png'))
+        load_button.setIconSize(QSize(32, 32))
+        load_button.clicked.connect(self.on_click_load_audio)
+        self.layout.addWidget(load_button, 3, 3, 1, 1)
 
-        self.preview_button = QPushButton('Preview')
+        save_button = QPushButton('Save')
+        save_button.setIcon(QIcon('./img/icon-save-close-32.png'))
+        save_button.setIconSize(QSize(32, 32))
+        save_button.clicked.connect(self.on_click_save)
+        self.layout.addWidget(save_button, 3, 4, 1, 1)
+
+        self.preview_button.setIcon(QIcon('./img/icon-speaker-32.png'))
+        self.preview_button.setIconSize(QSize(32, 32))
         self.preview_button.clicked.connect(self.on_click_preview)
         if self.transcription.sample and self.transcription.sample.get_sample_file_path():
             self.output = self.transcription.sample.get_sample_file_path()
         else:
             self.preview_button.setEnabled(False)
-        self.layout.addWidget(self.preview_button, 3, 7, 1, 1)
+        self.layout.addWidget(self.preview_button, 3, 5, 1, 1)
 
         cancel_button = QPushButton('Cancel')
+        cancel_button.setIcon(QIcon('./img/icon-cancel-32.png'))
+        cancel_button.setIconSize(QSize(32, 32))
         cancel_button.clicked.connect(self.on_click_cancel)
-        self.layout.addWidget(cancel_button, 3, 8, 1, 1)
+        self.layout.addWidget(cancel_button, 3, 6, 1, 1)
 
         self.layout.setSizeConstraint(QLayout.SetFixedSize)
         self.setLayout(self.layout)
@@ -112,23 +125,40 @@ class RecordWindow(QDialog):
         except FileNotFoundError:
             self.output = None
 
+    def on_click_load_audio(self) -> None:
+        audio_path = QFileDialog().getOpenFileName(self, "Select Audio File to Load", "~", ".wav Audio Files (*.wav)")
+        LOG_RECORD_WINDOW.debug(f"Attempt to load audio: {audio_path}")
+        if audio_path:
+            self.output = audio_path[0]
+            self.__set_audio_sample(self.output)
+            self.update_button()
+            self.preview_button.setEnabled(True)
+            LOG_RECORD_WINDOW.info(f"Audio file loaded: {audio_path}")
+
     def on_click_save(self) -> None:
         if self.output:
-            self.transcription.set_blank_sample()
-            try:
-                self.transcription.sample.set_sample(self.output)
-            except FileNotFoundError:
-                self.transcription.sample = None
+            self.__set_audio_sample(self.output)
             self.update_button()
         self.close()
 
-    def on_click_cancel(self) -> None:
-        self.close()
+    def __set_audio_sample(self, path: str) -> None:
+        try:
+            self.transcription.set_blank_sample()
+            self.transcription.sample.set_sample(path)
+            LOG_RECORD_WINDOW.info(f"Audio sample set from: {path}")
+        except FileNotFoundError:
+            self.transcription.sample = None
+            LOG_RECORD_WINDOW.error(f"Could not load audio: {path} / {FileNotFoundError}")
 
     def on_click_preview(self) -> None:
-        print(self.output)
         if self.output:
-            print(self.output)
-            mixer.init()
-            sound = mixer.Sound(self.output)
-            sound.play()
+            try:
+                LOG_RECORD_WINDOW.debug(f"Previewing Audio: {self.output}")
+                mixer.init()
+                sound = mixer.Sound(self.output)
+                sound.play()
+            except pygerror as e:
+                LOG_RECORD_WINDOW.error(f"Error on previewing Audio: {e}")
+
+    def on_click_cancel(self) -> None:
+        self.close()
