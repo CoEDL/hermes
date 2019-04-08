@@ -120,11 +120,11 @@ class MainProjectSelection(QWidget):
         self.init_ui()
 
     def init_ui(self) -> None:
-        new_project_btn = ModeButton("./img/icon_new_project.png",
+        new_project_btn = ModeButton(resource_path("./img/icon_new_project.png"),
                                      "Start New Project",
                                      on_click = self.on_click_new_project)
         self.layout.addWidget(new_project_btn, 0, 0, 1, 1)
-        open_project_btn = ModeButton("./img/icon_open_project.png",
+        open_project_btn = ModeButton(resource_path("./img/icon_open_project.png"),
                                       "Open Project",
                                       on_click = self.on_click_open_project)
         self.layout.addWidget(open_project_btn, 0, 1, 1, 1)

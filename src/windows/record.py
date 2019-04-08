@@ -3,6 +3,7 @@ from PyQt5.QtCore import Qt, QSize
 from PyQt5.QtGui import QIcon
 from pygame import mixer
 from pygame import error as pygerror
+from utilities.files import resource_path
 from utilities.record import SimpleAudioRecorder
 from utilities.logger import setup_custom_logger
 from datatypes import Transcription, ConverterData, AppSettings
@@ -54,7 +55,7 @@ class RecordWindow(QDialog):
                                          '            max-width: 100px;}\n'
                                          'QPushButton:pressed {background-color: silver}')
         self.record_button.setFlat(True)
-        self.record_button.setIcon(QIcon('./img/icon-record-96.png'))
+        self.record_button.setIcon(QIcon(resource_path('./img/icon-record-96.png')))
         self.record_button.setIconSize(QSize(96, 96))
         self.record_button.setToolTip("Record button: Click to start/stop recording.")
         # self.record_button.pressed.connect(self.on_press_record)
@@ -64,20 +65,20 @@ class RecordWindow(QDialog):
         self.layout.setAlignment(self.record_button, Qt.AlignCenter)
 
         load_button = QPushButton('Load')
-        load_button.setIcon(QIcon('./img/icon-audio-file-32.png'))
+        load_button.setIcon(QIcon(resource_path('./img/icon-audio-file-32.png')))
         load_button.setIconSize(QSize(32, 32))
         load_button.setToolTip("Load a .wav audio file for this transcription.")
         load_button.clicked.connect(self.on_click_load_audio)
         self.layout.addWidget(load_button, 3, 3, 1, 1)
 
         save_button = QPushButton('Save')
-        save_button.setIcon(QIcon('./img/icon-save-close-32.png'))
+        save_button.setIcon(QIcon(resource_path('./img/icon-save-close-32.png')))
         save_button.setIconSize(QSize(32, 32))
         save_button.setToolTip("Finish and save current audio sample for this transcription.")
         save_button.clicked.connect(self.on_click_save)
         self.layout.addWidget(save_button, 3, 4, 1, 1)
 
-        self.preview_button.setIcon(QIcon('./img/icon-play-32.png'))
+        self.preview_button.setIcon(QIcon(resource_path('./img/icon-play-32.png')))
         self.preview_button.setIconSize(QSize(32, 32))
         self.preview_button.setToolTip("Playback the recorded or loaded audio file.")
         self.preview_button.clicked.connect(self.on_click_preview)
@@ -88,7 +89,7 @@ class RecordWindow(QDialog):
         self.layout.addWidget(self.preview_button, 3, 5, 1, 1)
 
         cancel_button = QPushButton('Cancel')
-        cancel_button.setIcon(QIcon('./img/icon-cancel-32.png'))
+        cancel_button.setIcon(QIcon(resource_path('./img/icon-cancel-32.png')))
         cancel_button.setIconSize(QSize(32, 32))
         cancel_button.setToolTip("Cancel without saving audio.")
         cancel_button.clicked.connect(self.on_click_cancel)
@@ -104,12 +105,12 @@ class RecordWindow(QDialog):
         if not self.recording:
             self.recording = True
             self.recorder.start_recording()
-            self.record_button.setIcon(QIcon('./img/icon-stop-96_3.png'))
+            self.record_button.setIcon(QIcon(resource_path('./img/icon-stop-96_3.png')))
             self.record_button.setIconSize(QSize(96, 96))
         else:
             self.recording = False
             self.recorder.stop_recording()
-            self.record_button.setIcon(QIcon('./img/icon-record-96.png'))
+            self.record_button.setIcon(QIcon(resource_path('./img/icon-record-96.png')))
             self.record_button.setIconSize(QSize(96, 96))
             try:
                 self.output = self.recorder.file_path
