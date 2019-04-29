@@ -25,7 +25,7 @@ Instructions for using Hermes to produce language resources can be found [here](
 
 | MacOS  | Windows |
 | ------ | ------- |
-| [Link](https://www.dropbox.com/s/5lqk8tvqfjvyg4x/Hermes%20-%20The%20Language%20Resource%20Creator.app.zip?dl=1) | [Link](https://www.dropbox.com/s/qwg525k1k3zs1hn/Hermes%20-%20The%20Language%20Resource%20Creator.exe?dl=1) |
+| [Link](https://www.dropbox.com/s/5lqk8tvqfjvyg4x/Hermes%20-%20The%20Language%20Resource%20Creator.app.zip?dl=1) | [Link](https://drive.google.com/open?id=1M1i6ZK1wl0Yl4MLkL74mGnPx5r-RiGfI) |
 
 
 ## Build Requirements:
