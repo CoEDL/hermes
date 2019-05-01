@@ -154,11 +154,6 @@ in the settings menu.
 4. To preview your recording, click the 'Play Audio' button.
 5. Click 'Save' to save your recording for the specified word.
 6. Click 'Cancel' if you do not want to save the recording.
-
-<p align="center">
-<img src="img/hermes_audio4.png" />
-</p>
-
 7. To load an audio recording that you have already made (*.wav format), click Load and navigate to the file and click 'Open' in the dialog box.
 
 ## 3.2 Attaching Images to Words
