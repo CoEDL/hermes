@@ -121,7 +121,7 @@ in the settings menu.
 2. Click on 'Project Details' and a window will open displaying project details (i.e., Languages, and Author Name).
 
 <p align="center">
-<img src="img/hermes_proj_details2.png" />
+<img src="img/hermes_proj_details2a.png" />
 </p>
 
 3. Click 'Save' to commit any changes to details, otherwise click 'Close' to close the window without saving.
